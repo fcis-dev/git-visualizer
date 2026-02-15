@@ -3650,6 +3650,7 @@ dependencies = [
 name = "tauri-appgit-visualizer"
 version = "0.1.0"
 dependencies = [
+ "dirs",
  "git2",
  "serde",
  "serde_json",
@@ -3657,6 +3658,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-dialog",
  "tauri-plugin-opener",
+ "walkdir",
 ]
 
 [[package]]
