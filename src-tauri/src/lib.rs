@@ -1,4 +1,4 @@
-use git2::{Repository, Sort};
+use git2::{Config, Repository, Sort};
 use serde::Serialize;
 use std::path::Path;
 use tauri::State;
@@ -14,6 +14,7 @@ struct CommitData {
     author: String,
     date: i64,
     parents: Vec<String>,
+    refs: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -27,17 +28,43 @@ struct RepoData {
 fn get_git_graph(path: &str) -> Result<Vec<CommitData>, String> {
     let repo = Repository::open(path).map_err(|e| e.to_string())?;
     let mut revwalk = repo.revwalk().map_err(|e| e.to_string())?;
+
+    // Push HEAD, all local branches, and all remote branches
+    revwalk.push_head().ok(); // Ignore if HEAD doesn't exist yet
+    revwalk
+        .push_glob("refs/heads/*")
+        .map_err(|e| e.to_string())?;
+    revwalk
+        .push_glob("refs/remotes/*")
+        .map_err(|e| e.to_string())?;
+
     revwalk
         .set_sorting(Sort::TOPOLOGICAL | Sort::TIME)
         .map_err(|e| e.to_string())?;
-    revwalk.push_head().map_err(|e| e.to_string())?;
+
+    // Build map of commit ID -> Ref names (branches, tags)
+    let mut refs_map: std::collections::HashMap<String, Vec<String>> =
+        std::collections::HashMap::new();
+    if let Ok(references) = repo.references() {
+        for ref_result in references {
+            if let Ok(reference) = ref_result {
+                let name = reference.shorthand().unwrap_or("").to_string();
+                if let Ok(resolved) = reference.peel_to_commit() {
+                    let id = resolved.id().to_string();
+                    refs_map.entry(id).or_default().push(name);
+                }
+            }
+        }
+    }
 
     let mut commits = Vec::new();
-    for oid in revwalk {
+    // Limit to 1000 for performance
+    for oid in revwalk.take(1000) {
         let oid = oid.map_err(|e| e.to_string())?;
         let commit = repo.find_commit(oid).map_err(|e| e.to_string())?;
 
         let parents: Vec<String> = commit.parent_ids().map(|p| p.to_string()).collect();
+        let refs = refs_map.get(&oid.to_string()).cloned().unwrap_or_default();
 
         commits.push(CommitData {
             hash: oid.to_string(),
@@ -45,6 +72,7 @@ fn get_git_graph(path: &str) -> Result<Vec<CommitData>, String> {
             author: commit.author().name().unwrap_or("").to_string(),
             date: commit.time().seconds(),
             parents,
+            refs,
         });
     }
 
@@ -290,6 +318,170 @@ fn get_current_branch(path: &str) -> Result<String, String> {
     }
 }
 
+// Git Helper to run commands
+fn run_git_cmd(path: &str, args: &[&str]) -> Result<String, String> {
+    use std::process::Command;
+    #[cfg(target_os = "windows")]
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+    let mut cmd = Command::new("git");
+    cmd.args(args);
+    cmd.current_dir(path);
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let output = cmd
+        .output()
+        .map_err(|e| format!("Failed to execute git command: {}", e))?;
+
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).to_string())
+    }
+}
+
+#[tauri::command]
+fn git_fetch_prune(path: &str) -> Result<String, String> {
+    run_git_cmd(path, &["fetch", "--prune", "--all"])
+}
+
+#[tauri::command]
+fn git_merge(path: &str, branch: &str) -> Result<String, String> {
+    run_git_cmd(path, &["merge", branch])
+}
+
+#[tauri::command]
+fn git_stash_save(path: &str, message: Option<String>) -> Result<String, String> {
+    let mut args = vec!["stash", "save"];
+    if let Some(msg) = &message {
+        args.push(msg);
+    }
+    run_git_cmd(path, &args)
+}
+
+#[tauri::command]
+fn git_stash_pop(path: &str) -> Result<String, String> {
+    run_git_cmd(path, &["stash", "pop"])
+}
+
+#[tauri::command]
+fn git_cherry_pick(path: &str, hash: &str) -> Result<String, String> {
+    run_git_cmd(path, &["cherry-pick", hash])
+}
+
+#[tauri::command]
+fn git_revert(path: &str, hash: &str) -> Result<String, String> {
+    run_git_cmd(path, &["revert", hash, "--no-edit"])
+}
+
+#[tauri::command]
+fn git_diff(path: &str, file: Option<String>) -> Result<String, String> {
+    let mut args = vec!["diff"];
+    if let Some(f) = &file {
+        args.push(f);
+    }
+    run_git_cmd(path, &args)
+}
+
+#[tauri::command]
+fn git_tag_create(path: &str, name: &str, hash: Option<String>) -> Result<String, String> {
+    let mut args = vec!["tag", name];
+    if let Some(h) = &hash {
+        args.push(h);
+    }
+    run_git_cmd(path, &args)
+}
+
+#[tauri::command]
+fn git_tag_delete(path: &str, name: &str) -> Result<String, String> {
+    run_git_cmd(path, &["tag", "-d", name])
+}
+
+#[tauri::command]
+fn git_branch_create(path: &str, name: &str, hash: &str) -> Result<String, String> {
+    run_git_cmd(path, &["branch", name, hash])
+}
+
+#[tauri::command]
+fn git_checkout_branch(path: &str, branch: &str) -> Result<String, String> {
+    run_git_cmd(path, &["checkout", branch])
+}
+
+#[tauri::command]
+fn git_checkout_commit(path: &str, hash: &str) -> Result<String, String> {
+    run_git_cmd(path, &["checkout", hash])
+}
+
+#[tauri::command]
+fn git_reset(path: &str, hash: &str, mode: &str) -> Result<String, String> {
+    // mode: --soft, --mixed, --hard
+    run_git_cmd(path, &["reset", mode, hash])
+}
+
+#[tauri::command]
+fn git_rebase(path: &str, branch: &str) -> Result<String, String> {
+    run_git_cmd(path, &["rebase", branch])
+}
+
+#[tauri::command]
+fn git_remote_list(path: &str) -> Result<Vec<String>, String> {
+    let output = run_git_cmd(path, &["remote", "-v"])?;
+    Ok(output.lines().map(|s| s.to_string()).collect())
+}
+
+#[tauri::command]
+fn git_remote_add(path: &str, name: &str, url: &str) -> Result<String, String> {
+    run_git_cmd(path, &["remote", "add", name, url])
+}
+
+#[tauri::command]
+fn git_remote_remove(path: &str, name: &str) -> Result<String, String> {
+    run_git_cmd(path, &["remote", "remove", name])
+}
+
+#[tauri::command]
+fn git_blame(path: &str, file: &str) -> Result<String, String> {
+    run_git_cmd(path, &["blame", file])
+}
+
+#[tauri::command]
+fn get_branches(path: &str) -> Result<Vec<String>, String> {
+    let output = run_git_cmd(path, &["branch", "-a", "--format=%(refname:short)"])?;
+    Ok(output.lines().map(|s| s.to_string()).collect())
+}
+
+#[tauri::command]
+fn get_git_config_user(_path: &str) -> Result<(String, String), String> {
+    // Open default config (global/system) directly, ignoring repo context
+    let config = Config::open_default().map_err(|e| e.to_string())?;
+
+    let name = config.get_string("user.name").unwrap_or_default();
+    let email = config.get_string("user.email").unwrap_or_default();
+
+    Ok((name, email))
+}
+
+#[tauri::command]
+fn set_git_config_user(_path: &str, name: &str, email: &str) -> Result<(), String> {
+    // Specifically target the global config file
+    let global_path = Config::find_global().map_err(|e| e.to_string())?;
+    let mut config = Config::open(&global_path).map_err(|e| e.to_string())?;
+
+    config
+        .set_str("user.name", name)
+        .map_err(|e| e.to_string())?;
+    config
+        .set_str("user.email", email)
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app_state = AppState::new();
@@ -298,6 +490,7 @@ pub fn run() {
         .manage(app_state)
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             get_git_graph,
             add_folder,
@@ -310,7 +503,29 @@ pub fn run() {
             git_commit,
             git_push,
             git_pull,
-            get_current_branch
+            get_current_branch,
+            git_fetch_prune,
+            git_merge,
+            git_stash_save,
+            git_stash_pop,
+            git_cherry_pick,
+            git_revert,
+            git_diff,
+            git_tag_create,
+            git_tag_delete,
+            git_branch_create,
+            git_branch_create,
+            git_checkout_branch,
+            git_checkout_commit,
+            git_reset,
+            git_rebase,
+            git_remote_list,
+            git_remote_add,
+            git_remote_remove,
+            git_blame,
+            get_branches,
+            get_git_config_user,
+            set_git_config_user
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

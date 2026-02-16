@@ -4,4 +4,5 @@ export interface CommitData {
   author: string;
   date: number;
   parents: string[];
+  refs: string[];
 }

@@ -90,11 +90,11 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-slate-800/60 flex items-center justify-between bg-slate-900/40">
-        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">PROJECTS</span>
+      <div className="p-4 border-b border-slate-200 dark:border-slate-800/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/40">
+        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">PROJECTS</span>
         <button 
             onClick={handleAddFolder}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors"
+            className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition-colors"
             title="Add Project Folder"
         >
             <FolderPlus className="w-4 h-4" />
@@ -113,32 +113,32 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
                 key={repo.path}
                 className={`flex items-center space-x-2 p-2 rounded cursor-pointer transition-colors group ${
                     activeRepoPath === repo.path 
-                        ? 'bg-indigo-600/20 text-indigo-300' 
-                        : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+                        ? 'bg-indigo-50 dark:bg-indigo-600/20 text-indigo-700 dark:text-indigo-300' 
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
                 onClick={() => onSelectRepo(repo.path)}
                 title={repo.path}
             >
-                <Folder className={`w-4 h-4 ${activeRepoPath === repo.path ? 'text-indigo-400' : 'text-slate-500'}`} />
+                <Folder className={`w-4 h-4 ${activeRepoPath === repo.path ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`} />
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-medium truncate">{repo.name}</span>
                         {repo.branch && (
                              <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
                                 activeRepoPath === repo.path 
-                                    ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300' 
-                                    : 'bg-slate-800 border-slate-700 text-slate-500'
+                                    ? 'bg-indigo-100 dark:bg-indigo-500/20 border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-300' 
+                                    : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'
                              }`}>
                                 {repo.branch}
                              </span>
                         )}
                     </div>
-                    <div className="text-[10px] text-slate-600 truncate">{repo.path}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-600 truncate">{repo.path}</div>
                 </div>
                 
                 <button 
                     onClick={(e) => handleRemoveRepo(repo.path, e)}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 hover:text-red-400 text-slate-500 rounded transition-all"
+                    className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 dark:hover:text-red-400 text-slate-400 dark:text-slate-500 rounded transition-all"
                     title="Remove Project"
                 >
                     <Trash2 className="w-3.5 h-3.5" />
