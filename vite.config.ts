@@ -30,4 +30,10 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
+  build: {
+    sourcemap: false,
+  },
+  css: {
+    devSourcemap: false,
+  }
 }));

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
 import { Commit } from "../../domain/entities/GitEntities";
 
@@ -56,6 +56,12 @@ export function useGit(repoPath: string) {
         throw e;
     }
   };
+
+  useEffect(() => {
+    if (repoPath) {
+      loadCommits();
+    }
+  }, [repoPath, loadCommits]);
 
   return {
     commits,

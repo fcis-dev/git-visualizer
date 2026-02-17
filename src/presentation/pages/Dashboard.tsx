@@ -36,7 +36,7 @@ export function Dashboard() {
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { commits, branchName, availableBranches, error, loadCommits, setError } = useGit(repoPath);
+  const { commits, branchName, availableBranches, error, loadCommits, setError, isLoading } = useGit(repoPath);
   const { showConfirm, showInput, showAlert } = useDialog();
   
   // Refresh graph after action
@@ -363,9 +363,14 @@ export function Dashboard() {
                     }
                   }}
                 />
-              ) : (
+              ) : isLoading ? (
                 <div className="flex items-center justify-center flex-1">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center flex-1 text-slate-400 dark:text-slate-600">
+                  <GitBranch className="w-16 h-16 mb-4 opacity-20" />
+                  <p className="text-sm font-medium">No commits found</p>
                 </div>
               )
             ) : (
