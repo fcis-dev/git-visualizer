@@ -1,13 +1,13 @@
 import React, { useRef, useEffect } from 'react';
 import * as d3 from 'd3';
-import { CommitData } from '../types';
+import { Commit } from '../../domain/entities/GitEntities';
 import { calculateGraphLayout } from '../utils/graphLayout';
 import { useTheme } from '../context/ThemeContext';
 
 interface GraphProps {
-  commits: CommitData[];
-  selectedCommit: CommitData | null;
-  onSelectCommit: (commit: CommitData) => void;
+  commits: Commit[];
+  selectedCommit: Commit | null;
+  onSelectCommit: (commit: Commit) => void;
 }
 
 export const Graph: React.FC<GraphProps> = ({ commits, selectedCommit, onSelectCommit }) => {
@@ -32,7 +32,7 @@ export const Graph: React.FC<GraphProps> = ({ commits, selectedCommit, onSelectC
 
     // Dynamic colors based on theme
     const isDark = theme === 'dark';
-    const textColor = isDark ? "#e2e8f0" : "#1e293b"; // slate-200 / slate-800
+    // const textColor = isDark ? "#e2e8f0" : "#1e293b"; // slate-200 / slate-800
     const mutedColor = isDark ? "#64748b" : "#94a3b8"; // slate-500 / slate-400
     const strokeColor = isDark ? "#0f172a" : "#ffffff"; // slate-950 / white
 

@@ -1,11 +1,11 @@
-import { CommitData } from '../types';
+import { Commit } from '../../domain/entities/GitEntities';
 
 interface Point {
   x: number;
   y: number;
 }
 
-export interface GraphNode extends CommitData {
+export interface GraphNode extends Commit {
   x: number;
   y: number;
   lane: number;
@@ -23,7 +23,7 @@ const COLORS = [
   "#2ECC71", "#1BBC9B", "#4B77BE", "#2C3E50"
 ];
 
-export function calculateGraphLayout(commits: CommitData[]) {
+export function calculateGraphLayout(commits: Commit[]) {
   const nodes: GraphNode[] = [];
   const links: GraphLink[] = [];
 

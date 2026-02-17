@@ -23,7 +23,7 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
   const [remotes, setRemotes] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   
-  const { showInput, showAlert } = useDialog();
+  const { showInput, showAlert, showConfirm } = useDialog();
 
   useEffect(() => {
     if (repoPath) {
