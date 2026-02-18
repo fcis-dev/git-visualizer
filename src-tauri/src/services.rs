@@ -1,4 +1,4 @@
-use crate::models::{CommitData, FileStatus, RepoData};
+use crate::models::{CommitData, CommitDetails, FileChange, FileStatus, RepoData};
 use git2::{Repository, Sort};
 use std::path::Path;
 use walkdir::WalkDir;
@@ -52,6 +52,79 @@ pub fn get_git_graph(path: &str) -> Result<Vec<CommitData>, String> {
     Ok(commits)
 }
 
+pub fn get_commit_details(path: &str, hash: &str) -> Result<CommitDetails, String> {
+    let repo = Repository::open(path).map_err(|e| e.to_string())?;
+    let oid = git2::Oid::from_str(hash).map_err(|e| e.to_string())?;
+    let commit = repo.find_commit(oid).map_err(|e| e.to_string())?;
+
+    let tree = repo
+        .find_tree(commit.tree_id())
+        .map_err(|e| e.to_string())?;
+
+    let parent_tree = if commit.parent_count() > 0 {
+        let parent_id = commit.parent_id(0).map_err(|e| e.to_string())?;
+        let parent = repo.find_commit(parent_id).map_err(|e| e.to_string())?;
+        Some(
+            repo.find_tree(parent.tree_id())
+                .map_err(|e| e.to_string())?,
+        )
+    } else {
+        None
+    };
+
+    let mut diff_opts = git2::DiffOptions::new();
+    let diff = repo
+        .diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts))
+        .map_err(|e| e.to_string())?;
+
+    let mut files = Vec::new();
+
+    // We can't easily get insertions/deletions per file without more complex diff analysis (Patch),
+    // but for now let's collect paths and statuses.
+    // If we want stats, we'd need to iterate patches.
+
+    diff.print(git2::DiffFormat::NameStatus, |delta, _hunk, _line| {
+        let path = delta
+            .new_file()
+            .path()
+            .unwrap_or(Path::new(""))
+            .to_string_lossy()
+            .replace("\\", "/");
+        let status = match delta.status() {
+            git2::Delta::Added => "A",
+            git2::Delta::Deleted => "D",
+            git2::Delta::Modified => "M",
+            git2::Delta::Renamed => "R",
+            git2::Delta::Copied => "C",
+            _ => "U",
+        };
+
+        // Placeholder for stats since getting them requires iterating patches which is heavier
+        // For a quick list, 0 is fine, or we can implement patch iteration if needed.
+        files.push(FileChange {
+            path,
+            status: status.to_string(),
+            insertions: 0,
+            deletions: 0,
+        });
+        true
+    })
+    .map_err(|e| e.to_string())?;
+
+    let parents: Vec<String> = commit.parent_ids().map(|p| p.to_string()).collect();
+    let commit_message = commit.message().unwrap_or("").to_string();
+    let commit_author = commit.author().name().unwrap_or("").to_string();
+
+    Ok(CommitDetails {
+        hash: commit.id().to_string(),
+        message: commit_message,
+        author: commit_author,
+        date: commit.time().seconds(),
+        parents,
+        files,
+    })
+}
+
 pub fn get_repos_in_folder(path: &str) -> Result<Vec<RepoData>, String> {
     let mut repos = Vec::new();
     for entry in WalkDir::new(path)
@@ -96,7 +169,9 @@ pub fn get_git_status(path: &str) -> Result<Vec<FileStatus>, String> {
     for entry in repo_statuses.iter() {
         let status = entry.status();
         let path = entry.path().unwrap_or("").to_string();
-        let status_str = if status.is_index_new()
+        let status_str = if status.is_conflicted() {
+            "conflicted"
+        } else if status.is_index_new()
             || status.is_index_modified()
             || status.is_index_deleted()
             || status.is_index_renamed()
@@ -118,6 +193,21 @@ pub fn get_git_status(path: &str) -> Result<Vec<FileStatus>, String> {
         });
     }
     Ok(statuses)
+}
+
+pub fn git_resolve_conflict(path: &str, file: &str, strategy: &str) -> Result<String, String> {
+    // strategy: "ours" | "theirs"
+    // git checkout --ours -- <file>
+    // git add <file>
+
+    let flag = match strategy {
+        "ours" => "--ours",
+        "theirs" => "--theirs",
+        _ => return Err("Invalid strategy".to_string()),
+    };
+
+    run_git_cmd(path, &["checkout", flag, "--", file])?;
+    run_git_cmd(path, &["add", file])
 }
 
 pub fn git_stage(path: &str, files: Vec<String>) -> Result<(), String> {
@@ -247,11 +337,28 @@ pub fn git_revert(path: &str, hash: &str) -> Result<String, String> {
     run_git_cmd(path, &["revert", hash, "--no-edit"])
 }
 
-pub fn git_diff(path: &str, file: Option<String>) -> Result<String, String> {
-    let mut args = vec!["diff"];
-    if let Some(f) = &file {
+pub fn git_diff(path: &str, file: Option<String>, hash: Option<String>) -> Result<String, String> {
+    let normalized_file = file.map(|f| f.replace("\\", "/"));
+
+    let mut args = Vec::new();
+    if let Some(h) = &hash {
+        args.push("show");
+        args.push("--pretty=format:");
+        args.push("--patch");
+        args.push("--no-color");
+        args.push(h);
+        if normalized_file.is_some() {
+            args.push("--");
+        }
+    } else {
+        args.push("diff");
+        args.push("HEAD");
+    }
+
+    if let Some(f) = &normalized_file {
         args.push(f);
     }
+
     run_git_cmd(path, &args)
 }
 
@@ -300,8 +407,17 @@ pub fn git_remote_remove(path: &str, name: &str) -> Result<String, String> {
     run_git_cmd(path, &["remote", "remove", name])
 }
 
-pub fn git_blame(path: &str, file: &str) -> Result<String, String> {
-    run_git_cmd(path, &["blame", file])
+pub fn git_blame(path: &str, file: &str, hash: Option<String>) -> Result<String, String> {
+    let mut args = vec!["blame", "--date=short"];
+    if let Some(h) = &hash {
+        args.push(h);
+    }
+    args.push("--");
+    // Normalize path separators
+    let normalized_file = file.replace("\\", "/");
+    args.push(&normalized_file);
+
+    run_git_cmd(path, &args)
 }
 
 pub fn get_branches(path: &str) -> Result<Vec<String>, String> {

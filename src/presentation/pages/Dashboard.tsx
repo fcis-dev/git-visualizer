@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   GitBranch,
   GitCommit,
@@ -23,7 +23,7 @@ import { DiffView } from "../components/DiffView";
 import { useDialog } from "../context/DialogContext";
 import { useGit } from "../hooks/useGit";
 import { useGitActions } from "../hooks/useGitActions";
-import { Commit } from "../../domain/entities/GitEntities";
+import { Commit, CommitDetails } from "../../domain/entities/GitEntities";
 
 type ActiveView = "explorer" | "source-control";
 
@@ -31,27 +31,55 @@ export function Dashboard() {
   const [repoPath, setRepoPath] = useState<string>("");
   const [activeView, setActiveView] = useState<ActiveView>("explorer");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [diffFile, setDiffFile] = useState<string | null>(null);
+  const [diffTarget, setDiffTarget] = useState<{ path: string; commitHash?: string } | null>(null);
   const [selectedCommit, setSelectedCommit] = useState<Commit | null>(null);
+  const [commitDetails, setCommitDetails] = useState<CommitDetails | null>(
+    null,
+  );
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { commits, branchName, availableBranches, error, loadCommits, setError, isLoading } = useGit(repoPath);
+  const {
+    commits,
+    branchName,
+    availableBranches,
+    error,
+    loadCommits,
+    setError,
+    isLoading,
+  } = useGit(repoPath);
   const { showConfirm, showInput, showAlert } = useDialog();
-  
+
   // Refresh graph after action
   const onActionSuccess = () => {
-      loadCommits();
+    loadCommits();
   };
 
   const gitActions = useGitActions(repoPath, onActionSuccess);
+
+  useEffect(() => {
+    if (selectedCommit) {
+      setCommitDetails(null); // Clear previous details
+      gitActions
+        .getCommitDetails(selectedCommit.hash)
+        .then((details: any) => {
+          setCommitDetails(details);
+        })
+        .catch(console.error);
+    } else {
+      setCommitDetails(null);
+    }
+  }, [selectedCommit, repoPath]);
 
   const repoName = repoPath ? repoPath.split("/").pop() : "GitVi";
 
   const handleFetch = async () => {
     try {
       await gitActions.fetch();
-      showAlert("Fetch Successful", "Repository fetched and pruned successfully.");
+      showAlert(
+        "Fetch Successful",
+        "Repository fetched and pruned successfully.",
+      );
     } catch (e: any) {
       console.error(e);
       setError(e.toString());
@@ -59,13 +87,13 @@ export function Dashboard() {
   };
 
   const handleCheckout = async (branch: string) => {
-      try {
-          await gitActions.checkoutBranch(branch);
-          setIsBranchDropdownOpen(false);
-          showAlert("Checked Out", `Switched to branch ${branch}`);
-      } catch (e: any) {
-          setError(e.toString());
-      }
+    try {
+      await gitActions.checkoutBranch(branch);
+      setIsBranchDropdownOpen(false);
+      showAlert("Checked Out", `Switched to branch ${branch}`);
+    } catch (e: any) {
+      setError(e.toString());
+    }
   };
 
   const handleCheckoutCommit = (hash: string) => {
@@ -75,7 +103,10 @@ export function Dashboard() {
       async () => {
         try {
           await gitActions.checkoutCommit(hash);
-          showAlert("Checked Out", `Checked out commit ${hash.substring(0, 7)}`);
+          showAlert(
+            "Checked Out",
+            `Checked out commit ${hash.substring(0, 7)}`,
+          );
         } catch (e: any) {
           setError(e.toString());
         }
@@ -83,34 +114,37 @@ export function Dashboard() {
     );
   };
 
-  const handleReset = (hash: string, mode: 'soft' | 'mixed' | 'hard') => {
-      showConfirm(
-          `Reset (${mode})`,
-          `Are you sure you want to ${mode} reset to ${hash.substring(0,7)}? This may rewrite history.`,
-          async () => {
-              try {
-                  await gitActions.reset(hash, mode);
-                  showAlert("Reset Complete", `Successfully reset to ${hash.substring(0,7)}`);
-              } catch (e: any) {
-                  setError(e.toString());
-              }
-          }
-      );
+  const handleReset = (hash: string, mode: "soft" | "mixed" | "hard") => {
+    showConfirm(
+      `Reset (${mode})`,
+      `Are you sure you want to ${mode} reset to ${hash.substring(0, 7)}? This may rewrite history.`,
+      async () => {
+        try {
+          await gitActions.reset(hash, mode);
+          showAlert(
+            "Reset Complete",
+            `Successfully reset to ${hash.substring(0, 7)}`,
+          );
+        } catch (e: any) {
+          setError(e.toString());
+        }
+      },
+    );
   };
 
   const handleRebase = (hash: string) => {
-      showConfirm(
-          "Rebase",
-          `Are you sure you want to rebase current branch onto ${hash.substring(0,7)}?`,
-          async () => {
-              try {
-                  await gitActions.rebase(hash);
-                  showAlert("Rebase Complete", "Rebase finished successfully.");
-              } catch (e: any) {
-                  setError(e.toString());
-              }
-          }
-      );
+    showConfirm(
+      "Rebase",
+      `Are you sure you want to rebase current branch onto ${hash.substring(0, 7)}?`,
+      async () => {
+        try {
+          await gitActions.rebase(hash);
+          showAlert("Rebase Complete", "Rebase finished successfully.");
+        } catch (e: any) {
+          setError(e.toString());
+        }
+      },
+    );
   };
 
   const handleCherryPick = (hash: string) => {
@@ -192,11 +226,12 @@ export function Dashboard() {
         repoPath={repoPath}
       />
 
-      {diffFile && repoPath && (
+      {diffTarget && repoPath && (
         <DiffView
           repoPath={repoPath}
-          filePath={diffFile}
-          onClose={() => setDiffFile(null)}
+          filePath={diffTarget.path}
+          commitHash={diffTarget.commitHash}
+          onClose={() => setDiffTarget(null)}
         />
       )}
 
@@ -234,8 +269,8 @@ export function Dashboard() {
         {activeView === "explorer" && (
           <ProjectExplorer
             onSelectRepo={(path) => {
-                setRepoPath(path);
-                // The useEffect in useGit will trigger loadCommits
+              setRepoPath(path);
+              // The useEffect in useGit will trigger loadCommits
             }}
             activeRepoPath={repoPath}
             onClearActiveRepo={() => {
@@ -248,7 +283,7 @@ export function Dashboard() {
         {activeView === "source-control" && (
           <SourceControl
             repoPath={repoPath || null}
-            onSelectFile={setDiffFile}
+            onSelectFile={(path) => setDiffTarget({ path })}
           />
         )}
       </aside>
@@ -264,41 +299,47 @@ export function Dashboard() {
             {repoPath && (
               <div className="flex items-center space-x-2">
                 <div className="flex items-center space-x-2 relative">
-                    <span className="text-xs text-slate-500 dark:text-slate-600 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">Git</span>
-                    <button 
-                         onClick={(e) => {
-                            e.stopPropagation();
-                            setIsBranchDropdownOpen(!isBranchDropdownOpen);
-                         }}
-                         className="flex items-center space-x-1 text-xs text-indigo-600 dark:text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors"
-                    >
-                        <GitBranch className="w-3 h-3" />
-                        <span>{branchName || "No Branch"}</span>
-                        <ArrowDown className="w-3 h-3 ml-1 opacity-50" />
-                    </button>
-                    
-                    {/* Branch Dropdown */}
-                    {isBranchDropdownOpen && (
-                        <div className="absolute top-full left-0 mt-1 w-64 max-h-64 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-100 custom-scrollbar">
-                            <div className="p-2 space-y-1">
-                                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 px-2 py-1">Switch Branch</div>
-                                {availableBranches.map(branch => (
-                                    <button
-                                        key={branch}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleCheckout(branch);
-                                        }}
-                                        className={`w-full text-left px-2 py-1.5 rounded text-xs flex items-center space-x-2 ${branch === branchName ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
-                                    >
-                                        <GitBranch className="w-3.5 h-3.5 opacity-70" />
-                                        <span className="truncate">{branch}</span>
-                                        {branch === branchName && <Check className="w-3 h-3 ml-auto" />}
-                                    </button>
-                                ))}
-                            </div>
+                  <span className="text-xs text-slate-500 dark:text-slate-600 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    Git
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsBranchDropdownOpen(!isBranchDropdownOpen);
+                    }}
+                    className="flex items-center space-x-1 text-xs text-indigo-600 dark:text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors"
+                  >
+                    <GitBranch className="w-3 h-3" />
+                    <span>{branchName || "No Branch"}</span>
+                    <ArrowDown className="w-3 h-3 ml-1 opacity-50" />
+                  </button>
+
+                  {/* Branch Dropdown */}
+                  {isBranchDropdownOpen && (
+                    <div className="absolute top-full left-0 mt-1 w-64 max-h-64 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-100 custom-scrollbar">
+                      <div className="p-2 space-y-1">
+                        <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 px-2 py-1">
+                          Switch Branch
                         </div>
-                    )}
+                        {availableBranches.map((branch) => (
+                          <button
+                            key={branch}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCheckout(branch);
+                            }}
+                            className={`w-full text-left px-2 py-1.5 rounded text-xs flex items-center space-x-2 ${branch === branchName ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400" : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"}`}
+                          >
+                            <GitBranch className="w-3.5 h-3.5 opacity-70" />
+                            <span className="truncate">{branch}</span>
+                            {branch === branchName && (
+                              <Check className="w-3 h-3 ml-auto" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -306,16 +347,16 @@ export function Dashboard() {
 
           {repoPath && (
             <div className="flex items-center space-x-2">
-                   <div className="relative">
-                        <SearchIcon className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                        <input 
-                            type="text" 
-                            placeholder="Search commits..." 
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-full py-1 pl-8 pr-3 text-xs w-48 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all placeholder:text-slate-400"
-                        />
-                   </div>
+              <div className="relative">
+                <SearchIcon className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search commits..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-full py-1 pl-8 pr-3 text-xs w-48 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all placeholder:text-slate-400"
+                />
+              </div>
               <button
                 onClick={() => handleFetch()}
                 className="p-1.5 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition"
@@ -349,10 +390,15 @@ export function Dashboard() {
             {repoPath ? (
               commits.length > 0 ? (
                 <Graph
-                  commits={commits.filter(c => 
-                      c.message.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                  commits={commits.filter(
+                    (c) =>
+                      c.message
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()) ||
                       c.hash.includes(searchQuery) ||
-                      c.author.toLowerCase().includes(searchQuery.toLowerCase())
+                      c.author
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase()),
                   )}
                   selectedCommit={selectedCommit}
                   onSelectCommit={(commit) => {
@@ -463,46 +509,48 @@ export function Dashboard() {
                     <Check className="w-3.5 h-3.5" />
                     <span>Checkout</span>
                   </button>
-                    <button 
+                  <button
                     onClick={() => handleRebase(selectedCommit.hash)}
                     className="flex items-center justify-center space-x-1.5 p-2 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors"
                     title="Rebase current branch onto this commit"
-                >
+                  >
                     <ArrowUp className="w-3.5 h-3.5" />
                     <span>Rebase</span>
-                </button>
-                
-                {/* Reset Menu */}
-                {/* Reset Menu */}
-                <div className="relative group">
+                  </button>
+
+                  {/* Reset Menu */}
+                  {/* Reset Menu */}
+                  <div className="relative group">
                     <button className="w-full flex items-center justify-center space-x-1.5 p-2 rounded bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors">
-                        <RotateCcw className="w-3.5 h-3.5 text-red-500" />
-                        <span>Reset...</span>
+                      <RotateCcw className="w-3.5 h-3.5 text-red-500" />
+                      <span>Reset...</span>
                     </button>
                     {/* Invisible bridge to prevent closing when moving mouse */}
                     <div className="absolute bottom-full left-0 w-full h-2 bg-transparent hidden group-hover:block" />
-                    
+
                     <div className="absolute bottom-full right-0 mb-1 w-32 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded shadow-xl hidden group-hover:block z-50 overflow-hidden">
-                        <button 
-                            onClick={() => handleReset(selectedCommit.hash, 'soft')}
-                            className="w-full text-left px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-800 transition-colors"
-                        >
-                            Soft
-                        </button>
-                        <button 
-                            onClick={() => handleReset(selectedCommit.hash, 'mixed')}
-                            className="w-full text-left px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-800 transition-colors"
-                        >
-                            Mixed
-                        </button>
-                        <button 
-                            onClick={() => handleReset(selectedCommit.hash, 'hard')}
-                            className="w-full text-left px-3 py-2 text-xs hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 hover:text-red-700 transition-colors"
-                        >
-                            Hard
-                        </button>
+                      <button
+                        onClick={() => handleReset(selectedCommit.hash, "soft")}
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-800 transition-colors"
+                      >
+                        Soft
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleReset(selectedCommit.hash, "mixed")
+                        }
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border-b border-slate-100 dark:border-slate-800 transition-colors"
+                      >
+                        Mixed
+                      </button>
+                      <button
+                        onClick={() => handleReset(selectedCommit.hash, "hard")}
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 hover:text-red-700 transition-colors"
+                      >
+                        Hard
+                      </button>
                     </div>
-                </div>
+                  </div>
                 </div>
 
                 <div className="w-full h-px bg-slate-200 dark:bg-slate-800" />
@@ -579,6 +627,51 @@ export function Dashboard() {
                     </div>
                   </>
                 )}
+
+                {/* Modified Files */}
+                <div className="w-full h-px bg-slate-200 dark:bg-slate-800" />
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-slate-500 grayscale uppercase flex justify-between items-center">
+                    <span>Changed Files</span>
+                    <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500">
+                      {commitDetails?.files?.length || 0}
+                    </span>
+                  </h4>
+                  {commitDetails ? (
+                    <div className="space-y-1">
+                      {commitDetails.files.map((file, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center space-x-2 text-xs group cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 p-1 rounded transition-colors"
+                          onClick={() => setDiffTarget({ path: file.path, commitHash: selectedCommit.hash })}
+                        >
+                          <span
+                            className={`
+                                     w-4 h-4 flex items-center justify-center rounded text-[10px] font-bold
+                                     ${file.status === "M" ? "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" : ""}
+                                     ${file.status === "A" ? "text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30" : ""}
+                                     ${file.status === "D" ? "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30" : ""}
+                                     ${file.status === "R" ? "text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30" : ""}
+                                     ${!["M", "A", "D", "R"].includes(file.status) ? "text-slate-600 bg-slate-100 dark:text-slate-400 dark:bg-slate-800" : ""}
+                                 `}
+                          >
+                            {file.status}
+                          </span>
+                          <span
+                            className="text-slate-700 dark:text-slate-300 truncate flex-1"
+                            title={file.path}
+                          >
+                            {file.path}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500"></div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}

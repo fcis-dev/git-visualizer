@@ -16,6 +16,7 @@ interface SourceControlProps {
 export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
   const [stagedFiles, setStagedFiles] = useState<FileStatus[]>([]);
   const [changes, setChanges] = useState<FileStatus[]>([]);
+  const [conflictedFiles, setConflictedFiles] = useState<FileStatus[]>([]);
   const [commitMessage, setCommitMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [pushPullLoading, setPushPullLoading] = useState(false);
@@ -32,6 +33,7 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
     } else {
         setStagedFiles([]);
         setChanges([]);
+        setConflictedFiles([]);
         setRemotes([]);
     }
   }, [repoPath]);
@@ -44,10 +46,13 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
       
       const staged: FileStatus[] = [];
       const changed: FileStatus[] = [];
+      const conflicted: FileStatus[] = [];
 
       statuses.forEach(s => {
         if (s.status === 'staged') {
           staged.push(s);
+        } else if (s.status === 'conflicted') {
+          conflicted.push(s);
         } else {
           changed.push(s);
         }
@@ -55,6 +60,7 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
 
       setStagedFiles(staged);
       setChanges(changed);
+      setConflictedFiles(conflicted);
       setError(null);
     } catch (err: any) {
       console.error("Failed to load status", err);
@@ -84,6 +90,18 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
     } catch (err) {
       console.error("Failed to unstage", err);
     }
+  };
+
+  const handleResolveConflict = async (file: string, strategy: 'ours' | 'theirs', e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!repoPath) return;
+      try {
+          await invoke('git_resolve_conflict', { path: repoPath, file, strategy });
+          loadStatus();
+      } catch (err: any) {
+          console.error("Failed to resolve conflict", err);
+          setError("Resolve failed: " + err.toString());
+      }
   };
 
   const handleCommit = async () => {
@@ -283,8 +301,50 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
             </button>
         </div>
 
+        {/* Conflicted Files */}
+        {conflictedFiles.length > 0 && (
+            <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs font-bold text-red-500 uppercase px-1">
+                    <span>Conflicted</span>
+                    <span className="bg-red-100 dark:bg-red-900/30 px-1.5 rounded-full text-red-600 dark:text-red-300">{conflictedFiles.length}</span>
+                </div>
+                {conflictedFiles.map(file => (
+                    <div 
+                        key={file.path} 
+                        className="group flex flex-col p-1.5 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
+                    >
+                        <div 
+                            className="flex items-center justify-between cursor-pointer mb-1"
+                            onClick={() => onSelectFile(file.path)}
+                        >
+                            <span className="text-sm text-red-600 dark:text-red-300 truncate font-medium" title={file.path}>
+                                {file.path}
+                            </span>
+                        </div>
+                        <div className="flex space-x-1">
+                            <button 
+                                onClick={(e) => handleResolveConflict(file.path, 'ours', e)}
+                                className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs py-1 px-2 rounded hover:bg-green-50 dark:hover:bg-green-900/20 text-slate-600 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                                title="Accept Current (Ours)"
+                            >
+                                Accept Current
+                            </button>
+                            <button 
+                                onClick={(e) => handleResolveConflict(file.path, 'theirs', e)}
+                                className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs py-1 px-2 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                title="Accept Incoming (Theirs)"
+                            >
+                                Accept Incoming
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )}
+
         {/* Commit Input */}
         <div className="space-y-2">
+
             <textarea 
                 value={commitMessage}
                 onChange={(e) => setCommitMessage(e.target.value)}

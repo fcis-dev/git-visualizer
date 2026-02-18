@@ -63,6 +63,17 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         onSuccess?.();
     };
 
+    const getCommitDetails = async (hash: string) => {
+        if (!repoPath) return null;
+        return await repository.getCommitDetails(repoPath, hash);
+    };
+
+    const resolveConflict = async (file: string, strategy: 'ours' | 'theirs') => {
+        if (!repoPath) return;
+        await repository.resolveConflict(repoPath, file, strategy);
+        onSuccess?.();
+    };
+
     return {
         checkoutCommit,
         checkoutBranch,
@@ -73,6 +84,8 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         revert,
         merge,
         createTag,
-        createBranch
+        createBranch,
+        getCommitDetails,
+        resolveConflict
     };
 }

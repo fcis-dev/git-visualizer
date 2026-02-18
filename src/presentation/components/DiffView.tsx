@@ -5,10 +5,11 @@ import { X } from 'lucide-react';
 interface DiffViewProps {
     repoPath: string;
     filePath: string;
+    commitHash?: string;
     onClose: () => void;
 }
 
-export function DiffView({ repoPath, filePath, onClose }: DiffViewProps) {
+export function DiffView({ repoPath, filePath, commitHash, onClose }: DiffViewProps) {
     const [diff, setDiff] = useState<string>("");
     const [blame, setBlame] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'diff' | 'blame'>('diff');
@@ -19,7 +20,8 @@ export function DiffView({ repoPath, filePath, onClose }: DiffViewProps) {
         setLoading(true);
         setError(null);
         if (viewMode === 'diff') {
-            invoke<string>('git_diff', { path: repoPath, file: filePath })
+            setBlame(null);
+            invoke<string>('git_diff', { path: repoPath, file: filePath, hash: commitHash })
                 .then(d => {
                     setDiff(d);
                     setLoading(false);
@@ -30,7 +32,8 @@ export function DiffView({ repoPath, filePath, onClose }: DiffViewProps) {
                     setLoading(false);
                 });
         } else {
-            invoke<string>('git_blame', { path: repoPath, file: filePath })
+            setDiff("");
+            invoke<string>('git_blame', { path: repoPath, file: filePath, hash: commitHash })
                 .then(b => {
                     setBlame(b);
                     setLoading(false);
@@ -41,7 +44,7 @@ export function DiffView({ repoPath, filePath, onClose }: DiffViewProps) {
                     setLoading(false);
                 });
         }
-    }, [repoPath, filePath, viewMode]);
+    }, [repoPath, filePath, viewMode, commitHash]);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -81,7 +84,7 @@ export function DiffView({ repoPath, filePath, onClose }: DiffViewProps) {
                         <div className="flex items-center justify-center h-full text-red-500 dark:text-red-400">
                             {error}
                         </div>
-                    ) : diff ? (
+                    ) : viewMode === 'diff' && diff ? (
                         <table className="w-full border-collapse font-mono text-xs">
                             <tbody>
                                 {(() => {
@@ -138,7 +141,8 @@ export function DiffView({ repoPath, filePath, onClose }: DiffViewProps) {
                                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
                                     <th className="py-2 px-4 font-medium w-24">Commit</th>
                                     <th className="py-2 px-4 font-medium w-32">Author</th>
-                                    <th className="py-2 px-4 font-medium w-32">Date</th>
+                                    <th className="py-2 px-4 font-medium w-24">Date</th>
+                                    <th className="py-2 px-4 font-medium w-12 text-right">Line</th>
                                     <th className="py-2 px-4 font-medium">Content</th>
                                 </tr>
                             </thead>
@@ -147,11 +151,11 @@ export function DiffView({ repoPath, filePath, onClose }: DiffViewProps) {
                                     let prevHash = "";
                                     return blame.split('\n').map((line, i) => {
                                         if (!line) return null;
-                                        // Regex: hash (author date line) content
-                                        const match = /^([a-f0-9]+)\s+\((.*?)\s+(\d{4}-\d{2}-\d{2})\s+.*?\)\s(.*)$/.exec(line);
+                                        // Regex: optional ^, hash, (author date line) content
+                                        const match = /^[\^]?([a-f0-9]+)\s+\((.*?)\s+(\d{4}-\d{2}-\d{2})\s+(\d+)\)\s(.*)$/.exec(line);
                                         
                                         if (match) {
-                                            const [, hash, author, date, content] = match;
+                                            const [, hash, author, date, lineNum, content] = match;
                                             const shortHash = hash.substring(0, 7);
                                             const isSameCommit = shortHash === prevHash;
                                             prevHash = shortHash;
@@ -191,7 +195,10 @@ export function DiffView({ repoPath, filePath, onClose }: DiffViewProps) {
                                                     <td className="py-0.5 px-4 text-slate-400 dark:text-slate-500 whitespace-nowrap text-[10px]">
                                                         {!isSameCommit && date}
                                                     </td>
-                                                    <td className="py-0.5 px-4 text-slate-700 dark:text-slate-300 whitespace-pre w-full font-mono text-sm leading-tight border-l border-slate-100 dark:border-slate-800">
+                                                    <td className="py-0.5 px-4 text-slate-400 dark:text-slate-500 text-right font-mono text-xs select-none">
+                                                        {lineNum}
+                                                    </td>
+                                                    <td className="py-0.5 px-4 text-slate-700 dark:text-slate-300 whitespace-pre w-full font-mono text-xs leading-tight border-l border-slate-100 dark:border-slate-800">
                                                         {content}
                                                     </td>
                                                 </tr>
@@ -199,7 +206,7 @@ export function DiffView({ repoPath, filePath, onClose }: DiffViewProps) {
                                         }
                                         return (
                                             <tr key={i}>
-                                                <td colSpan={4} className="py-1 px-4 text-slate-500">{line}</td>
+                                                <td colSpan={5} className="py-1 px-4 text-slate-500">{line}</td>
                                             </tr>
                                         );
                                     });

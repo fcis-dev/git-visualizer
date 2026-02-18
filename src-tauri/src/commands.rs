@@ -1,8 +1,13 @@
 use crate::config;
 use crate::config::AppState;
-use crate::models::{CommitData, FileStatus, RepoData};
+use crate::models::{CommitData, CommitDetails, FileStatus, RepoData};
 use crate::services;
 use tauri::State; // use services module
+
+#[tauri::command]
+pub fn get_commit_details(path: &str, hash: &str) -> Result<CommitDetails, String> {
+    services::get_commit_details(path, hash)
+}
 
 #[tauri::command]
 pub fn get_git_graph(path: &str) -> Result<Vec<CommitData>, String> {
@@ -32,6 +37,15 @@ pub fn get_repos_in_folder(path: &str) -> Result<Vec<RepoData>, String> {
 #[tauri::command]
 pub fn get_git_status(path: &str) -> Result<Vec<FileStatus>, String> {
     services::get_git_status(path)
+}
+
+#[tauri::command]
+pub fn git_resolve_conflict(
+    path: String,
+    file: String,
+    strategy: String,
+) -> Result<String, String> {
+    services::git_resolve_conflict(&path, &file, &strategy)
 }
 
 #[tauri::command]
@@ -95,8 +109,8 @@ pub fn git_revert(path: &str, hash: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn git_diff(path: &str, file: Option<String>) -> Result<String, String> {
-    services::git_diff(path, file)
+pub fn git_diff(path: &str, file: Option<String>, hash: Option<String>) -> Result<String, String> {
+    services::git_diff(path, file, hash)
 }
 
 #[tauri::command]
@@ -150,8 +164,8 @@ pub fn git_remote_remove(path: &str, name: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn git_blame(path: &str, file: &str) -> Result<String, String> {
-    services::git_blame(path, file)
+pub fn git_blame(path: &str, file: &str, hash: Option<String>) -> Result<String, String> {
+    services::git_blame(path, file, hash)
 }
 
 #[tauri::command]

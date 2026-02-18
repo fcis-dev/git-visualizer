@@ -15,6 +15,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
+            commands::get_commit_details,
             commands::get_git_graph,
             commands::add_folder,
             commands::remove_folder,
@@ -45,6 +46,7 @@ pub fn run() {
             commands::git_remote_add,
             commands::git_remote_remove,
             commands::git_blame,
+            commands::git_resolve_conflict,
             commands::get_branches,
             commands::get_git_config_user,
             commands::set_git_config_user

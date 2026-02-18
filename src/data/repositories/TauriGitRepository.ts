@@ -7,6 +7,10 @@ export class TauriGitRepository implements IGitRepository {
     return await invoke<Commit[]>("get_git_graph", { path });
   }
 
+  async getCommitDetails(path: string, hash: string): Promise<any> {
+      return await invoke("get_commit_details", { path, hash });
+  }
+
   async getCurrentBranch(path: string): Promise<string> {
     return await invoke<string>("get_current_branch", { path });
   }
@@ -62,5 +66,9 @@ export class TauriGitRepository implements IGitRepository {
 
   async createBranch(path: string, name: string, hash: string): Promise<void> {
     await invoke("git_branch_create", { path, name, hash });
+  }
+
+  async resolveConflict(path: string, file: string, strategy: 'ours' | 'theirs'): Promise<void> {
+    await invoke("git_resolve_conflict", { path, file, strategy });
   }
 }

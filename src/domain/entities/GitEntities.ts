@@ -12,3 +12,14 @@ export interface Repository {
   name: string;
   branch?: string;
 }
+
+export interface FileChange {
+    path: string;
+    status: string; // "A", "M", "D", "R", "conflicted", etc.
+    insertions: number;
+    deletions: number;
+}
+
+export interface CommitDetails extends Commit {
+    files: FileChange[];
+}
