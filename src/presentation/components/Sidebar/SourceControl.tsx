@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { RefreshCw, Play, Check, X, ArrowUp, ArrowDown, Archive, ArchiveRestore, Globe, Plus, Trash2 } from 'lucide-react';
+import { RefreshCw, Play, Check, X, ArrowUp, ArrowDown, Archive, ArchiveRestore, Globe, Plus, Trash2, RotateCcw } from 'lucide-react';
 import { useDialog } from '../../context/DialogContext';
 
 interface FileStatus {
@@ -91,6 +91,17 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
       console.error("Failed to unstage", err);
     }
   };
+  
+  const handleUnstageAll = async () => {
+      if (!repoPath || stagedFiles.length === 0) return;
+      try {
+          const files = stagedFiles.map(c => c.path);
+          await invoke('git_unstage', { path: repoPath, files });
+          loadStatus();
+      } catch (err: any) {
+          setError(err.toString());
+      }
+  };
 
   const handleResolveConflict = async (file: string, strategy: 'ours' | 'theirs', e: React.MouseEvent) => {
       e.stopPropagation();
@@ -102,6 +113,42 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
           console.error("Failed to resolve conflict", err);
           setError("Resolve failed: " + err.toString());
       }
+  };
+  
+  const handleDiscard = async (file: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!repoPath) return;
+    
+    showConfirm(
+        "Discard Changes", 
+        `Are you sure you want to discard changes in ${file}? This cannot be undone.`,
+        async () => {
+             try {
+                await invoke('git_discard_changes', { path: repoPath, files: [file] });
+                loadStatus();
+             } catch(err: any) {
+                console.error("Failed to discard", err);
+                setError(err.toString());
+             }
+        }
+    );
+  };
+  
+  const handleDiscardAll = () => {
+       if (!repoPath || changes.length === 0) return;
+       showConfirm(
+           "Discard All Changes",
+           `Are you sure you want to discard ALL ${changes.length} changes? This cannot be undone.`,
+           async () => {
+               try {
+                   const files = changes.map(c => c.path);
+                   await invoke('git_discard_changes', { path: repoPath, files });
+                   loadStatus();
+               } catch (err: any) {
+                   setError(err.toString());
+               }
+           }
+       );
   };
 
   const handleCommit = async () => {
@@ -370,7 +417,18 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
         <div className="space-y-1">
             <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase px-1">
                 <span>Staged Changes</span>
-                <span className="bg-slate-200 dark:bg-slate-800 px-1.5 rounded-full text-slate-700 dark:text-slate-300">{stagedFiles.length}</span>
+                <div className="flex items-center space-x-2">
+                    <span className="bg-slate-200 dark:bg-slate-800 px-1.5 rounded-full text-slate-700 dark:text-slate-300">{stagedFiles.length}</span>
+                    {stagedFiles.length > 0 && (
+                        <button
+                            onClick={handleUnstageAll}
+                            className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                            title="Unstage All"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+                </div>
             </div>
             {stagedFiles.map(file => (
                 <div 
@@ -381,13 +439,15 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
                     <span className="text-sm text-slate-600 dark:text-slate-300 truncate flex-1" title={file.path}>
                         {file.path}
                     </span>
-                    <button 
-                        onClick={(e) => handleUnstage(file.path, e)}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-slate-900 dark:hover:text-white"
-                        title="Unstage changes"
-                    >
-                        <X className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex opacity-0 group-hover:opacity-100">
+                        <button 
+                            onClick={(e) => handleUnstage(file.path, e)}
+                            className="p-1 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700/50 rounded"
+                            title="Unstage changes"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
                 </div>
             ))}
         </div>
@@ -396,7 +456,35 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
         <div className="space-y-1">
             <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase px-1">
                 <span>Changes</span>
-                <span className="bg-slate-200 dark:bg-slate-800 px-1.5 rounded-full text-slate-700 dark:text-slate-300">{changes.length}</span>
+                <div className="flex items-center space-x-2">
+                    <span className="bg-slate-200 dark:bg-slate-800 px-1.5 rounded-full text-slate-700 dark:text-slate-300">{changes.length}</span>
+                    {changes.length > 0 && (
+                        <div className="flex items-center space-x-1">
+                            <button
+                                onClick={handleDiscardAll}
+                                className="p-1 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                title="Discard All Changes"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    if(repoPath) {
+                                        try {
+                                             const files = changes.map(c => c.path);
+                                             await invoke('git_stage', { path: repoPath, files });
+                                             loadStatus();
+                                        } catch(e) {}
+                                    }
+                                }}
+                                className="p-1 text-slate-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
+                                title="Stage All"
+                            >
+                                <Play className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
             {changes.map(file => (
                 <div 
@@ -410,13 +498,22 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
                     }`} title={file.path}>
                         {file.path}
                     </span>
-                    <button 
-                        onClick={(e) => handleStage(file.path, e)}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-slate-900 dark:hover:text-white"
-                        title="Stage changes"
-                    >
-                        <Play className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex opacity-0 group-hover:opacity-100 space-x-1">
+                        <button 
+                            onClick={(e) => handleDiscard(file.path, e)}
+                            className="p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                            title="Discard changes"
+                        >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                            onClick={(e) => handleStage(file.path, e)}
+                            className="p-1 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
+                            title="Stage changes"
+                        >
+                            <Play className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
                 </div>
             ))}
         </div>

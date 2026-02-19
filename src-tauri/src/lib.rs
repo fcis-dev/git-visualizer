@@ -49,7 +49,8 @@ pub fn run() {
             commands::git_resolve_conflict,
             commands::get_branches,
             commands::get_git_config_user,
-            commands::set_git_config_user
+            commands::set_git_config_user,
+            commands::git_discard_changes
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -359,7 +359,31 @@ pub fn git_diff(path: &str, file: Option<String>, hash: Option<String>) -> Resul
         args.push(f);
     }
 
-    run_git_cmd(path, &args)
+    let result = run_git_cmd(path, &args);
+
+    if hash.is_none() {
+        if let Ok(diff_output) = &result {
+            if diff_output.trim().is_empty() {
+                if let Some(f) = &normalized_file {
+                    let full_path = std::path::Path::new(path).join(f);
+                    if let Ok(content) = std::fs::read_to_string(full_path) {
+                        let lines: Vec<&str> = content.lines().collect();
+                        let line_count = if lines.is_empty() { 0 } else { lines.len() };
+                        let mut synthetic_diff = format!(
+                            "diff --git a/{0} b/{0}\nnew file mode 100644\nindex 0000000..0000000\n--- /dev/null\n+++ b/{0}\n@@ -0,0 +1,{1} @@\n",
+                            f, line_count
+                        );
+                        for line in lines {
+                            synthetic_diff.push_str(&format!("+{}\n", line));
+                        }
+                        return Ok(synthetic_diff);
+                    }
+                }
+            }
+        }
+    }
+
+    result
 }
 
 pub fn git_tag_create(path: &str, name: &str, hash: Option<String>) -> Result<String, String> {
@@ -442,5 +466,43 @@ pub fn set_git_config_user(_path: &str, name: &str, email: &str) -> Result<(), S
     config
         .set_str("user.email", email)
         .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn git_discard_changes(path: &str, files: Vec<String>) -> Result<(), String> {
+    use std::path::Path;
+    let repo = Repository::open(path).map_err(|e| e.to_string())?;
+
+    let mut files_to_checkout = Vec::new();
+
+    for file_path_str in files {
+        let path_obj = Path::new(&file_path_str);
+        // Check if file is untracked
+        let status = repo.status_file(path_obj).map_err(|e| e.to_string())?;
+
+        if status.is_wt_new() {
+            // Untracked file: delete it
+            let full_path = Path::new(path).join(path_obj);
+            if full_path.exists() {
+                if full_path.is_dir() {
+                    std::fs::remove_dir_all(&full_path).map_err(|e| e.to_string())?;
+                } else {
+                    std::fs::remove_file(&full_path).map_err(|e| e.to_string())?;
+                }
+            }
+        } else {
+            // Tracked file (modified or deleted)
+            files_to_checkout.push(file_path_str);
+        }
+    }
+
+    if !files_to_checkout.is_empty() {
+        // Use run_git_cmd for checkout as it handles multiple files well
+        let mut args = vec!["checkout", "--"];
+        let refs: Vec<&str> = files_to_checkout.iter().map(|s| s.as_str()).collect();
+        args.extend(refs);
+        run_git_cmd(path, &args)?;
+    }
+
     Ok(())
 }

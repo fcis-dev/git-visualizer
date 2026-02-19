@@ -182,3 +182,8 @@ pub fn get_git_config_user(path: &str) -> Result<(String, String), String> {
 pub fn set_git_config_user(path: &str, name: &str, email: &str) -> Result<(), String> {
     services::set_git_config_user(path, name, email)
 }
+
+#[tauri::command]
+pub fn git_discard_changes(path: &str, files: Vec<String>) -> Result<(), String> {
+    services::git_discard_changes(path, files)
+}
