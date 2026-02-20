@@ -38,10 +38,7 @@ export function Dashboard() {
         </ErrorBoundary>
       )}
 
-      {/* Debug Overlay */}
-      <div className="absolute bottom-1 left-1 bg-black/50 text-white text-[10px] px-1 pointer-events-none z-50 rounded">
-        Current Repo: {repoPath || "None"}
-      </div>
+
     </div>
   );
 }
