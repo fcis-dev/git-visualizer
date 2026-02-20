@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import * as d3 from 'd3';
 import { Commit } from '../../domain/entities/GitEntities';
-import { calculateGraphLayout } from '../utils/graphLayout';
+import { calculateGraphLayout, LANE_COLORS } from '../utils/graphLayout';
 import { useTheme } from '../context/ThemeContext';
 
 interface GraphProps {
@@ -34,14 +34,14 @@ export const Graph: React.FC<GraphProps> = ({ commits, selectedCommit, onSelectC
     const isDark = theme === 'dark';
     // const textColor = isDark ? "#e2e8f0" : "#1e293b"; // slate-200 / slate-800
     const mutedColor = isDark ? "#64748b" : "#94a3b8"; // slate-500 / slate-400
-    const strokeColor = isDark ? "#0f172a" : "#ffffff"; // slate-950 / white
 
-    // Draw links
+    // Draw link backgrounds (thicker stroke to create gap effect)
     svg.append("g")
-      .selectAll("path")
+      .selectAll("path.bg")
       .data(links)
       .enter()
       .append("path")
+      .attr("class", "bg")
       .attr("d", d => {
         const pathGen = d3.path();
         pathGen.moveTo(d.source.x, d.source.y);
@@ -49,22 +49,62 @@ export const Graph: React.FC<GraphProps> = ({ commits, selectedCommit, onSelectC
         if (d.source.x === d.target.x) {
           pathGen.lineTo(d.target.x, d.target.y);
         } else {
-          // Curve logic: 
-          // Start vertical down, then curve to target x, then vertical to target y
-          const midY = (d.source.y + d.target.y) / 2;
+          const dy = d.target.y - d.source.y;
+          if (dy > 0) {
+            pathGen.bezierCurveTo(
+              d.source.x, d.source.y + dy / 2,
+              d.target.x, d.target.y - dy / 2,
+              d.target.x, d.target.y
+            );
+          } else {
+            pathGen.lineTo(d.target.x, d.target.y);
+          }
+        }
+        return pathGen.toString();
+      })
+      .attr("stroke", isDark ? "#0f172a" : "#ffffff") // Matches background to create gap
+      .attr("stroke-width", 6)
+      .attr("fill", "none")
+      .attr("opacity", 1);
 
-          pathGen.bezierCurveTo(
-            d.source.x, midY,
-            d.target.x, midY,
-            d.target.x, d.target.y
-          );
+    // Draw links
+    svg.append("g")
+      .selectAll("path.fg")
+      .data(links)
+      .enter()
+      .append("path")
+      .attr("class", "fg")
+      .attr("d", d => {
+        const pathGen = d3.path();
+        pathGen.moveTo(d.source.x, d.source.y);
+
+        if (d.source.x === d.target.x) {
+          pathGen.lineTo(d.target.x, d.target.y);
+        } else {
+          const dy = d.target.y - d.source.y;
+          if (dy > 0) {
+            pathGen.bezierCurveTo(
+              d.source.x, d.source.y + dy / 2,
+              d.target.x, d.target.y - dy / 2,
+              d.target.x, d.target.y
+            );
+          } else {
+            pathGen.lineTo(d.target.x, d.target.y);
+          }
         }
         return pathGen.toString();
       })
       .attr("stroke", d => d.color)
       .attr("stroke-width", 2)
       .attr("fill", "none")
-      .attr("opacity", 0.6);
+      .attr("opacity", 0.9)
+      .style("transition", "stroke-width 0.2s ease")
+      .on("mouseover", function() {
+        d3.select(this).attr("stroke-width", 4).attr("opacity", 1);
+      })
+      .on("mouseout", function() {
+        d3.select(this).attr("stroke-width", 2).attr("opacity", 0.9);
+      });
 
     // Draw nodes
     const nodeGroup = svg.append("g")
@@ -76,7 +116,7 @@ export const Graph: React.FC<GraphProps> = ({ commits, selectedCommit, onSelectC
       .style("cursor", "pointer")
       .on("click", (_event, d) => onSelectCommit(d))
       .on("mouseover", function() {
-        d3.select(this).select("circle").attr("r", 9).attr("stroke-width", 3);
+        d3.select(this).select("circle").attr("r", 8).attr("stroke-width", 4);
         d3.select(this).select("text").attr("fill", isDark ? "#fff" : "#000"); // Highlight text
       })
       .on("mouseout", function() {
@@ -84,28 +124,20 @@ export const Graph: React.FC<GraphProps> = ({ commits, selectedCommit, onSelectC
         const data = d3.select(this).datum() as any;
         const isSelected = selectedCommit?.hash === data.hash;
         if (!isSelected) {
-           d3.select(this).select("circle").attr("r", 7).attr("stroke-width", 2);
+           d3.select(this).select("circle").attr("r", 6).attr("stroke-width", 3);
            d3.select(this).select("text").attr("fill", mutedColor);
         }
       });
 
-    const LANE_COLORS = [
-      "#6366f1", // Indigo
-      "#ec4899", // Pink
-      "#10b981", // Emerald
-      "#f59e0b", // Amber
-      "#3b82f6", // Blue
-      "#8b5cf6", // Violet
-      "#ef4444", // Red
-      "#14b8a6", // Teal
-    ];
+    const bgFill = isDark ? "#0f172a" : "#ffffff";
 
     // Node Circle
     nodeGroup.append("circle")
-      .attr("r", d => (selectedCommit?.hash === d.hash ? 9 : 7))
-      .attr("fill", d => LANE_COLORS[d.lane % LANE_COLORS.length])
-      .attr("stroke", d => (selectedCommit?.hash === d.hash ? (isDark ? "#fff" : "#000") : strokeColor))
-      .attr("stroke-width", d => (selectedCommit?.hash === d.hash ? 3 : 2));
+      .attr("r", d => (selectedCommit?.hash === d.hash ? 8 : 6))
+      .attr("fill", bgFill)
+      .attr("stroke", d => LANE_COLORS[d.lane % LANE_COLORS.length])
+      .attr("stroke-width", d => (selectedCommit?.hash === d.hash ? 4 : 3))
+      .style("transition", "all 0.2s ease");
 
     // Commit Message and Refs
     nodeGroup.each(function(d) {

@@ -1,4 +1,4 @@
-import { Commit } from '../../domain/entities/GitEntities';
+import { Commit } from "../../domain/entities/GitEntities";
 
 interface Point {
   x: number;
@@ -17,10 +17,15 @@ export interface GraphLink {
   color: string;
 }
 
-const COLORS = [
-  "#F64747", "#F9690E", "#F9BF3B", "#26C281", "#1BA39C", "#22A7F0", "#89C4F4",
-  "#9B59B6", "#AEA8D3", "#FFE6E6", "#DCC6E0", "#E87E04", "#F4D03F",
-  "#2ECC71", "#1BBC9B", "#4B77BE", "#2C3E50"
+export const LANE_COLORS = [
+  "#6366f1", // Indigo
+  "#ec4899", // Pink
+  "#10b981", // Emerald
+  "#f59e0b", // Amber
+  "#3b82f6", // Blue
+  "#8b5cf6", // Violet
+  "#ef4444", // Red
+  "#14b8a6", // Teal
 ];
 
 export function calculateGraphLayout(commits: Commit[]) {
@@ -48,7 +53,7 @@ export function calculateGraphLayout(commits: Commit[]) {
     } else {
       // New branch tip or detached
       // Find first empty lane
-      lane = activeLanes.findIndex(l => l === null || l === undefined);
+      lane = activeLanes.findIndex((l) => l === null || l === undefined);
       if (lane === -1) {
         lane = activeLanes.length;
         activeLanes.push(null);
@@ -72,7 +77,7 @@ export function calculateGraphLayout(commits: Commit[]) {
           // If occupied, we might need to branch out, but here we are going down.
           // Actually parent 0 *should* take the lane.
           // If multiple children point to same parent, the first one seen (newest) takes it.
-          // Subsequent children pointing to same parent will find it already in a lane? 
+          // Subsequent children pointing to same parent will find it already in a lane?
           // Wait, if P is in activeLanes, it means it's already "taken".
           // If P is already in activeLanes, we connect to it.
           // This logic needs to be careful about not duplicating activeLanes entries for same parent.
@@ -81,7 +86,7 @@ export function calculateGraphLayout(commits: Commit[]) {
         // Verify if parent is already active
         if (!activeLanes.includes(parentHash)) {
           // Assign a new lane or find empty
-          let targetLane = activeLanes.findIndex(l => l === null);
+          let targetLane = activeLanes.findIndex((l) => l === null);
           if (targetLane === -1) {
             targetLane = activeLanes.length;
             activeLanes.push(parentHash);
@@ -92,7 +97,7 @@ export function calculateGraphLayout(commits: Commit[]) {
       }
     });
 
-    // If multiple parents point to same hash, ensure we don't duplicate. 
+    // If multiple parents point to same hash, ensure we don't duplicate.
     // The simplified logic above might overwrite.
     // Better:
     // clear current commit from activeLanes (done)
@@ -124,7 +129,7 @@ export function calculateGraphLayout(commits: Commit[]) {
           pLane = lane;
           activeLanes[lane] = parentHash;
         } else {
-          pLane = activeLanes.findIndex(l => l === null);
+          pLane = activeLanes.findIndex((l) => l === null);
           if (pLane === -1) {
             pLane = activeLanes.length;
             activeLanes.push(parentHash);
@@ -139,7 +144,7 @@ export function calculateGraphLayout(commits: Commit[]) {
       links.push({
         source: { x: lane * 20 + 20, y: index * 40 + 25 },
         target: { x: pLane * 20 + 20, y: (index + 1) * 40 + 25 },
-        color: COLORS[lane % COLORS.length]
+        color: LANE_COLORS[lane % LANE_COLORS.length],
       });
     });
 
@@ -149,7 +154,7 @@ export function calculateGraphLayout(commits: Commit[]) {
       ...commit,
       x: lane * 20 + 20,
       y: index * 40 + 25,
-      lane
+      lane,
     });
   });
 
