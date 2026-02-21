@@ -155,6 +155,26 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
                  await repository.stashPop(repoPath);
                  onSuccess?.();
              }
-        }
+        },
+        
+        getRebaseState: async () => repoPath ? await repository.getRebaseState(repoPath) : false,
+        rebaseInteractive: async (baseCommit: string, sequence: string) => {
+             if (repoPath) {
+                 await repository.rebaseInteractive(repoPath, baseCommit, sequence);
+                 onSuccess?.();
+             }
+        },
+        rebaseContinue: async () => {
+             if (repoPath) {
+                 await repository.rebaseContinue(repoPath);
+                 onSuccess?.();
+             }
+        },
+        rebaseAbort: async () => {
+             if (repoPath) {
+                 await repository.rebaseAbort(repoPath);
+                 onSuccess?.();
+             }
+        },
     };
 }

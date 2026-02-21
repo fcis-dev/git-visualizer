@@ -19,6 +19,12 @@ export interface IGitRepository {
     mode: "soft" | "mixed" | "hard",
   ): Promise<void>;
   rebase(path: string, branch: string): Promise<void>;
+  
+  getRebaseState(path: string): Promise<boolean>;
+  rebaseInteractive(path: string, baseCommit: string, sequence: string): Promise<string>;
+  rebaseContinue(path: string): Promise<void>;
+  rebaseAbort(path: string): Promise<void>;
+  
   cherryPick(path: string, hash: string): Promise<void>;
   revert(path: string, hash: string): Promise<void>;
   merge(path: string, branch: string): Promise<void>;

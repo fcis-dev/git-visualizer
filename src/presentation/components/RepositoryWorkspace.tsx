@@ -461,6 +461,7 @@ export function RepositoryWorkspace({
                     onCherryPick={handleCherryPick}
                     onRebase={handleRebase}
                     onReset={handleReset}
+                    onRefreshGraph={() => loadCommits()}
                 />
             </div>
         )}

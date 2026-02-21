@@ -245,3 +245,27 @@ pub fn search_commits(
 ) -> Result<Vec<CommitData>, String> {
     services::search_commits(path, query, search_type)
 }
+
+#[tauri::command]
+pub fn git_get_rebase_state(path: &str) -> Result<bool, String> {
+    services::git_get_rebase_state(path)
+}
+
+#[tauri::command]
+pub fn git_rebase_interactive(
+    path: &str,
+    base_commit: &str,
+    sequence: &str,
+) -> Result<String, String> {
+    services::git_rebase_interactive(path, base_commit, sequence)
+}
+
+#[tauri::command]
+pub fn git_rebase_continue(path: &str) -> Result<String, String> {
+    services::git_rebase_continue(path)
+}
+
+#[tauri::command]
+pub fn git_rebase_abort(path: &str) -> Result<String, String> {
+    services::git_rebase_abort(path)
+}

@@ -1,8 +1,9 @@
-import { GitCommit, Copy, GitPullRequest, RotateCcw, Tag, GitBranch, Check, ArrowUp, X, FileText, FolderTree } from 'lucide-react';
+import { GitCommit, Copy, GitPullRequest, RotateCcw, Tag, GitBranch, Check, ArrowUp, X, FileText, FolderTree, GitMerge } from 'lucide-react';
 import { Commit, CommitDetails as CommitDetailsType } from '../../domain/entities/GitEntities';
 import { useState, useEffect } from 'react';
 import { useGitActions } from '../hooks/useGitActions';
 import { FileTreeViewer } from './FileTreeViewer';
+import { RebaseModal } from './RebaseModal';
 
 interface CommitDetailsProps {
     commit: Commit;
@@ -24,6 +25,7 @@ interface CommitDetailsProps {
     onCherryPick: (hash: string) => void;
     onRebase: (hash: string) => void;
     onReset: (hash: string, mode: "soft" | "mixed" | "hard") => void;
+    onRefreshGraph: () => void;
 }
 
 export function CommitDetails({
@@ -43,11 +45,13 @@ export function CommitDetails({
     onRebase,
     onReset,
     onViewHistoricalFile,
-    repoPath
+    repoPath,
+    onRefreshGraph
 }: CommitDetailsProps) {
     const [activeTab, setActiveTab] = useState<'changes' | 'tree'>('changes');
     const [treeFiles, setTreeFiles] = useState<string[]>([]);
     const [treeLoading, setTreeLoading] = useState(false);
+    const [isRebaseModalOpen, setIsRebaseModalOpen] = useState(false);
     const { getCommitTree } = useGitActions(repoPath);
 
     useEffect(() => {
@@ -73,6 +77,7 @@ export function CommitDetails({
     }, [activeTab, commit.hash, repoPath]);
 
     return (
+        <>
         <div className="h-full flex flex-col bg-slate-50/50 dark:bg-slate-900/50 border-l border-slate-200 dark:border-slate-800">
             {/* Header / Title */}
             <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between">
@@ -183,6 +188,14 @@ export function CommitDetails({
                                 <ArrowUp className="w-3.5 h-3.5" />
                                 <span>Rebase</span>
                              </button>
+                             <button
+                                onClick={() => setIsRebaseModalOpen(true)}
+                                className="col-span-2 flex items-center justify-center space-x-1.5 p-2 rounded bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-xs text-indigo-700 dark:text-indigo-400 font-medium transition-colors border border-indigo-200/50 dark:border-indigo-500/20"
+                                title="Start an interactive rebase from this commit"
+                             >
+                                <GitMerge className="w-3.5 h-3.5" />
+                                <span>Rebase Interactive from here...</span>
+                             </button>
                         </div>
                         
                         {/* Reset Dropdown/Group */}
@@ -290,5 +303,15 @@ export function CommitDetails({
 
             </div>
         </div>
+
+        {isRebaseModalOpen && commit && (
+            <RebaseModal
+                repoPath={repoPath}
+                baseCommit={commit.hash}
+                onClose={() => setIsRebaseModalOpen(false)}
+                onRefreshGraph={onRefreshGraph}
+            />
+        )}
+      </>
     );
 }

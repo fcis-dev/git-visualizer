@@ -60,7 +60,11 @@ pub fn run() {
             commands::get_file_content_at_commit,
             commands::search_commits,
             commands::git_commit_amend,
-            commands::get_git_reflog
+            commands::get_git_reflog,
+            commands::git_get_rebase_state,
+            commands::git_rebase_interactive,
+            commands::git_rebase_continue,
+            commands::git_rebase_abort
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

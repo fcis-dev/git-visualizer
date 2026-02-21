@@ -32,6 +32,7 @@ export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }
   const [previousMessage, setPreviousMessage] = useState("");
 
   const [isStashesModalOpen, setIsStashesModalOpen] = useState(false);
+  const [isRebasing, setIsRebasing] = useState(false);
 
   const { showInput, showAlert, showConfirm } = useDialog();
 
@@ -70,6 +71,10 @@ export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }
       setStagedFiles(staged);
       setChanges(changed);
       setConflictedFiles(conflicted);
+      
+      const rebasing = await invoke<boolean>("git_get_rebase_state", { path: repoPath });
+      setIsRebasing(rebasing);
+      
       setError(null);
     } catch (err: any) {
       console.error("Failed to load status", err);
@@ -301,6 +306,60 @@ export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-4">
+        {error && (
+            <div className="p-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-200 text-xs rounded break-all">
+                {error}
+            </div>
+        )}
+
+        {isRebasing && (
+            <div className="flex flex-col p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-lg">
+                <div className="flex items-center space-x-2 text-amber-800 dark:text-amber-400 font-bold mb-2 text-sm">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                    </span>
+                    <span>Rebase in Progress</span>
+                </div>
+                <p className="text-xs text-amber-700 dark:text-amber-500 mb-3 leading-tight font-medium">
+                    Resolve any conflicts below, stage them, and then continue. Or abort to cancel.
+                </p>
+                <div className="flex space-x-2">
+                    <button
+                        onClick={async () => {
+                            try {
+                                setLoading(true);
+                                await invoke("git_rebase_abort", { path: repoPath });
+                                loadStatus();
+                                if (onCommit) onCommit();
+                            } catch (e: any) {
+                                setError(e.toString());
+                                setLoading(false);
+                            }
+                        }}
+                        className="flex-1 py-1.5 text-xs rounded font-bold transition-colors bg-white hover:bg-red-50 text-red-600 border border-red-200 dark:bg-amber-950/50 dark:hover:bg-red-900/50 dark:border-red-800 dark:text-red-400"
+                    >
+                        Abort
+                    </button>
+                    <button
+                        onClick={async () => {
+                            try {
+                                setLoading(true);
+                                await invoke("git_rebase_continue", { path: repoPath });
+                                loadStatus();
+                                if (onCommit) onCommit();
+                            } catch (e: any) {
+                                setError(e.toString());
+                                setLoading(false);
+                            }
+                        }}
+                        className="flex-[2] py-1.5 text-xs rounded font-bold transition-colors bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white shadow-sm"
+                    >
+                        Continue Rebase
+                    </button>
+                </div>
+            </div>
+        )}
         {error && (
             <div className="p-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-200 text-xs rounded break-all">
                 {error}

@@ -2,6 +2,7 @@ use crate::models::{
     CommitData, CommitDetails, FileChange, FileStatus, ReflogEntry, RepoData, StashEntry, TagData,
 };
 use git2::{Repository, Sort};
+use std::fs;
 use std::path::Path;
 use walkdir::WalkDir;
 // use crate::config::AppState; // config logic stays in config.rs
@@ -382,6 +383,82 @@ pub fn git_cherry_pick(path: &str, hash: &str) -> Result<String, String> {
 
 pub fn git_revert(path: &str, hash: &str) -> Result<String, String> {
     run_git_cmd(path, &["revert", hash, "--no-edit"])
+}
+
+pub fn git_get_rebase_state(path: &str) -> Result<bool, String> {
+    let repo_path = Path::new(path);
+    let git_dir = repo_path.join(".git");
+    let is_rebasing =
+        git_dir.join("rebase-merge").exists() || git_dir.join("rebase-apply").exists();
+    Ok(is_rebasing)
+}
+
+pub fn git_rebase_interactive(
+    path: &str,
+    base_commit: &str,
+    sequence: &str,
+) -> Result<String, String> {
+    let repo_path = Path::new(path);
+    let git_dir = repo_path.join(".git");
+
+    // 1. Write the frontend-generated sequence to a temporary file
+    let todo_path = git_dir.join("gitvi_todo.txt");
+    if let Err(e) = fs::write(&todo_path, sequence) {
+        return Err(format!("Failed to write rebase sequence: {}", e));
+    }
+
+    // 2. Generate the bypass script
+    // On Windows, Git Bash uses .sh scripts for sequence editor even if executed from CMD,
+    // but cross-platform we can provide a shell script that copies our txt over the target git-rebase-todo.
+    let script_path = git_dir.join("gitvi_seq_editor.sh");
+    // git passes the path to `.git/rebase-merge/git-rebase-todo` as $1
+    let script_content = format!(
+        "#!/bin/sh\ncp \"{todo}\" \"$1\"\n",
+        todo = todo_path.to_string_lossy().replace("\\", "/")
+    );
+
+    if let Err(e) = fs::write(&script_path, script_content) {
+        return Err(format!("Failed to write editor bypass script: {}", e));
+    }
+
+    // Run git rebase -i <base>, injecting our bypass script
+    let mut command = std::process::Command::new("git");
+    command.current_dir(path);
+    command.arg("rebase");
+    command.arg("-i");
+    command.arg(base_commit);
+
+    // Override the sequence editor so Git invokes our script instead of vim
+    command.env(
+        "GIT_SEQUENCE_EDITOR",
+        script_path.to_string_lossy().as_ref(),
+    );
+
+    // We also set standard core.editor to true (no-op) so if a commit is 'reword' or 'edit',
+    // it doesn't pop up a text editor. We handle rebasing strictly visually or manually.
+    command.env("GIT_EDITOR", "true");
+
+    let output = command.output().map_err(|e| e.to_string())?;
+
+    // Cleanup temporary files
+    let _ = fs::remove_file(&todo_path);
+    let _ = fs::remove_file(&script_path);
+
+    if !output.status.success() {
+        let err = String::from_utf8_lossy(&output.stderr);
+        return Err(err.to_string());
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+pub fn git_rebase_continue(path: &str) -> Result<String, String> {
+    // Pass -c core.editor=true to prevent vim popups if rebase tries to force an edit commit msg.
+    run_git_cmd(path, &["-c", "core.editor=true", "rebase", "--continue"])
+}
+
+pub fn git_rebase_abort(path: &str) -> Result<String, String> {
+    run_git_cmd(path, &["rebase", "--abort"])
 }
 
 pub fn git_diff(path: &str, file: Option<String>, hash: Option<String>) -> Result<String, String> {

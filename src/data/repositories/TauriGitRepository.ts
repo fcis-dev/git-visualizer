@@ -52,6 +52,22 @@ export class TauriGitRepository implements IGitRepository {
     await invoke("git_rebase", { path, branch });
   }
 
+  async getRebaseState(path: string): Promise<boolean> {
+      return await invoke<boolean>("git_get_rebase_state", { path });
+  }
+
+  async rebaseInteractive(path: string, baseCommit: string, sequence: string): Promise<string> {
+      return await invoke<string>("git_rebase_interactive", { path, base_commit: baseCommit, sequence });
+  }
+
+  async rebaseContinue(path: string): Promise<void> {
+      await invoke("git_rebase_continue", { path });
+  }
+
+  async rebaseAbort(path: string): Promise<void> {
+      await invoke("git_rebase_abort", { path });
+  }
+
   async stashSave(path: string, message?: string): Promise<void> {
     await invoke("git_stash_save", { path, message });
   }
