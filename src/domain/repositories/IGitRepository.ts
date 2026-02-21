@@ -31,4 +31,10 @@ export interface IGitRepository {
     hash: string,
     filePath: string,
   ): Promise<string>;
+
+  searchCommits(
+    path: string,
+    query: string,
+    searchType: "all" | "message" | "author" | "file",
+  ): Promise<Commit[]>;
 }

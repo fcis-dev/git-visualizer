@@ -84,6 +84,11 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         return await repository.getFileContentAtCommit(repoPath, hash, filePath);
     };
 
+    const searchCommits = async (query: string, searchType: "all" | "message" | "author" | "file") => {
+        if (!repoPath) return [];
+        return await repository.searchCommits(repoPath, query, searchType);
+    };
+
     return {
         checkoutCommit,
         checkoutBranch,
@@ -98,6 +103,7 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         getCommitDetails,
         resolveConflict,
         getCommitTree,
-        getFileContentAtCommit
+        getFileContentAtCommit,
+        searchCommits
     };
 }

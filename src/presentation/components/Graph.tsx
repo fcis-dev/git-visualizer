@@ -16,7 +16,16 @@ export const Graph: React.FC<GraphProps> = ({ commits, selectedCommit, onSelectC
   const { theme } = useTheme();
 
   useEffect(() => {
-    if (!commits.length || !svgRef.current) return;
+    if (!svgRef.current) return;
+
+    const svg = d3.select(svgRef.current);
+    
+    // Always clear existing graph first
+    svg.selectAll("*").remove();
+
+    if (!commits.length) {
+       return;
+    }
 
     const { nodes, links } = calculateGraphLayout(commits);
 
@@ -26,8 +35,6 @@ export const Graph: React.FC<GraphProps> = ({ commits, selectedCommit, onSelectC
     const width = Math.max(800, containerRef.current?.clientWidth || 800);
     const height = (nodes.length + 1) * rowHeight;
 
-    const svg = d3.select(svgRef.current);
-    svg.selectAll("*").remove();
     svg.attr("width", width).attr("height", height);
 
     // Dynamic colors based on theme

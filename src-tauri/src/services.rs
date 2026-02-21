@@ -526,6 +526,37 @@ pub fn search_commits(
     query: &str,
     search_type: &str,
 ) -> Result<Vec<CommitData>, String> {
+    if search_type == "all" {
+        let msg_commits = search_commits_internal(path, query, "message").unwrap_or_default();
+        let author_commits = search_commits_internal(path, query, "author").unwrap_or_default();
+        let file_commits = search_commits_internal(path, query, "file").unwrap_or_default();
+
+        let mut seen = std::collections::HashSet::new();
+        let mut merged = Vec::new();
+
+        for c in msg_commits
+            .into_iter()
+            .chain(author_commits.into_iter())
+            .chain(file_commits.into_iter())
+        {
+            if seen.insert(c.hash.clone()) {
+                merged.push(c);
+            }
+        }
+
+        merged.sort_by(|a, b| b.date.cmp(&a.date));
+        merged.truncate(200);
+        return Ok(merged);
+    }
+
+    search_commits_internal(path, query, search_type)
+}
+
+fn search_commits_internal(
+    path: &str,
+    query: &str,
+    search_type: &str,
+) -> Result<Vec<CommitData>, String> {
     let mut args = vec![
         "log",
         "--format=%H%x00%an%x00%ct%x00%p%x00%D%x00%s", // Hash NULL Author NULL UnixTimestamp NULL Parents NULL Refs NULL Subject
@@ -551,12 +582,6 @@ pub fn search_commits(
         "file" => {
             args.push("--");
             args.push(&query_string); // e.g. "package.json" or "*.rs"
-        }
-        "all" => {
-            // "all" searches in messages
-            grep_query = format!("--grep={}", query_string);
-            args.push("-i");
-            args.push(&grep_query);
         }
         _ => return Err("Invalid search type".to_string()),
     }

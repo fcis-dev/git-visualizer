@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   GitBranch,
   RefreshCw,
   ArrowLeft,
+  Search,
+  Filter
 } from "lucide-react";
 import { SourceControl } from "./Sidebar/SourceControl";
 import { Graph } from "./Graph";
@@ -42,15 +44,23 @@ export function RepositoryWorkspace({
     commitHash: string;
   } | null>(null);
 
+  // Global search state
+  const [searchType, setSearchType] = useState<"all" | "message" | "author" | "file">("all");
+  const [globalSearchResults, setGlobalSearchResults] = useState<Commit[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef<number | null>(null);
+
   // Using existing hooks
   const { commits, branchName, loadCommits, setError } = useGit(repoPath);
 
   // Filter commits based on search query
-  const filteredCommits = commits.filter(commit => 
+  const filteredLocalCommits = commits.filter(commit => 
       commit.message.toLowerCase().includes(commitSearchQuery.toLowerCase()) ||
       commit.hash.toLowerCase().includes(commitSearchQuery.toLowerCase()) ||
       commit.author.toLowerCase().includes(commitSearchQuery.toLowerCase())
   );
+
+  const displayCommits = globalSearchResults !== null ? globalSearchResults : filteredLocalCommits;
 
   const { showConfirm, showInput, showAlert } = useDialog();
 
@@ -60,6 +70,37 @@ export function RepositoryWorkspace({
   };
 
   const gitActions = useGitActions(repoPath, onActionSuccess);
+
+  // Perform global backend search when query changes
+  useEffect(() => {
+    if (commitSearchQuery.trim().length === 0) {
+        setGlobalSearchResults(null);
+        setIsSearching(false);
+        return;
+    }
+
+    if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+    }
+
+    setIsSearching(true);
+    searchTimeoutRef.current = window.setTimeout(() => {
+        gitActions.searchCommits(commitSearchQuery, searchType)
+            .then(results => {
+                setGlobalSearchResults(results);
+                setIsSearching(false);
+            })
+            .catch(err => {
+                console.error("Search failed:", err);
+                setGlobalSearchResults(null);
+                setIsSearching(false);
+            });
+    }, 500); // 500ms debounce
+
+    return () => {
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, [commitSearchQuery, searchType, repoPath]);
 
   // Load commit details when selected
   useEffect(() => {
@@ -263,20 +304,66 @@ export function RepositoryWorkspace({
         <div className="flex-1 flex flex-col relative overflow-hidden bg-white dark:bg-slate-950">
             
             {/* Search Bar */}
-            <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-                <input 
-                    type="text" 
-                    placeholder="Search commits by message, hash, or author..." 
-                    value={commitSearchQuery}
-                    onChange={(e) => setCommitSearchQuery(e.target.value)}
-                    className="w-full px-4 py-2 text-sm bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-slate-800 dark:text-slate-200 placeholder-slate-400"
-                />
+            <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex space-x-2">
+                <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="w-4 h-4 text-slate-400" />
+                    </div>
+                    <input 
+                        type="text" 
+                        placeholder={
+                            searchType === "all" ? "Search globally by message, author..." :
+                            searchType === "message" ? "Search commit messages globally..." :
+                            searchType === "author" ? "Search by commit author globally..." :
+                            "Search by changed file path globally..."
+                        }
+                        value={commitSearchQuery}
+                        onChange={(e) => setCommitSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-slate-800 dark:text-slate-200 placeholder-slate-400 transition-colors"
+                    />
+                    {isSearching && (
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                             <div className="animate-spin rounded-full h-3.5 w-3.5 border-t-2 border-b-2 border-indigo-500"></div>
+                        </div>
+                    )}
+                </div>
+                
+                <div className="relative shrink-0 flex items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded">
+                    <div className="pl-3 pr-2 border-r border-slate-200 dark:border-slate-800 text-slate-400">
+                        <Filter className="w-4 h-4" />
+                    </div>
+                    <select
+                        value={searchType}
+                        onChange={(e) => setSearchType(e.target.value as any)}
+                        className="py-2 pl-2 pr-6 text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-slate-700 dark:text-slate-300 appearance-none cursor-pointer"
+                    >
+                        <option value="all">Everywhere</option>
+                        <option value="message">Message</option>
+                        <option value="author">Author</option>
+                        <option value="file">File Path</option>
+                    </select>
+                </div>
             </div>
+
+            {/* Global Search Notice */}
+            {globalSearchResults !== null && (
+                <div className="bg-indigo-50 dark:bg-indigo-500/10 border-b border-indigo-100 dark:border-indigo-500/20 px-3 py-1.5 flex justify-between items-center text-xs">
+                    <span className="text-indigo-700 dark:text-indigo-300">
+                        Showing <strong>{globalSearchResults.length}</strong> global search results for "{commitSearchQuery}"
+                    </span>
+                    <button 
+                         onClick={() => setCommitSearchQuery("")}
+                         className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 font-medium underline"
+                    >
+                        Clear Search
+                    </button>
+                </div>
+            )}
 
             {/* Graph */}
             <div className="flex-1 overflow-hidden flex flex-col relative">
                <Graph
-                    commits={filteredCommits}
+                    commits={displayCommits}
                     selectedCommit={selectedCommit}
                     onSelectCommit={setSelectedCommit}
                 />

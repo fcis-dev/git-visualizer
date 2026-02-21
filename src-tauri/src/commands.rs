@@ -201,3 +201,12 @@ pub fn get_file_content_at_commit(
 ) -> Result<String, String> {
     services::get_file_content_at_commit(path, hash, file_path)
 }
+
+#[tauri::command]
+pub fn search_commits(
+    path: &str,
+    query: &str,
+    search_type: &str,
+) -> Result<Vec<CommitData>, String> {
+    services::search_commits(path, query, search_type)
+}

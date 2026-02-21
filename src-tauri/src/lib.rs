@@ -52,7 +52,8 @@ pub fn run() {
             commands::set_git_config_user,
             commands::git_discard_changes,
             commands::get_commit_tree,
-            commands::get_file_content_at_commit
+            commands::get_file_content_at_commit,
+            commands::search_commits
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

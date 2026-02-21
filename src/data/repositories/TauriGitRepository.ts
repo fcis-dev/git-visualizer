@@ -79,4 +79,9 @@ export class TauriGitRepository implements IGitRepository {
   async getFileContentAtCommit(path: string, hash: string, filePath: string): Promise<string> {
       return await invoke<string>("get_file_content_at_commit", { path, hash, filePath });
   }
+
+  async searchCommits(path: string, query: string, searchType: "all" | "message" | "author" | "file"): Promise<Commit[]> {
+      // In Rust the command name is search_commits, so the arguments are path, query, search_type
+      return await invoke<Commit[]>("search_commits", { path, query, searchType: searchType });
+  }
 }
