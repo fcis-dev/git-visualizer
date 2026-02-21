@@ -89,6 +89,11 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         return await repository.searchCommits(repoPath, query, searchType);
     };
 
+    const commitAmend = async (message: string) => {
+        if (!repoPath) return;
+        return await repository.commitAmend(repoPath, message);
+    };
+
     return {
         checkoutCommit,
         checkoutBranch,
@@ -104,6 +109,7 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         resolveConflict,
         getCommitTree,
         getFileContentAtCommit,
-        searchCommits
+        searchCommits,
+        commitAmend
     };
 }

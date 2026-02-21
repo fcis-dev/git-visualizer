@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { RefreshCw, Play, Check, X, ArrowUp, ArrowDown, Archive, ArchiveRestore, Globe, Plus, Trash2, RotateCcw } from 'lucide-react';
 import { useDialog } from '../../context/DialogContext';
+import { Commit } from '../../../domain/entities/GitEntities';
 
 interface FileStatus {
   path: string;
@@ -10,10 +11,12 @@ interface FileStatus {
 
 interface SourceControlProps {
   repoPath: string | null;
+  latestCommit?: Commit | null;
   onSelectFile: (file: string) => void;
+  onCommit?: () => void;
 }
 
-export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
+export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }: SourceControlProps) {
   const [stagedFiles, setStagedFiles] = useState<FileStatus[]>([]);
   const [changes, setChanges] = useState<FileStatus[]>([]);
   const [conflictedFiles, setConflictedFiles] = useState<FileStatus[]>([]);
@@ -24,6 +27,9 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
   const [remotes, setRemotes] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   
+  const [isAmend, setIsAmend] = useState(false);
+  const [previousMessage, setPreviousMessage] = useState("");
+
   const { showInput, showAlert, showConfirm } = useDialog();
 
   useEffect(() => {
@@ -154,9 +160,15 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
   const handleCommit = async () => {
     if (!repoPath || !commitMessage) return;
     try {
-      await invoke('git_commit', { path: repoPath, message: commitMessage });
+      if (isAmend) {
+        await invoke('git_commit_amend', { path: repoPath, message: commitMessage });
+        setIsAmend(false);
+      } else {
+        await invoke('git_commit', { path: repoPath, message: commitMessage });
+      }
       setCommitMessage("");
       loadStatus();
+      if (onCommit) onCommit();
     } catch (err: any) {
       console.error("Failed to commit", err);
       setError(err.toString());
@@ -391,7 +403,29 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
 
         {/* Commit Input */}
         <div className="space-y-2">
-
+            {latestCommit && (
+                <div className="flex items-center space-x-2 px-1">
+                    <input 
+                        type="checkbox" 
+                        id="amend-checkbox"
+                        checked={isAmend}
+                        onChange={(e) => {
+                            const checked = e.target.checked;
+                            setIsAmend(checked);
+                            if (checked) {
+                                setPreviousMessage(commitMessage);
+                                setCommitMessage(latestCommit.message);
+                            } else {
+                                setCommitMessage(previousMessage);
+                            }
+                        }}
+                        className="rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 dark:bg-slate-900"
+                    />
+                    <label htmlFor="amend-checkbox" className="text-xs text-slate-600 dark:text-slate-400 cursor-pointer select-none">
+                        Amend previous commit
+                    </label>
+                </div>
+            )}
             <textarea 
                 value={commitMessage}
                 onChange={(e) => setCommitMessage(e.target.value)}
@@ -405,11 +439,11 @@ export function SourceControl({ repoPath, onSelectFile }: SourceControlProps) {
             />
             <button 
                 onClick={handleCommit}
-                disabled={!commitMessage || stagedFiles.length === 0}
+                disabled={!commitMessage || (!isAmend && stagedFiles.length === 0)}
                 className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-1.5 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
             >
                 <Check className="w-4 h-4" />
-                Commit
+                {isAmend ? "Commit Amend" : "Commit"}
             </button>
         </div>
 

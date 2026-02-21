@@ -263,6 +263,10 @@ pub fn git_commit(path: &str, message: String) -> Result<String, String> {
     Ok(oid.to_string())
 }
 
+pub fn git_commit_amend(path: &str, message: String) -> Result<String, String> {
+    run_git_cmd(path, &["commit", "--amend", "-m", &message])
+}
+
 pub fn get_current_branch(path: &str) -> Result<String, String> {
     let repo = Repository::open(path).map_err(|e| e.to_string())?;
     let head = match repo.head() {

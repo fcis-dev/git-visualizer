@@ -64,6 +64,11 @@ pub fn git_commit(path: &str, message: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub fn git_commit_amend(path: &str, message: String) -> Result<String, String> {
+    services::git_commit_amend(path, message)
+}
+
+#[tauri::command]
 pub fn git_push(path: &str) -> Result<String, String> {
     services::git_push(path)
 }

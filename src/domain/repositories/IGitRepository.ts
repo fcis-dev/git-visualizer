@@ -37,4 +37,6 @@ export interface IGitRepository {
     query: string,
     searchType: "all" | "message" | "author" | "file",
   ): Promise<Commit[]>;
+
+  commitAmend(path: string, message: string): Promise<void>;
 }

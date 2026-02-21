@@ -294,9 +294,11 @@ export function RepositoryWorkspace({
         <div className="w-80 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col z-10">
           <SourceControl
             repoPath={repoPath}
+            latestCommit={commits.length > 0 ? commits[0] : null}
             onSelectFile={(file) => {
               setDiffTarget({ path: file });
             }}
+            onCommit={loadCommits}
           />
         </div>
 
