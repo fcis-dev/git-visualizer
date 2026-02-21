@@ -187,3 +187,17 @@ pub fn set_git_config_user(path: &str, name: &str, email: &str) -> Result<(), St
 pub fn git_discard_changes(path: &str, files: Vec<String>) -> Result<(), String> {
     services::git_discard_changes(path, files)
 }
+
+#[tauri::command]
+pub fn get_commit_tree(path: &str, hash: &str) -> Result<Vec<String>, String> {
+    services::get_commit_tree(path, hash)
+}
+
+#[tauri::command]
+pub fn get_file_content_at_commit(
+    path: &str,
+    hash: &str,
+    file_path: &str,
+) -> Result<String, String> {
+    services::get_file_content_at_commit(path, hash, file_path)
+}

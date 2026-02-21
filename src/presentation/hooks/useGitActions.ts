@@ -74,6 +74,16 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         onSuccess?.();
     };
 
+    const getCommitTree = async (hash: string) => {
+        if (!repoPath) return [];
+        return await repository.getCommitTree(repoPath, hash);
+    };
+
+    const getFileContentAtCommit = async (hash: string, filePath: string) => {
+        if (!repoPath) return "";
+        return await repository.getFileContentAtCommit(repoPath, hash, filePath);
+    };
+
     return {
         checkoutCommit,
         checkoutBranch,
@@ -86,6 +96,8 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         createTag,
         createBranch,
         getCommitDetails,
-        resolveConflict
+        resolveConflict,
+        getCommitTree,
+        getFileContentAtCommit
     };
 }

@@ -8,6 +8,7 @@ import { SourceControl } from "./Sidebar/SourceControl";
 import { Graph } from "./Graph";
 import { DiffView } from "./DiffView";
 import { CommitDetails } from "./CommitDetails";
+import { HistoricalFileContentView } from "./HistoricalFileContentView";
 import { useGit } from "../hooks/useGit";
 import { useGitActions } from "../hooks/useGitActions";
 import { useDialog } from "../context/DialogContext";
@@ -34,6 +35,11 @@ export function RepositoryWorkspace({
   const [diffTarget, setDiffTarget] = useState<{
     path: string;
     commitHash?: string;
+  } | null>(null);
+  
+  const [contentTarget, setContentTarget] = useState<{
+    path: string;
+    commitHash: string;
   } | null>(null);
 
   // Using existing hooks
@@ -304,12 +310,23 @@ export function RepositoryWorkspace({
                     </div>
                 </div>
             )}
+
+            {/* Historical File Content View Overlay */}
+            {contentTarget && (
+                <HistoricalFileContentView
+                    repoPath={repoPath}
+                    filePath={contentTarget.path}
+                    commitHash={contentTarget.commitHash}
+                    onClose={() => setContentTarget(null)}
+                />
+            )}
         </div>
 
         {/* Right Column: Commit Details */}
         {selectedCommit && (
             <div className="w-96 shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 animate-in slide-in-from-right duration-200 z-10 shadow-xl overflow-y-auto">
                 <CommitDetails
+                    repoPath={repoPath}
                     commit={selectedCommit}
                     details={commitDetails}
                     detailsLoading={detailsLoading}
@@ -318,6 +335,9 @@ export function RepositoryWorkspace({
                     onCopyHash={(h) => navigator.clipboard.writeText(h)}
                     onSelectFile={(p) =>
                         setDiffTarget({ path: p, commitHash: selectedCommit.hash })
+                    }
+                    onViewHistoricalFile={(p) =>
+                        setContentTarget({ path: p, commitHash: selectedCommit.hash })
                     }
                     onCheckout={handleCheckoutCommit}
                     onCreateBranch={handleCreateBranch}

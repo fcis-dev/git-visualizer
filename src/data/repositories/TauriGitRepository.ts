@@ -71,4 +71,12 @@ export class TauriGitRepository implements IGitRepository {
   async resolveConflict(path: string, file: string, strategy: 'ours' | 'theirs'): Promise<void> {
     await invoke("git_resolve_conflict", { path, file, strategy });
   }
+
+  async getCommitTree(path: string, hash: string): Promise<string[]> {
+      return await invoke<string[]>("get_commit_tree", { path, hash });
+  }
+
+  async getFileContentAtCommit(path: string, hash: string, filePath: string): Promise<string> {
+      return await invoke<string>("get_file_content_at_commit", { path, hash, filePath });
+  }
 }

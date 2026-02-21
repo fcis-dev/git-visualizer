@@ -1,5 +1,8 @@
-import { GitCommit, Copy, GitPullRequest, RotateCcw, Tag, GitBranch, Check, ArrowUp, X } from 'lucide-react';
+import { GitCommit, Copy, GitPullRequest, RotateCcw, Tag, GitBranch, Check, ArrowUp, X, FileText, FolderTree } from 'lucide-react';
 import { Commit, CommitDetails as CommitDetailsType } from '../../domain/entities/GitEntities';
+import { useState, useEffect } from 'react';
+import { useGitActions } from '../hooks/useGitActions';
+import { FileTreeViewer } from './FileTreeViewer';
 
 interface CommitDetailsProps {
     commit: Commit;
@@ -9,6 +12,8 @@ interface CommitDetailsProps {
     onClose: () => void;
     onCopyHash: (hash: string) => void;
     onSelectFile: (path: string) => void;
+    onViewHistoricalFile: (path: string) => void;
+    repoPath: string;
     
     // Actions
     onCheckout: (hash: string) => void;
@@ -36,8 +41,36 @@ export function CommitDetails({
     onRevert,
     onCherryPick,
     onRebase,
-    onReset
+    onReset,
+    onViewHistoricalFile,
+    repoPath
 }: CommitDetailsProps) {
+    const [activeTab, setActiveTab] = useState<'changes' | 'tree'>('changes');
+    const [treeFiles, setTreeFiles] = useState<string[]>([]);
+    const [treeLoading, setTreeLoading] = useState(false);
+    const { getCommitTree } = useGitActions(repoPath);
+
+    useEffect(() => {
+        let mounted = true;
+        if (activeTab === 'tree' && commit.hash) {
+            setTreeLoading(true);
+            getCommitTree(commit.hash)
+                .then(files => {
+                    if (mounted) {
+                        setTreeFiles(files);
+                        setTreeLoading(false);
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to load tree:", err);
+                    if (mounted) {
+                        setTreeLoading(false);
+                    }
+                });
+        }
+        return () => { mounted = false; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab, commit.hash, repoPath]);
 
     return (
         <div className="h-full flex flex-col bg-slate-50/50 dark:bg-slate-900/50 border-l border-slate-200 dark:border-slate-800">
@@ -182,49 +215,78 @@ export function CommitDetails({
                     </div>
                 </div>
 
-                {/* Changed Files */}
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex justify-between">
-                        <span>Changed Files</span>
-                        <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-400">
-                            {details?.files.length || 0}
-                        </span>
-                    </h4>
-                    
-                    {detailsLoading ? (
-                        <div className="flex justify-center py-4">
-                             <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500"></div>
-                             <span className="ml-2 text-xs text-slate-400">Loading details...</span>
-                        </div>
-                    ) : details && details.files.length > 0 ? (
-                         <div className="space-y-0.5">
-                            {details.files.map((file, idx) => (
-                                <div
-                                    key={idx}
-                                    className="flex items-center space-x-2 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer group transition-colors"
-                                    onClick={() => onSelectFile(file.path)}
-                                >
-                                    <span className={`
-                                        w-4 h-4 flex items-center justify-center rounded text-[10px] font-bold shrink-0
-                                        ${file.status === "M" ? "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20" : ""}
-                                        ${file.status === "A" ? "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20" : ""}
-                                        ${file.status === "D" ? "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20" : ""}
-                                        ${file.status === "R" ? "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/20" : ""}
-                                    `}>
-                                        {file.status}
-                                    </span>
-                                    <span className="text-sm text-slate-700 dark:text-slate-300 truncate" title={file.path}>
-                                        {file.path}
-                                    </span>
-                                </div>
-                            ))}
-                         </div>
-                    ) : (
-                        <div className="text-center py-4 text-xs text-slate-400">
-                             No files changed or failed to load.
-                        </div>
-                    )}
+                {/* Tabs */}
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex space-x-4 mb-2">
+                    <button
+                        onClick={() => setActiveTab('changes')}
+                        className={`flex items-center space-x-1.5 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'changes' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>Changes</span>
+                        {activeTab === 'changes' && (
+                             <span className="ml-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[10px]">
+                                 {details?.files.length || 0}
+                             </span>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('tree')}
+                        className={`flex items-center space-x-1.5 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'tree' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                    >
+                        <FolderTree className="w-3.5 h-3.5" />
+                        <span>File Tree</span>
+                    </button>
                 </div>
+
+                {/* Tab Content */}
+                {activeTab === 'changes' ? (
+                    <div>
+                        {detailsLoading ? (
+                            <div className="flex justify-center py-4">
+                                 <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500"></div>
+                                 <span className="ml-2 text-xs text-slate-400">Loading details...</span>
+                            </div>
+                        ) : details && details.files.length > 0 ? (
+                             <div className="space-y-0.5">
+                                {details.files.map((file, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="flex items-center space-x-2 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer group transition-colors"
+                                        onClick={() => onSelectFile(file.path)}
+                                    >
+                                        <span className={`
+                                            w-4 h-4 flex items-center justify-center rounded text-[10px] font-bold shrink-0
+                                            ${file.status === "M" ? "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20" : ""}
+                                            ${file.status === "A" ? "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/20" : ""}
+                                            ${file.status === "D" ? "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20" : ""}
+                                            ${file.status === "R" ? "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/20" : ""}
+                                        `}>
+                                            {file.status}
+                                        </span>
+                                        <span className="text-sm text-slate-700 dark:text-slate-300 truncate" title={file.path}>
+                                            {file.path}
+                                        </span>
+                                    </div>
+                                ))}
+                             </div>
+                        ) : (
+                            <div className="text-center py-4 text-xs text-slate-400">
+                                 No files changed or failed to load.
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div>
+                        {treeLoading ? (
+                            <div className="flex justify-center py-4">
+                                 <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500"></div>
+                                 <span className="ml-2 text-xs text-slate-400">Loading tree...</span>
+                            </div>
+                        ) : (
+                            <FileTreeViewer files={treeFiles} onSelectFile={onViewHistoricalFile} />
+                        )}
+                    </div>
+                )}
 
             </div>
         </div>

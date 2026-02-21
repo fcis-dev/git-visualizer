@@ -506,3 +506,94 @@ pub fn git_discard_changes(path: &str, files: Vec<String>) -> Result<(), String>
 
     Ok(())
 }
+
+pub fn get_commit_tree(path: &str, hash: &str) -> Result<Vec<String>, String> {
+    let output = run_git_cmd(path, &["ls-tree", "-r", "--name-only", hash])?;
+    Ok(output.lines().map(|s| s.to_string()).collect())
+}
+
+pub fn get_file_content_at_commit(
+    path: &str,
+    hash: &str,
+    file_path: &str,
+) -> Result<String, String> {
+    let target = format!("{}:{}", hash, file_path.replace("\\", "/"));
+    run_git_cmd(path, &["show", &target])
+}
+
+pub fn search_commits(
+    path: &str,
+    query: &str,
+    search_type: &str,
+) -> Result<Vec<CommitData>, String> {
+    let mut args = vec![
+        "log",
+        "--format=%H%x00%an%x00%ct%x00%p%x00%D%x00%s", // Hash NULL Author NULL UnixTimestamp NULL Parents NULL Refs NULL Subject
+        "-n",
+        "200", // Limit to 200 results for performance
+    ];
+
+    let query_string = query.to_string();
+    let author_query;
+    let grep_query;
+
+    match search_type {
+        "message" => {
+            grep_query = format!("--grep={}", query_string);
+            args.push("-i"); // case-insensitive
+            args.push(&grep_query);
+        }
+        "author" => {
+            author_query = format!("--author={}", query_string);
+            args.push("-i"); // case-insensitive
+            args.push(&author_query);
+        }
+        "file" => {
+            args.push("--");
+            args.push(&query_string); // e.g. "package.json" or "*.rs"
+        }
+        "all" => {
+            // "all" searches in messages
+            grep_query = format!("--grep={}", query_string);
+            args.push("-i");
+            args.push(&grep_query);
+        }
+        _ => return Err("Invalid search type".to_string()),
+    }
+
+    let output = run_git_cmd(path, &args)?;
+
+    let mut commits = Vec::new();
+    for line in output.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        let parts: Vec<&str> = line.split('\x00').collect();
+        if parts.len() >= 6 {
+            let hash = parts[0].to_string();
+            let author = parts[1].to_string();
+            let date = parts[2].parse::<i64>().unwrap_or(0);
+            let parents: Vec<String> = parts[3].split_whitespace().map(|s| s.to_string()).collect();
+
+            let refs_str = parts[4].trim();
+            let refs: Vec<String> = if refs_str.is_empty() {
+                Vec::new()
+            } else {
+                refs_str.split(", ").map(|s| s.to_string()).collect()
+            };
+
+            let message = parts[5].to_string();
+
+            commits.push(CommitData {
+                hash,
+                message,
+                author,
+                date,
+                parents,
+                refs,
+            });
+        }
+    }
+
+    Ok(commits)
+}
