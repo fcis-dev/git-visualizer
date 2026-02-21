@@ -6,7 +6,8 @@ import {
   Search,
   Filter,
   LifeBuoy,
-  Tag
+  Tag,
+  Check
 } from "lucide-react";
 import { SourceControl } from "./Sidebar/SourceControl";
 import { Graph } from "./Graph";
@@ -15,6 +16,7 @@ import { CommitDetails } from "./CommitDetails";
 import { HistoricalFileContentView } from "./HistoricalFileContentView";
 import { ReflogModal } from "./ReflogModal";
 import { TagsModal } from "./TagsModal";
+import { CreateBranchModal } from "./CreateBranchModal";
 import { useGit } from "../hooks/useGit";
 import { useGitActions } from "../hooks/useGitActions";
 import { useDialog } from "../context/DialogContext";
@@ -50,15 +52,17 @@ export function RepositoryWorkspace({
 
   const [isReflogModalOpen, setIsReflogModalOpen] = useState(false);
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
+  const [createBranchTarget, setCreateBranchTarget] = useState<string | null>(null);
 
   // Global search state
   const [searchType, setSearchType] = useState<"all" | "message" | "author" | "file">("all");
   const [globalSearchResults, setGlobalSearchResults] = useState<Commit[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const searchTimeoutRef = useRef<number | null>(null);
 
   // Using existing hooks
-  const { commits, branchName, loadCommits, setError } = useGit(repoPath);
+  const { commits, branchName, availableBranches, checkoutBranch, loadCommits, setError } = useGit(repoPath);
 
   // Filter commits based on search query
   const filteredLocalCommits = commits.filter(commit => 
@@ -162,16 +166,9 @@ export function RepositoryWorkspace({
     );
   };
   const handleCreateBranch = (hash: string) => {
-    showInput("Create Branch", "Branch name:", async (name) => {
-      if (!name) return;
-      try {
-        await gitActions.createBranch(name, hash);
-        showAlert("Success", `Branch '${name}' created.`);
-      } catch (e: any) {
-        setError(e.toString());
-      }
-    });
+    setCreateBranchTarget(hash);
   };
+  
   const handleCreateTag = (hash: string) => {
     showInput("Create Tag", "Tag name:", async (name) => {
       if (!name) return;
@@ -272,10 +269,58 @@ export function RepositoryWorkspace({
 
           <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2" />
 
-          <div className="flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1.5 rounded text-sm text-indigo-700 dark:text-indigo-300 font-medium border border-indigo-100 dark:border-indigo-500/20">
-            <GitBranch className="w-4 h-4" />
-            <span>{branchName || "..."}</span>
-            {/* Build a real branch switcher here later */}
+          {/* Branch Switcher Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
+              className="flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1.5 rounded text-sm text-indigo-700 dark:text-indigo-300 font-medium border border-indigo-100 dark:border-indigo-500/20 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors"
+              title="Switch Branch"
+            >
+              <GitBranch className="w-4 h-4" />
+              <span>{branchName || "..."}</span>
+            </button>
+            
+            {isBranchDropdownOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-30" 
+                  onClick={() => setIsBranchDropdownOpen(false)}
+                />
+                <div className="absolute left-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-40 overflow-hidden animate-in slide-in-from-top-2 duration-150">
+                  <div className="px-3 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+                    Local Branches
+                  </div>
+                  <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                    {availableBranches.map(branch => (
+                      <button
+                        key={branch}
+                        onClick={async () => {
+                           try {
+                             await checkoutBranch(branch);
+                             setIsBranchDropdownOpen(false);
+                             showAlert("Branch Switched", `Successfully checked out ${branch}`);
+                           } catch (e: any) {
+                             setIsBranchDropdownOpen(false);
+                             showAlert("Checkout Failed", e.toString());
+                           }
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between
+                           ${branch === branchName ? "text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50/50 dark:bg-indigo-900/10" : "text-slate-700 dark:text-slate-300"}
+                        `}
+                      >
+                         <span className="truncate">{branch}</span>
+                         {branch === branchName && <Check className="w-3.5 h-3.5" />}
+                      </button>
+                    ))}
+                    {availableBranches.length === 0 && (
+                      <div className="px-3 py-4 text-center text-xs text-slate-400">
+                        No branches found
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -481,6 +526,22 @@ export function RepositoryWorkspace({
           repoPath={repoPath}
           onClose={() => setIsTagsModalOpen(false)}
           onRefreshGraph={() => loadCommits()}
+        />
+      )}
+      {createBranchTarget && (
+        <CreateBranchModal
+          baseCommit={createBranchTarget}
+          onClose={() => setCreateBranchTarget(null)}
+          onSubmit={async (name, checkout) => {
+            await gitActions.createBranch(name, createBranchTarget);
+            if (checkout) {
+              await gitActions.checkoutBranch(name);
+              showAlert("Success", `Branch '${name}' created and checked out.`);
+              loadCommits();
+            } else {
+              showAlert("Success", `Branch '${name}' created.`);
+            }
+          }}
         />
       )}
     </div>

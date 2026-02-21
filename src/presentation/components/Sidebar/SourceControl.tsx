@@ -353,7 +353,7 @@ export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }
                                 setLoading(false);
                             }
                         }}
-                        className="flex-[2] py-1.5 text-xs rounded font-bold transition-colors bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white shadow-sm"
+                        className="flex-2 py-1.5 text-xs rounded font-bold transition-colors bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white shadow-sm"
                     >
                         Continue Rebase
                     </button>
@@ -400,7 +400,7 @@ export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }
             <button
                 onClick={() => setIsStashesModalOpen(true)}
                 disabled={stashLoading}
-                className="flex-[2] flex items-center justify-center space-x-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 py-1.5 rounded text-xs transition-colors font-medium border border-emerald-200/50 dark:border-emerald-500/20"
+                className="flex-2 flex items-center justify-center space-x-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 py-1.5 rounded text-xs transition-colors font-medium border border-emerald-200/50 dark:border-emerald-500/20"
                 title="Manage Stashes"
             >
                 <span>Stashes</span>

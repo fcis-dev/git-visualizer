@@ -116,6 +116,36 @@ export function CommitDetails({
                         <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
                         <span>{new Date(commit.date * 1000).toLocaleString()}</span>
                     </div>
+
+                    {/* Tags and Branches */}
+                    {commit.refs && commit.refs.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-3 pl-8">
+                            {commit.refs.map(ref => {
+                                const isTag = ref.startsWith("tag: ");
+                                const isHead = ref.includes("HEAD");
+                                const isOrigin = ref.includes("origin");
+                                const displayName = isTag ? ref.substring(5) : ref;
+                                
+                                let baseStyles = "text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700";
+                                
+                                if (isHead) {
+                                    baseStyles = "text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
+                                } else if (isTag) {
+                                    baseStyles = "text-[10px] bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/60";
+                                } else if (isOrigin) {
+                                    baseStyles = "text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800/60";
+                                }
+                                
+                                return (
+                                    <span key={ref} className={`px-1.5 py-0.5 rounded border flex items-center shadow-sm font-mono whitespace-nowrap ${baseStyles}`}>
+                                        {isTag && <Tag className="w-2.5 h-2.5 mr-1" />}
+                                        {!isTag && <GitBranch className="w-2.5 h-2.5 mr-1" />}
+                                        {displayName}
+                                    </span>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 {/* Actions Section */}
