@@ -1,4 +1,4 @@
-import { Commit } from "../entities/GitEntities";
+import { Commit, ReflogEntry, TagData } from "../entities/GitEntities";
 
 export interface IGitRepository {
   getCommits(path: string): Promise<Commit[]>;
@@ -11,6 +11,7 @@ export interface IGitRepository {
   fetch(path: string): Promise<void>;
   pull(path: string): Promise<void>;
   push(path: string): Promise<void>;
+  pushTags(path: string): Promise<void>;
 
   reset(
     path: string,
@@ -23,6 +24,7 @@ export interface IGitRepository {
   merge(path: string, branch: string): Promise<void>;
 
   createTag(path: string, name: string, hash?: string): Promise<void>;
+  deleteTag(path: string, name: string): Promise<void>;
   createBranch(path: string, name: string, hash: string): Promise<void>;
 
   getCommitTree(path: string, hash: string): Promise<string[]>;
@@ -39,4 +41,8 @@ export interface IGitRepository {
   ): Promise<Commit[]>;
 
   commitAmend(path: string, message: string): Promise<void>;
+
+  getReflog(path: string): Promise<ReflogEntry[]>;
+  
+  getTags(path: string): Promise<TagData[]>;
 }

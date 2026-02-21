@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { Commit } from "../../domain/entities/GitEntities";
+import { Commit, ReflogEntry, TagData } from "../../domain/entities/GitEntities";
 import { IGitRepository } from "../../domain/repositories/IGitRepository";
 
 export class TauriGitRepository implements IGitRepository {
@@ -40,6 +40,10 @@ export class TauriGitRepository implements IGitRepository {
     await invoke("git_push", { path });
   }
 
+  async pushTags(path: string): Promise<void> {
+    await invoke("git_push_tags", { path });
+  }
+
   async reset(path: string, hash: string, mode: 'soft' | 'mixed' | 'hard'): Promise<void> {
     await invoke("git_reset", { path, hash, mode: `--${mode}` });
   }
@@ -62,6 +66,10 @@ export class TauriGitRepository implements IGitRepository {
 
   async createTag(path: string, name: string, hash?: string): Promise<void> {
     await invoke("git_tag_create", { path, name, hash });
+  }
+
+  async deleteTag(path: string, name: string): Promise<void> {
+    await invoke("git_tag_delete", { path, name });
   }
 
   async createBranch(path: string, name: string, hash: string): Promise<void> {
@@ -88,5 +96,13 @@ export class TauriGitRepository implements IGitRepository {
 
   async commitAmend(path: string, message: string): Promise<void> {
     await invoke("git_commit_amend", { path, message });
+  }
+
+  async getReflog(path: string): Promise<ReflogEntry[]> {
+    return await invoke<ReflogEntry[]>("get_git_reflog", { path });
+  }
+
+  async getTags(path: string): Promise<TagData[]> {
+    return await invoke<TagData[]>("get_tags", { path });
   }
 }

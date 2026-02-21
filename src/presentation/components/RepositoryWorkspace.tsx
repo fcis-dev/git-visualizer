@@ -4,13 +4,17 @@ import {
   RefreshCw,
   ArrowLeft,
   Search,
-  Filter
+  Filter,
+  LifeBuoy,
+  Tag
 } from "lucide-react";
 import { SourceControl } from "./Sidebar/SourceControl";
 import { Graph } from "./Graph";
 import { DiffView } from "./DiffView";
 import { CommitDetails } from "./CommitDetails";
 import { HistoricalFileContentView } from "./HistoricalFileContentView";
+import { ReflogModal } from "./ReflogModal";
+import { TagsModal } from "./TagsModal";
 import { useGit } from "../hooks/useGit";
 import { useGitActions } from "../hooks/useGitActions";
 import { useDialog } from "../context/DialogContext";
@@ -43,6 +47,9 @@ export function RepositoryWorkspace({
     path: string;
     commitHash: string;
   } | null>(null);
+
+  const [isReflogModalOpen, setIsReflogModalOpen] = useState(false);
+  const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
 
   // Global search state
   const [searchType, setSearchType] = useState<"all" | "message" | "author" | "file">("all");
@@ -274,6 +281,24 @@ export function RepositoryWorkspace({
 
         <div className="flex items-center space-x-2">
           {/* Actions */}
+          
+          <button
+            onClick={() => setIsTagsModalOpen(true)}
+            className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg transition-colors border border-blue-200 dark:border-blue-500/20 text-sm font-medium"
+            title="Manage Tags"
+          >
+            <Tag className="w-4 h-4" />
+            <span>Tags</span>
+          </button>
+
+          <button
+            onClick={() => setIsReflogModalOpen(true)}
+            className="flex items-center space-x-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-lg transition-colors border border-amber-200 dark:border-amber-500/20 text-sm font-medium"
+            title="Rescue Center (Reflog)"
+          >
+            <LifeBuoy className="w-4 h-4" />
+            <span>Rescue</span>
+          </button>
 
           <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2" />
 
@@ -441,6 +466,22 @@ export function RepositoryWorkspace({
         )}
 
       </main>
+
+      {/* Overlays */}
+      {isReflogModalOpen && (
+        <ReflogModal
+          repoPath={repoPath}
+          onClose={() => setIsReflogModalOpen(false)}
+          onRestore={() => loadCommits()}
+        />
+      )}
+      {isTagsModalOpen && (
+        <TagsModal
+          repoPath={repoPath}
+          onClose={() => setIsTagsModalOpen(false)}
+          onRefreshGraph={() => loadCommits()}
+        />
+      )}
     </div>
   );
 }

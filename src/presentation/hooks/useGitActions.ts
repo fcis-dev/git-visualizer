@@ -57,6 +57,18 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         onSuccess?.();
     };
 
+    const pushTags = async () => {
+        if (!repoPath) return;
+        await repository.pushTags(repoPath);
+        onSuccess?.();
+    };
+
+    const deleteTag = async (name: string) => {
+        if (!repoPath) return;
+        await repository.deleteTag(repoPath, name);
+        onSuccess?.();
+    };
+
     const createBranch = async (name: string, hash: string) => {
         if (!repoPath) return;
         await repository.createBranch(repoPath, name, hash);
@@ -94,6 +106,16 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         return await repository.commitAmend(repoPath, message);
     };
 
+    const getReflog = async () => {
+        if (!repoPath) return [];
+        return await repository.getReflog(repoPath);
+    };
+
+    const getTags = async () => {
+        if (!repoPath) return [];
+        return await repository.getTags(repoPath);
+    };
+
     return {
         checkoutCommit,
         checkoutBranch,
@@ -104,12 +126,16 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         revert,
         merge,
         createTag,
+        pushTags,
+        deleteTag,
         createBranch,
         getCommitDetails,
         resolveConflict,
         getCommitTree,
         getFileContentAtCommit,
         searchCommits,
-        commitAmend
+        commitAmend,
+        getReflog,
+        getTags
     };
 }

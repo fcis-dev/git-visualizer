@@ -165,10 +165,17 @@ export const Graph: React.FC<GraphProps> = ({ commits, selectedCommit, onSelectC
                  let textFill = isDark ? "#fff" : "#0f172a";
                  let border = isDark ? "#475569" : "#cbd5e1";
 
+                 const isTag = ref.startsWith("tag: ");
+                 const displayName = isTag ? ref.substring(5) : ref;
+
                  if (ref.includes("HEAD")) {
                      bgFill = isDark ? "#065f46" : "#d1fae5"; // emerald-800 / emerald-100
                      textFill = isDark ? "#d1fae5" : "#065f46";
                      border = isDark ? "#047857" : "#6ee7b7";
+                 } else if (isTag) {
+                     bgFill = isDark ? "#422006" : "#fef3c7"; // amber-950 / amber-100
+                     textFill = isDark ? "#fde68a" : "#d97706";
+                     border = isDark ? "#d97706" : "#fcd34d";
                  } else if (ref.includes("origin")) {
                      bgFill = isDark ? "#1e3a8a" : "#dbeafe"; // blue-900 / blue-100
                      textFill = isDark ? "#dbeafe" : "#1e40af";
@@ -176,7 +183,7 @@ export const Graph: React.FC<GraphProps> = ({ commits, selectedCommit, onSelectC
                  }
 
                  const text = g.append("text")
-                    .text(ref)
+                    .text(displayName)
                     .attr("font-size", "10px")
                     .attr("font-family", "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace")
                     .attr("fill", textFill)

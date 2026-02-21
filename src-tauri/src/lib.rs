@@ -26,6 +26,7 @@ pub fn run() {
             commands::git_unstage,
             commands::git_commit,
             commands::git_push,
+            commands::git_push_tags,
             commands::git_pull,
             commands::get_current_branch,
             commands::git_fetch_prune,
@@ -37,6 +38,7 @@ pub fn run() {
             commands::git_diff,
             commands::git_tag_create,
             commands::git_tag_delete,
+            commands::get_tags,
             commands::git_branch_create,
             commands::git_checkout_branch,
             commands::git_checkout_commit,
@@ -54,7 +56,8 @@ pub fn run() {
             commands::get_commit_tree,
             commands::get_file_content_at_commit,
             commands::search_commits,
-            commands::git_commit_amend
+            commands::git_commit_amend,
+            commands::get_git_reflog
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

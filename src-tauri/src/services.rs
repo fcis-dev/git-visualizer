@@ -1,4 +1,6 @@
-use crate::models::{CommitData, CommitDetails, FileChange, FileStatus, RepoData};
+use crate::models::{
+    CommitData, CommitDetails, FileChange, FileStatus, ReflogEntry, RepoData, TagData,
+};
 use git2::{Repository, Sort};
 use std::path::Path;
 use walkdir::WalkDir;
@@ -16,6 +18,9 @@ pub fn get_git_graph(path: &str) -> Result<Vec<CommitData>, String> {
         .push_glob("refs/remotes/*")
         .map_err(|e| e.to_string())?;
     revwalk
+        .push_glob("refs/tags/*")
+        .map_err(|e| e.to_string())?;
+    revwalk
         .set_sorting(Sort::TOPOLOGICAL | Sort::TIME)
         .map_err(|e| e.to_string())?;
 
@@ -27,7 +32,12 @@ pub fn get_git_graph(path: &str) -> Result<Vec<CommitData>, String> {
                 let name = reference.shorthand().unwrap_or("").to_string();
                 if let Ok(resolved) = reference.peel_to_commit() {
                     let id = resolved.id().to_string();
-                    refs_map.entry(id).or_default().push(name);
+                    let display_name = if reference.is_tag() {
+                        format!("tag: {}", name)
+                    } else {
+                        name
+                    };
+                    refs_map.entry(id).or_default().push(display_name);
                 }
             }
         }
@@ -309,12 +319,16 @@ pub fn git_push(path: &str) -> Result<String, String> {
     run_git_cmd(path, &["push"])
 }
 
+pub fn git_push_tags(path: &str) -> Result<String, String> {
+    run_git_cmd(path, &["push", "--tags"])
+}
+
 pub fn git_pull(path: &str) -> Result<String, String> {
     run_git_cmd(path, &["pull"])
 }
 
 pub fn git_fetch_prune(path: &str) -> Result<String, String> {
-    run_git_cmd(path, &["fetch", "--prune", "--all"])
+    run_git_cmd(path, &["fetch", "--prune", "--all", "--tags"])
 }
 
 pub fn git_merge(path: &str, branch: &str) -> Result<String, String> {
@@ -625,4 +639,96 @@ fn search_commits_internal(
     }
 
     Ok(commits)
+}
+
+pub fn get_git_reflog(path: &str) -> Result<Vec<ReflogEntry>, String> {
+    let output = run_git_cmd(path, &["reflog", "-n", "100"])?;
+    let mut entries = Vec::new();
+
+    for line in output.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        // Example line:
+        // 9b6d61d HEAD@{0}: commit: my message here
+        // 564177c HEAD@{1}: reset: moving to HEAD~1
+
+        // Handle variations gracefully
+        // Handle variations gracefully
+        let hash_index_part;
+        let action_message_part;
+
+        if let Some(pos) = line.find(": ") {
+            hash_index_part = &line[..pos];
+            action_message_part = &line[pos + 2..];
+        } else {
+            hash_index_part = line;
+            action_message_part = "";
+        }
+
+        let hash_index_split: Vec<&str> = hash_index_part.split_whitespace().collect();
+        if hash_index_split.len() < 2 {
+            continue;
+        }
+
+        let hash = hash_index_split[0].to_string();
+        let index = hash_index_split[1..].join(" ");
+
+        let action;
+        let message;
+
+        if let Some(pos) = action_message_part.find(": ") {
+            action = action_message_part[..pos].to_string();
+            message = action_message_part[pos + 2..].to_string();
+        } else {
+            action = action_message_part.to_string();
+            message = String::new();
+        }
+
+        entries.push(ReflogEntry {
+            hash,
+            index,
+            action,
+            message,
+        });
+    }
+
+    Ok(entries)
+}
+
+pub fn get_tags(path: &str) -> Result<Vec<TagData>, String> {
+    let output = run_git_cmd(
+        path,
+        &[
+            "tag",
+            "-l",
+            "--format=%(refname:short)|||%(subject)|||%(creatordate:unix)|||%(objectname)",
+        ],
+    )?;
+
+    let mut tags = Vec::new();
+
+    for line in output.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        let parts: Vec<&str> = line.split("|||").collect();
+        if parts.len() >= 4 {
+            let name = parts[0].to_string();
+            let message = parts[1].to_string();
+            let date = parts[2].parse::<i64>().unwrap_or(0);
+            let hash = parts[3].to_string();
+
+            tags.push(TagData {
+                name,
+                message,
+                date,
+                hash,
+            });
+        }
+    }
+
+    Ok(tags)
 }

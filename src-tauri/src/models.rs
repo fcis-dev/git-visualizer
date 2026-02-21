@@ -40,3 +40,19 @@ pub struct CommitDetails {
     pub parents: Vec<String>,
     pub files: Vec<FileChange>,
 }
+
+#[derive(Debug, Serialize)]
+pub struct ReflogEntry {
+    pub hash: String,
+    pub index: String,
+    pub action: String,
+    pub message: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TagData {
+    pub name: String,
+    pub message: String,
+    pub date: i64,
+    pub hash: String,
+}

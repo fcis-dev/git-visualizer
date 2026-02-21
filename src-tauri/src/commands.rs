@@ -1,6 +1,6 @@
 use crate::config;
 use crate::config::AppState;
-use crate::models::{CommitData, CommitDetails, FileStatus, RepoData};
+use crate::models::{CommitData, CommitDetails, FileStatus, ReflogEntry, RepoData, TagData};
 use crate::services;
 use tauri::State; // use services module
 
@@ -74,6 +74,11 @@ pub fn git_push(path: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub fn git_push_tags(path: &str) -> Result<String, String> {
+    services::git_push_tags(path)
+}
+
+#[tauri::command]
 pub fn git_pull(path: &str) -> Result<String, String> {
     services::git_pull(path)
 }
@@ -129,6 +134,11 @@ pub fn git_tag_delete(path: &str, name: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub fn get_tags(path: &str) -> Result<Vec<TagData>, String> {
+    services::get_tags(path)
+}
+
+#[tauri::command]
 pub fn git_branch_create(path: &str, name: &str, hash: &str) -> Result<String, String> {
     services::git_branch_create(path, name, hash)
 }
@@ -146,6 +156,11 @@ pub fn git_checkout_commit(path: &str, hash: &str) -> Result<String, String> {
 #[tauri::command]
 pub fn git_reset(path: &str, hash: &str, mode: &str) -> Result<String, String> {
     services::git_reset(path, hash, mode)
+}
+
+#[tauri::command]
+pub fn get_git_reflog(path: &str) -> Result<Vec<ReflogEntry>, String> {
+    services::get_git_reflog(path)
 }
 
 #[tauri::command]

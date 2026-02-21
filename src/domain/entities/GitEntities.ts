@@ -23,3 +23,17 @@ export interface FileChange {
 export interface CommitDetails extends Commit {
     files: FileChange[];
 }
+
+export interface ReflogEntry {
+  hash: string;
+  index: string;
+  action: string;
+  message: string;
+}
+
+export interface TagData {
+  name: string;
+  message: string;
+  date: number;
+  hash: string;
+}
