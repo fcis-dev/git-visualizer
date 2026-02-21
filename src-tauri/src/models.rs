@@ -56,3 +56,10 @@ pub struct TagData {
     pub date: i64,
     pub hash: String,
 }
+
+#[derive(Debug, Serialize)]
+pub struct StashEntry {
+    pub index: String,
+    pub message: String,
+    pub hash: String,
+}

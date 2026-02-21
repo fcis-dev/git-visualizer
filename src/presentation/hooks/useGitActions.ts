@@ -136,6 +136,25 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         searchCommits,
         commitAmend,
         getReflog,
-        getTags
+        getTags,
+        getStashes: async () => repoPath ? await repository.getStashes(repoPath) : [],
+        applyStash: async (index: string) => {
+            if (repoPath) {
+                await repository.applyStash(repoPath, index);
+                onSuccess?.();
+            }
+        },
+        dropStash: async (index: string) => {
+            if (repoPath) {
+                await repository.dropStash(repoPath, index);
+                onSuccess?.();
+            }
+        },
+        popStash: async () => {
+             if (repoPath) {
+                 await repository.stashPop(repoPath);
+                 onSuccess?.();
+             }
+        }
     };
 }

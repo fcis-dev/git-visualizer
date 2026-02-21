@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { RefreshCw, Play, Check, X, ArrowUp, ArrowDown, Archive, ArchiveRestore, Globe, Plus, Trash2, RotateCcw } from 'lucide-react';
+import { RefreshCw, Play, Check, X, ArrowUp, ArrowDown, Archive, Globe, Plus, Trash2, RotateCcw } from 'lucide-react';
 import { useDialog } from '../../context/DialogContext';
 import { Commit } from '../../../domain/entities/GitEntities';
+import { StashesModal } from '../StashesModal';
 
 interface FileStatus {
   path: string;
@@ -29,6 +30,8 @@ export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }
   
   const [isAmend, setIsAmend] = useState(false);
   const [previousMessage, setPreviousMessage] = useState("");
+
+  const [isStashesModalOpen, setIsStashesModalOpen] = useState(false);
 
   const { showInput, showAlert, showConfirm } = useDialog();
 
@@ -226,20 +229,6 @@ export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }
     );
   };
 
-  const handleStashPop = async () => {
-    if (!repoPath) return;
-    setStashLoading(true);
-    try {
-        await invoke('git_stash_pop', { path: repoPath });
-        loadStatus();
-    } catch (err: any) {
-        console.error("Failed to pop stash", err);
-        setError(err.toString());
-    } finally {
-        setStashLoading(false);
-    }
-  };
-
   const loadRemotes = async () => {
       if (!repoPath) return;
       try {
@@ -350,13 +339,12 @@ export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }
                 <span>Stash</span>
             </button>
             <button
-                onClick={handleStashPop}
+                onClick={() => setIsStashesModalOpen(true)}
                 disabled={stashLoading}
-                className="flex-1 flex items-center justify-center space-x-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 py-1.5 rounded text-xs transition-colors"
-                title="Pop Stash"
+                className="flex-[2] flex items-center justify-center space-x-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 py-1.5 rounded text-xs transition-colors font-medium border border-emerald-200/50 dark:border-emerald-500/20"
+                title="Manage Stashes"
             >
-                <ArchiveRestore className="w-3.5 h-3.5" />
-                <span>Pop</span>
+                <span>Stashes</span>
             </button>
         </div>
 
@@ -590,6 +578,17 @@ export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }
         </div>
 
       </div>
+
+      {isStashesModalOpen && repoPath && (
+        <StashesModal
+          repoPath={repoPath}
+          onClose={() => setIsStashesModalOpen(false)}
+          onRefreshGraph={() => {
+              loadStatus();
+              if (onCommit) onCommit(); // Trigger graph reload
+          }}
+        />
+      )}
     </div>
   );
 }

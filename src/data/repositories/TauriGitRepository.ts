@@ -52,6 +52,26 @@ export class TauriGitRepository implements IGitRepository {
     await invoke("git_rebase", { path, branch });
   }
 
+  async stashSave(path: string, message?: string): Promise<void> {
+    await invoke("git_stash_save", { path, message });
+  }
+
+  async stashPop(path: string): Promise<void> {
+    await invoke("git_stash_pop", { path });
+  }
+
+  async getStashes(path: string): Promise<import("../../domain/entities/GitEntities").StashEntry[]> {
+    return await invoke("git_stash_list", { path });
+  }
+
+  async applyStash(path: string, index: string): Promise<void> {
+    await invoke("git_stash_apply", { path, index });
+  }
+
+  async dropStash(path: string, index: string): Promise<void> {
+    await invoke("git_stash_drop", { path, index });
+  }
+
   async cherryPick(path: string, hash: string): Promise<void> {
     await invoke("git_cherry_pick", { path, hash });
   }

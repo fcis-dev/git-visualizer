@@ -37,3 +37,9 @@ export interface TagData {
   date: number;
   hash: string;
 }
+
+export interface StashEntry {
+  index: string;
+  message: string;
+  hash: string;
+}

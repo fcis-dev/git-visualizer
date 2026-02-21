@@ -109,6 +109,21 @@ pub fn git_stash_pop(path: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub fn git_stash_list(path: &str) -> Result<Vec<crate::models::StashEntry>, String> {
+    services::git_stash_list(path)
+}
+
+#[tauri::command]
+pub fn git_stash_apply(path: &str, index: &str) -> Result<String, String> {
+    services::git_stash_apply(path, index)
+}
+
+#[tauri::command]
+pub fn git_stash_drop(path: &str, index: &str) -> Result<String, String> {
+    services::git_stash_drop(path, index)
+}
+
+#[tauri::command]
 pub fn git_cherry_pick(path: &str, hash: &str) -> Result<String, String> {
     services::git_cherry_pick(path, hash)
 }

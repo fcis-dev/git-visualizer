@@ -1,5 +1,5 @@
 use crate::models::{
-    CommitData, CommitDetails, FileChange, FileStatus, ReflogEntry, RepoData, TagData,
+    CommitData, CommitDetails, FileChange, FileStatus, ReflogEntry, RepoData, StashEntry, TagData,
 };
 use git2::{Repository, Sort};
 use std::path::Path;
@@ -345,6 +345,35 @@ pub fn git_stash_save(path: &str, message: Option<String>) -> Result<String, Str
 
 pub fn git_stash_pop(path: &str) -> Result<String, String> {
     run_git_cmd(path, &["stash", "pop"])
+}
+
+pub fn git_stash_list(path: &str) -> Result<Vec<StashEntry>, String> {
+    let output = run_git_cmd(path, &["stash", "list", "--format=%gd|||%H|||%gs"])?;
+    let mut entries = Vec::new();
+
+    for line in output.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        let parts: Vec<&str> = line.split("|||").collect();
+        if parts.len() == 3 {
+            entries.push(StashEntry {
+                index: parts[0].trim().to_string(),
+                hash: parts[1].trim().to_string(),
+                message: parts[2].trim().to_string(),
+            });
+        }
+    }
+
+    Ok(entries)
+}
+
+pub fn git_stash_apply(path: &str, index: &str) -> Result<String, String> {
+    run_git_cmd(path, &["stash", "apply", index])
+}
+
+pub fn git_stash_drop(path: &str, index: &str) -> Result<String, String> {
+    run_git_cmd(path, &["stash", "drop", index])
 }
 
 pub fn git_cherry_pick(path: &str, hash: &str) -> Result<String, String> {

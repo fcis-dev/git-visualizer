@@ -22,6 +22,12 @@ export interface IGitRepository {
   cherryPick(path: string, hash: string): Promise<void>;
   revert(path: string, hash: string): Promise<void>;
   merge(path: string, branch: string): Promise<void>;
+  
+  stashSave(path: string, message?: string): Promise<void>;
+  stashPop(path: string): Promise<void>;
+  getStashes(path: string): Promise<import("../entities/GitEntities").StashEntry[]>;
+  applyStash(path: string, index: string): Promise<void>;
+  dropStash(path: string, index: string): Promise<void>;
 
   createTag(path: string, name: string, hash?: string): Promise<void>;
   deleteTag(path: string, name: string): Promise<void>;
