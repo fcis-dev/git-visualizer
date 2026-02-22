@@ -10,7 +10,7 @@ import {
   Check,
 } from "lucide-react";
 import { SourceControl } from "./Sidebar/SourceControl";
-import { Graph } from "./Graph";
+import { Graph, GraphHandle } from "./Graph";
 import { DiffView } from "./DiffView";
 import { CommitDetails } from "./CommitDetails";
 import { HistoricalFileContentView } from "./HistoricalFileContentView";
@@ -67,7 +67,13 @@ export function RepositoryWorkspace({
   >(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const [isScrollingToHead, setIsScrollingToHead] = useState(false);
   const searchTimeoutRef = useRef<number | null>(null);
+  const graphRef = useRef<GraphHandle>(null);
+  // We keep a ref of commits & loadMoreCommits to avoid stale closures in async loops
+  const commitsRef = useRef<Commit[]>([]);
+  const hasMoreRef = useRef<boolean>(true);
+  const isLoadingMoreRef = useRef<boolean>(false);
 
   // Using existing hooks
   const {
@@ -81,6 +87,11 @@ export function RepositoryWorkspace({
     hasMore,
     setError,
   } = useGit(repoPath);
+
+  // Keep refs in sync for use inside async loops (avoids stale closures)
+  useEffect(() => { commitsRef.current = commits; }, [commits]);
+  useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
+  useEffect(() => { isLoadingMoreRef.current = isLoadingMore; }, [isLoadingMore]);
 
   // Filter commits based on search query
   const filteredLocalCommits = commits.filter(
@@ -101,6 +112,42 @@ export function RepositoryWorkspace({
   };
 
   const gitActions = useGitActions(repoPath, onActionSuccess);
+
+  // Scroll the graph to the HEAD commit of the current branch.
+  // If the commit hasn't been loaded yet, keeps loading more pages until it appears.
+  const handleScrollToHead = async () => {
+    if (!branchName || isScrollingToHead) return;
+
+    // Try immediately with already-loaded commits
+    const found = graphRef.current?.scrollToHash(
+      commitsRef.current.find((c) => c.refs?.includes(branchName))?.hash ?? ""
+    );
+    if (found) return;
+
+    setIsScrollingToHead(true);
+    try {
+      // Keep loading pages until we find the commit or run out
+      while (hasMoreRef.current) {
+        if (isLoadingMoreRef.current) {
+          // Wait for the ongoing load to finish
+          await new Promise((r) => setTimeout(r, 300));
+          continue;
+        }
+        await loadMoreCommits();
+        // Small yield so React can flush the state update
+        await new Promise((r) => setTimeout(r, 50));
+        const headCommit = commitsRef.current.find((c) => c.refs?.includes(branchName));
+        if (headCommit) {
+          graphRef.current?.scrollToHash(headCommit.hash);
+          return;
+        }
+      }
+      // If we exhausted all commits and still didn't find it, just scroll to top
+      graphRef.current?.scrollToTop();
+    } finally {
+      setIsScrollingToHead(false);
+    }
+  };
 
   // Perform global backend search when query changes
   useEffect(() => {
@@ -348,6 +395,29 @@ export function RepositoryWorkspace({
               </>
             )}
           </div>
+
+          {/* Scroll to HEAD button */}
+          {commits.length > 0 && (
+            <button
+              onClick={handleScrollToHead}
+              disabled={isScrollingToHead}
+              className="flex items-center space-x-1 px-2 py-1 text-xs text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded transition-colors border border-transparent hover:border-indigo-200 dark:hover:border-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={isScrollingToHead ? "Buscando commit HEAD…" : "Ir al commit HEAD de la rama actual"}
+            >
+              {isScrollingToHead ? (
+                <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="12" cy="12" r="10" strokeWidth="3" strokeDasharray="31.4 31.4" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <polyline points="8 12 12 8 16 12" />
+                  <line x1="12" y1="8" x2="12" y2="16" />
+                </svg>
+              )}
+              <span>HEAD</span>
+            </button>
+          )}
         </div>
 
         <div className="flex items-center space-x-2">
@@ -472,12 +542,14 @@ export function RepositoryWorkspace({
           {/* Graph */}
           <div className="flex-1 overflow-hidden flex flex-col relative">
             <Graph
+              ref={graphRef}
               commits={displayCommits}
               selectedCommit={selectedCommit}
               onSelectCommit={setSelectedCommit}
-              onLoadMore={globalSearchResults === null ? loadMoreCommits : undefined}
+              onLoadMore={commitSearchQuery.trim().length === 0 ? loadMoreCommits : undefined}
               isLoadingMore={isLoadingMore}
-              hasMore={globalSearchResults === null ? hasMore : false}
+              hasMore={commitSearchQuery.trim().length === 0 ? hasMore : false}
+              isSearchResult={commitSearchQuery.trim().length > 0}
             />
           </div>
 

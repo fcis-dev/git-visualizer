@@ -1,8 +1,13 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useImperativeHandle } from "react";
 import * as d3 from "d3";
 import { Commit } from "../../domain/entities/GitEntities";
 import { calculateGraphLayout, LANE_COLORS } from "../utils/graphLayout";
 import { useTheme } from "../context/ThemeContext";
+
+export interface GraphHandle {
+  scrollToTop: () => void;
+  scrollToHash: (hash: string) => boolean; // returns false if hash not in current commits
+}
 
 interface GraphProps {
   commits: Commit[];
@@ -11,18 +16,38 @@ interface GraphProps {
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   hasMore?: boolean;
+  isSearchResult?: boolean;
 }
 
-export const Graph: React.FC<GraphProps> = ({
+export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph({
   commits,
   selectedCommit,
   onSelectCommit,
   onLoadMore,
   isLoadingMore = false,
   hasMore = false,
-}) => {
+  isSearchResult = false,
+}, ref) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Row layout constants must match graphLayout.ts
+  const ROW_HEIGHT = 56;
+  const PADDING_Y = 25;
+
+  useImperativeHandle(ref, () => ({
+    scrollToTop: () => containerRef.current?.scrollTo({ top: 0, behavior: "smooth" }),
+    scrollToHash: (hash: string) => {
+      const idx = commits.findIndex((c) => c.hash === hash);
+      if (idx === -1) return false;
+      const y = idx * ROW_HEIGHT + PADDING_Y;
+      const container = containerRef.current;
+      if (!container) return false;
+      const center = y - container.clientHeight / 2 + ROW_HEIGHT / 2;
+      container.scrollTo({ top: Math.max(0, center), behavior: "smooth" });
+      return true;
+    },
+  }));
   const sentinelRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
 
@@ -30,7 +55,7 @@ export const Graph: React.FC<GraphProps> = ({
 
   useEffect(() => {
     if (!containerRef.current) return;
-    
+
     let timeoutId: number;
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -40,7 +65,7 @@ export const Graph: React.FC<GraphProps> = ({
         }, 150);
       }
     });
-    
+
     observer.observe(containerRef.current);
     return () => {
       clearTimeout(timeoutId);
@@ -58,7 +83,7 @@ export const Graph: React.FC<GraphProps> = ({
           onLoadMore();
         }
       },
-      { root: containerRef.current, threshold: 0.1 }
+      { root: containerRef.current, threshold: 0.1 },
     );
     io.observe(sentinel);
     return () => io.disconnect();
@@ -76,7 +101,12 @@ export const Graph: React.FC<GraphProps> = ({
       return;
     }
 
-    const { nodes, links } = calculateGraphLayout(commits);
+    // When showing search results, strip parent relationships so the layout
+    // renders a flat list instead of trying to draw edges to missing commits.
+    const commitsForLayout = isSearchResult
+      ? commits.map((c) => ({ ...c, parents: [] }))
+      : commits;
+    const { nodes, links } = calculateGraphLayout(commitsForLayout);
 
     // Ensure row height matches `ROW_HEIGHT` in `graphLayout.ts` (56px)
     const rowHeight = 56;
@@ -221,75 +251,95 @@ export const Graph: React.FC<GraphProps> = ({
 
       let tagsHtml = "";
       if (d.refs && d.refs.length > 0) {
-        const tags = d.refs.map((ref) => {
-          let bgFill = isDark ? "#312e81" : "#e0e7ff";
-          let textFill = isDark ? "#e0e7ff" : "#4338ca";
-          let border = isDark ? "#3730a3" : "#c7d2fe";
+        const tags = d.refs
+          .map((ref) => {
+            let bgFill = isDark ? "#312e81" : "#e0e7ff";
+            let textFill = isDark ? "#e0e7ff" : "#4338ca";
+            let border = isDark ? "#3730a3" : "#c7d2fe";
 
-          const isTag = ref.startsWith("tag: ");
-          const displayName = isTag ? ref.substring(5) : ref;
+            const isTag = ref.startsWith("tag: ");
+            const displayName = isTag ? ref.substring(5) : ref;
 
-          if (ref.includes("HEAD") || isTag) {
-            bgFill = isDark ? "#064e3b" : "#d1fae5";
-            textFill = isDark ? "#d1fae5" : "#059669";
-            border = isDark ? "#065f46" : "#6ee7b7";
-          } else if (ref.includes("origin")) {
-            bgFill = isDark ? "#3730a3" : "#c7d2fe";
-            textFill = isDark ? "#e0e7ff" : "#3730a3";
-            border = isDark ? "#4338ca" : "#a5b4fc";
-          }
-          
-          const safeDisplayName = displayName.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          return `<div style="background-color: ${bgFill}; color: ${textFill}; border: 1px solid ${border}; border-radius: 4px; padding: 1px 6px; font-size: 10px; line-height: 14px; white-space: nowrap; pointer-events: auto;">${safeDisplayName}</div>`;
-        }).join('');
-        
+            if (ref.includes("HEAD") || isTag) {
+              bgFill = isDark ? "#064e3b" : "#d1fae5";
+              textFill = isDark ? "#d1fae5" : "#059669";
+              border = isDark ? "#065f46" : "#6ee7b7";
+            } else if (ref.includes("origin")) {
+              bgFill = isDark ? "#3730a3" : "#c7d2fe";
+              textFill = isDark ? "#e0e7ff" : "#3730a3";
+              border = isDark ? "#4338ca" : "#a5b4fc";
+            }
+
+            const safeDisplayName = displayName
+              .replace(/"/g, "&quot;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;");
+            return `<div style="background-color: ${bgFill}; color: ${textFill}; border: 1px solid ${border}; border-radius: 4px; padding: 1px 6px; font-size: 10px; line-height: 14px; white-space: nowrap; pointer-events: auto;">${safeDisplayName}</div>`;
+          })
+          .join("");
+
         tagsHtml = `<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;">${tags}</div>`;
       }
 
-        const absoluteX = (d as any).x + currentX;
-        const minTextWidth = 450;
-        const foWidth = Math.max(minTextWidth, width - absoluteX - 16);
-        const foHeight = 88; // Increased heavily to allow wrapping of tags without clipping
-        
-        if (absoluteX + foWidth + 16 > maxContentWidth) {
-          maxContentWidth = absoluteX + foWidth + 16;
-        }
-        
-        const commitDate = new Date(d.date * 1000);
-        
-        const datePart = commitDate.toLocaleDateString(undefined, {
-            year: 'numeric',
-            month: 'short', 
-            day: 'numeric'
-        });
-        const timePart = commitDate.toLocaleTimeString(undefined, {
-            hour: '2-digit', 
-            minute: '2-digit'
-        });
+      const absoluteX = (d as any).x + currentX;
+      const minTextWidth = 450;
+      const foWidth = Math.max(minTextWidth, width - absoluteX - 16);
+      const foHeight = 88; // Increased heavily to allow wrapping of tags without clipping
 
-        const msgColor = selectedCommit?.hash === d.hash ? (isDark ? "#fff" : "#000") : mutedColor;
-        const msgWeight = selectedCommit?.hash === d.hash ? "bold" : "normal";
+      if (absoluteX + foWidth + 16 > maxContentWidth) {
+        maxContentWidth = absoluteX + foWidth + 16;
+      }
 
-        const fo = group.append("foreignObject")
-          .attr("x", currentX)
-          .attr("y", -16) // Shifted up slightly
-          .attr("width", foWidth)
-          .attr("height", foHeight)
-          .style("pointer-events", "none")
-          .style("overflow", "visible"); // Allow overflow just in case
+      const commitDate = new Date(d.date * 1000);
 
-        // Use standard double quotes for the template string and escape quotes in data
-        const safeMsg = d.message.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const safeAuthor = d.author.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const datePart = commitDate.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+      const timePart = commitDate.toLocaleTimeString(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
-        fo.append("xhtml:div")
-          .style("display", "flex")
-          .style("align-items", "flex-start")
-          .style("gap", "16px")
-          .style("width", "100%")
-          .style("font-family", "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace")
-          .style("font-size", "12px")
-          .html(`
+      const msgColor =
+        selectedCommit?.hash === d.hash
+          ? isDark
+            ? "#fff"
+            : "#000"
+          : mutedColor;
+      const msgWeight = selectedCommit?.hash === d.hash ? "bold" : "normal";
+
+      const fo = group
+        .append("foreignObject")
+        .attr("x", currentX)
+        .attr("y", -16) // Shifted up slightly
+        .attr("width", foWidth)
+        .attr("height", foHeight)
+        .style("pointer-events", "none")
+        .style("overflow", "visible"); // Allow overflow just in case
+
+      // Use standard double quotes for the template string and escape quotes in data
+      const safeMsg = d.message
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      const safeAuthor = d.author
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+      fo
+        .append("xhtml:div")
+        .style("display", "flex")
+        .style("align-items", "flex-start")
+        .style("gap", "16px")
+        .style("width", "100%")
+        .style(
+          "font-family",
+          "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        )
+        .style("font-size", "12px").html(`
             <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
                 <div class="commit-message" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; color: ${msgColor}; font-weight: ${msgWeight}; pointer-events: auto; transition: color 0.1s;" title="${safeMsg}">
                   ${safeMsg}
@@ -308,7 +358,6 @@ export const Graph: React.FC<GraphProps> = ({
 
     // Expand the SVG canvas width if the content overflowed the container
     svg.attr("width", maxContentWidth);
-
   }, [commits, onSelectCommit, selectedCommit, theme, containerWidth]);
 
   return (
@@ -318,8 +367,19 @@ export const Graph: React.FC<GraphProps> = ({
       <div ref={sentinelRef} style={{ height: 1 }} />
       {isLoadingMore && (
         <div className="flex items-center justify-center py-4 text-slate-400 text-sm gap-2">
-          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <circle cx="12" cy="12" r="10" strokeWidth="3" strokeDasharray="31.4 31.4" />
+          <svg
+            className="animate-spin h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              strokeWidth="3"
+              strokeDasharray="31.4 31.4"
+            />
           </svg>
           Cargando más commits…
         </div>
@@ -331,4 +391,4 @@ export const Graph: React.FC<GraphProps> = ({
       )}
     </div>
   );
-};
+});
