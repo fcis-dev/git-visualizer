@@ -381,12 +381,12 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph({
               strokeDasharray="31.4 31.4"
             />
           </svg>
-          Cargando más commits…
+          Loading more commits…
         </div>
       )}
       {!hasMore && commits.length > 0 && (
         <div className="flex items-center justify-center py-3 text-slate-600 text-xs">
-          · Fin del historial ·
+          · End of history ·
         </div>
       )}
     </div>

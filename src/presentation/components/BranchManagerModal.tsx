@@ -74,9 +74,39 @@ export function BranchManagerModal({ repoPath, onClose, onRefreshGraph, currentB
     }
   };
 
-  // We don't have a specific deleteBranch action yet in useGitActions
-  // but we can add one if needed, or simply not offer delete for now.
-  // We'll leave the button out to keep it simple, or implement if needed.
+  const handleDelete = async (branch: BranchData) => {
+    showConfirm(
+      "Delete Branch",
+      `Are you sure you want to delete branch '${branch.name}'? This cannot be undone.`,
+      async () => {
+        try {
+          await gitActions.deleteBranch(branch.name, false);
+          await loadBranches();
+          onRefreshGraph();
+        } catch (e: any) {
+          const msg = e.toString();
+          if (msg.includes("not fully merged")) {
+            // Offer force-delete
+            showConfirm(
+              "Force Delete Branch",
+              `Branch '${branch.name}' is not fully merged. Force-delete it anyway?`,
+              async () => {
+                try {
+                  await gitActions.deleteBranch(branch.name, true);
+                  await loadBranches();
+                  onRefreshGraph();
+                } catch (fe: any) {
+                  setError(fe.toString());
+                }
+              }
+            );
+          } else {
+            setError(msg);
+          }
+        }
+      }
+    );
+  };
 
   const filteredBranches = branches.filter((branch) =>
     branch.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -169,15 +199,29 @@ export function BranchManagerModal({ repoPath, onClose, onRefreshGraph, currentB
                      )}
                   </div>
                   <div className="flex space-x-2">
-                    {!isActive && (
-                      <button
-                        onClick={() => handleCheckout(branch)}
-                        className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors rounded text-sm font-medium"
-                      >
-                        Checkout
-                      </button>
-                    )}
-                  </div>
+                     {!isActive && !branch.is_remote && (
+                       <button
+                         onClick={() => handleDelete(branch)}
+                         className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-all"
+                         title="Delete branch"
+                       >
+                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                           <polyline points="3 6 5 6 21 6" />
+                           <path d="M19 6l-1 14H6L5 6" />
+                           <path d="M10 11v6M14 11v6" />
+                           <path d="M9 6V4h6v2" />
+                         </svg>
+                       </button>
+                     )}
+                     {!isActive && (
+                       <button
+                         onClick={() => handleCheckout(branch)}
+                         className="opacity-0 group-hover:opacity-100 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors rounded text-sm font-medium"
+                       >
+                         Checkout
+                       </button>
+                     )}
+                   </div>
                 </div>
               );
             })}

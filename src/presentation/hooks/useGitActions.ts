@@ -75,6 +75,12 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         onSuccess?.();
     };
 
+    const deleteBranch = async (name: string, force = false) => {
+        if (!repoPath) return;
+        await repository.deleteBranch(repoPath, name, force);
+        onSuccess?.();
+    };
+
     const getCommitDetails = async (hash: string) => {
         if (!repoPath) return null;
         return await repository.getCommitDetails(repoPath, hash);
@@ -96,9 +102,9 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         return await repository.getFileContentAtCommit(repoPath, hash, filePath);
     };
 
-    const searchCommits = async (query: string, searchType: "all" | "message" | "author" | "file") => {
+    const searchCommits = async (query: string, searchType: "all" | "message" | "author" | "file", branches?: string[], skip = 0, limit = 50) => {
         if (!repoPath) return [];
-        return await repository.searchCommits(repoPath, query, searchType);
+        return await repository.searchCommits(repoPath, query, searchType, branches, skip, limit);
     };
 
     const commitAmend = async (message: string) => {
@@ -134,6 +140,7 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         pushTags,
         deleteTag,
         createBranch,
+        deleteBranch,
         getCommitDetails,
         resolveConflict,
         getCommitTree,

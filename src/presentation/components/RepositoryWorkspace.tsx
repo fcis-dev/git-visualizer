@@ -66,11 +66,14 @@ export function RepositoryWorkspace({
     Commit[] | null
   >(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasMoreSearch, setHasMoreSearch] = useState(false);
+  const [isLoadingMoreSearch, setIsLoadingMoreSearch] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isScrollingToHead, setIsScrollingToHead] = useState(false);
+  const [graphBranches, setGraphBranches] = useState<string[]>([]); // empty = all branches
+  const [isBranchFilterOpen, setIsBranchFilterOpen] = useState(false);
   const searchTimeoutRef = useRef<number | null>(null);
   const graphRef = useRef<GraphHandle>(null);
-  // We keep a ref of commits & loadMoreCommits to avoid stale closures in async loops
   const commitsRef = useRef<Commit[]>([]);
   const hasMoreRef = useRef<boolean>(true);
   const isLoadingMoreRef = useRef<boolean>(false);
@@ -86,7 +89,7 @@ export function RepositoryWorkspace({
     isLoadingMore,
     hasMore,
     setError,
-  } = useGit(repoPath);
+  } = useGit(repoPath, graphBranches);
 
   // Keep refs in sync for use inside async loops (avoids stale closures)
   useEffect(() => { commitsRef.current = commits; }, [commits]);
@@ -149,10 +152,12 @@ export function RepositoryWorkspace({
     }
   };
 
-  // Perform global backend search when query changes
+  // Perform global backend search when query changes (first page)
+  const SEARCH_PAGE = 50;
   useEffect(() => {
     if (commitSearchQuery.trim().length === 0) {
       setGlobalSearchResults(null);
+      setHasMoreSearch(false);
       setIsSearching(false);
       return;
     }
@@ -162,24 +167,52 @@ export function RepositoryWorkspace({
     }
 
     setIsSearching(true);
+    setGlobalSearchResults(null);
+    setHasMoreSearch(false);
     searchTimeoutRef.current = window.setTimeout(() => {
       gitActions
-        .searchCommits(commitSearchQuery, searchType)
+        .searchCommits(commitSearchQuery, searchType, graphBranches.length > 0 ? graphBranches : undefined, 0, SEARCH_PAGE)
         .then((results) => {
-          setGlobalSearchResults(results);
+          const hasMore = results.length > SEARCH_PAGE;
+          setGlobalSearchResults(hasMore ? results.slice(0, SEARCH_PAGE) : results);
+          setHasMoreSearch(hasMore);
           setIsSearching(false);
         })
         .catch((err) => {
           console.error("Search failed:", err);
           setGlobalSearchResults(null);
+          setHasMoreSearch(false);
           setIsSearching(false);
         });
-    }, 500); // 500ms debounce
+    }, 500);
 
     return () => {
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     };
-  }, [commitSearchQuery, searchType, repoPath]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [commitSearchQuery, searchType, repoPath, graphBranches]);
+
+  // Load next page of search results (append)
+  const loadMoreSearchResults = async () => {
+    if (!globalSearchResults || isLoadingMoreSearch || !hasMoreSearch) return;
+    setIsLoadingMoreSearch(true);
+    try {
+      const skip = globalSearchResults.length;
+      const results = await gitActions.searchCommits(
+        commitSearchQuery, searchType,
+        graphBranches.length > 0 ? graphBranches : undefined,
+        skip, SEARCH_PAGE
+      );
+      const hasMore = results.length > SEARCH_PAGE;
+      const toAdd = hasMore ? results.slice(0, SEARCH_PAGE) : results;
+      setGlobalSearchResults((prev) => [...(prev ?? []), ...toAdd]);
+      setHasMoreSearch(hasMore);
+    } catch (err) {
+      console.error("Load more search failed:", err);
+    } finally {
+      setIsLoadingMoreSearch(false);
+    }
+  };
 
   // Load commit details when selected
   useEffect(() => {
@@ -402,7 +435,7 @@ export function RepositoryWorkspace({
               onClick={handleScrollToHead}
               disabled={isScrollingToHead}
               className="flex items-center space-x-1 px-2 py-1 text-xs text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded transition-colors border border-transparent hover:border-indigo-200 dark:hover:border-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              title={isScrollingToHead ? "Buscando commit HEAD…" : "Ir al commit HEAD de la rama actual"}
+              title={isScrollingToHead ? "Locating HEAD commit…" : "Scroll to HEAD commit of current branch"}
             >
               {isScrollingToHead ? (
                 <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -478,8 +511,93 @@ export function RepositoryWorkspace({
 
         {/* Middle Column: History Graph & Search (and Overlay Diff) */}
         <div className="flex-1 flex flex-col relative overflow-hidden bg-white dark:bg-slate-950">
-          {/* Search Bar */}
-          <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex space-x-2">
+          {/* Search Bar — includes branch filter button */}
+          <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex space-x-2 items-center">
+            {/* Branch filter button */}
+            <div className="relative shrink-0 flex items-center">
+              <div className={`flex items-center border rounded transition-colors ${
+                graphBranches.length > 0
+                  ? "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/30"
+                  : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+              }`}>
+                <div className={`pl-2.5 pr-2 border-r flex items-center self-stretch ${
+                  graphBranches.length > 0
+                    ? "border-indigo-200 dark:border-indigo-500/30 text-indigo-500"
+                    : "border-slate-200 dark:border-slate-800 text-slate-400"
+                }`}>
+                  <GitBranch className="w-4 h-4" />
+                </div>
+                <button
+                  onClick={() => setIsBranchFilterOpen((v) => !v)}
+                  className={`py-2 pl-2 pr-2 text-sm focus:outline-none cursor-pointer flex items-center gap-1.5 ${
+                    graphBranches.length > 0
+                      ? "text-indigo-700 dark:text-indigo-300 font-medium"
+                      : "text-slate-700 dark:text-slate-300"
+                  }`}
+                >
+                  <span>
+                    {graphBranches.length === 0
+                      ? "All branches"
+                      : graphBranches.join(" + ")}
+                  </span>
+                  <svg className="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+              </div>
+              {/* Dropdown */}
+              {isBranchFilterOpen && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setIsBranchFilterOpen(false)} />
+                  <div className="absolute left-0 top-full mt-1 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-40 overflow-hidden">
+                    <button
+                      onClick={() => { setGraphBranches([]); setSelectedCommit(null); setCommitSearchQuery(""); setIsBranchFilterOpen(false); }}
+                      className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${
+                        graphBranches.length === 0 ? "text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50/50 dark:bg-indigo-500/5" : "text-slate-700 dark:text-slate-300"
+                      }`}
+                    >
+                      <span className={`w-4 h-4 flex items-center justify-center rounded border text-xs shrink-0 ${
+                        graphBranches.length === 0 ? "bg-indigo-500 border-indigo-500 text-white" : "border-slate-300 dark:border-slate-600"
+                      }`}>
+                        {graphBranches.length === 0 && <Check className="w-3 h-3" />}
+                      </span>
+                      <span>All branches</span>
+                    </button>
+                    <div className="max-h-52 overflow-y-auto custom-scrollbar">
+                      {availableBranches.map((b) => {
+                        const checked = graphBranches.includes(b);
+                        return (
+                          <button
+                            key={b}
+                            onClick={() => {
+                              setGraphBranches((prev) =>
+                                prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]
+                              );
+                              setSelectedCommit(null);
+                              setCommitSearchQuery("");
+                            }}
+                            className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${
+                              checked ? "text-indigo-700 dark:text-indigo-300" : "text-slate-700 dark:text-slate-300"
+                            }`}
+                          >
+                            <span className={`w-4 h-4 flex items-center justify-center rounded border shrink-0 transition-colors ${
+                              checked ? "bg-indigo-500 border-indigo-500 text-white" : "border-slate-300 dark:border-slate-600"
+                            }`}>
+                              {checked && <Check className="w-3 h-3" />}
+                            </span>
+                            <GitBranch className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                            <span className="truncate">{b}</span>
+                            {b === branchName && (
+                              <span className="ml-auto text-xs text-indigo-500 dark:text-indigo-400 shrink-0">current</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="w-4 h-4 text-slate-400" />
@@ -497,13 +615,24 @@ export function RepositoryWorkspace({
                 }
                 value={commitSearchQuery}
                 onChange={(e) => setCommitSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-slate-800 dark:text-slate-200 placeholder-slate-400 transition-colors"
+                className="w-full pl-9 pr-8 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-slate-800 dark:text-slate-200 placeholder-slate-400 transition-colors"
               />
-              {isSearching && (
+              {isSearching ? (
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <div className="animate-spin rounded-full h-3.5 w-3.5 border-t-2 border-b-2 border-indigo-500"></div>
                 </div>
-              )}
+              ) : commitSearchQuery.length > 0 ? (
+                <button
+                  onClick={() => setCommitSearchQuery("")}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  title="Clear search"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              ) : null}
             </div>
 
             <div className="relative shrink-0 flex items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded">
@@ -523,21 +652,7 @@ export function RepositoryWorkspace({
             </div>
           </div>
 
-          {/* Global Search Notice */}
-          {globalSearchResults !== null && (
-            <div className="bg-indigo-50 dark:bg-indigo-500/10 border-b border-indigo-100 dark:border-indigo-500/20 px-3 py-1.5 flex justify-between items-center text-xs">
-              <span className="text-indigo-700 dark:text-indigo-300">
-                Showing <strong>{globalSearchResults.length}</strong> global
-                search results for "{commitSearchQuery}"
-              </span>
-              <button
-                onClick={() => setCommitSearchQuery("")}
-                className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 font-medium underline"
-              >
-                Clear Search
-              </button>
-            </div>
-          )}
+
 
           {/* Graph */}
           <div className="flex-1 overflow-hidden flex flex-col relative">
@@ -546,9 +661,17 @@ export function RepositoryWorkspace({
               commits={displayCommits}
               selectedCommit={selectedCommit}
               onSelectCommit={setSelectedCommit}
-              onLoadMore={commitSearchQuery.trim().length === 0 ? loadMoreCommits : undefined}
-              isLoadingMore={isLoadingMore}
-              hasMore={commitSearchQuery.trim().length === 0 ? hasMore : false}
+              onLoadMore={
+                commitSearchQuery.trim().length > 0
+                  ? (hasMoreSearch ? loadMoreSearchResults : undefined)
+                  : loadMoreCommits
+              }
+              isLoadingMore={
+                commitSearchQuery.trim().length > 0 ? isLoadingMoreSearch : isLoadingMore
+              }
+              hasMore={
+                commitSearchQuery.trim().length > 0 ? hasMoreSearch : hasMore
+              }
               isSearchResult={commitSearchQuery.trim().length > 0}
             />
           </div>

@@ -1,14 +1,29 @@
 import { invoke } from "@tauri-apps/api/core";
-import { Commit, ReflogEntry, TagData } from "../../domain/entities/GitEntities";
+import {
+  Commit,
+  ReflogEntry,
+  TagData,
+} from "../../domain/entities/GitEntities";
 import { IGitRepository } from "../../domain/repositories/IGitRepository";
 
 export class TauriGitRepository implements IGitRepository {
-  async getCommits(path: string, skip: number = 0, limit: number = 150): Promise<Commit[]> {
-    return await invoke<Commit[]>("get_git_graph", { path, skip, limit });
+  async getCommits(
+    path: string,
+    skip: number = 0,
+    limit: number = 150,
+    branches?: string[],
+  ): Promise<Commit[]> {
+    const branchArg = branches && branches.length > 0 ? branches : null;
+    return await invoke<Commit[]>("get_git_graph", {
+      path,
+      skip,
+      limit,
+      branch: branchArg,
+    });
   }
 
   async getCommitDetails(path: string, hash: string): Promise<any> {
-      return await invoke("get_commit_details", { path, hash });
+    return await invoke("get_commit_details", { path, hash });
   }
 
   async getCurrentBranch(path: string): Promise<string> {
@@ -16,11 +31,15 @@ export class TauriGitRepository implements IGitRepository {
   }
 
   async getBranches(path: string): Promise<string[]> {
-      return await invoke<string[]>("get_branches", { path });
+    return await invoke<string[]>("get_branches", { path });
   }
 
-  async getBranchesInfo(path: string): Promise<import("../../domain/entities/GitEntities").BranchData[]> {
-      return await invoke<import("../../domain/entities/GitEntities").BranchData[]>("get_branches_info", { path });
+  async getBranchesInfo(
+    path: string,
+  ): Promise<import("../../domain/entities/GitEntities").BranchData[]> {
+    return await invoke<
+      import("../../domain/entities/GitEntities").BranchData[]
+    >("get_branches_info", { path });
   }
 
   async checkoutBranch(path: string, branch: string): Promise<void> {
@@ -47,7 +66,11 @@ export class TauriGitRepository implements IGitRepository {
     await invoke("git_push_tags", { path });
   }
 
-  async reset(path: string, hash: string, mode: 'soft' | 'mixed' | 'hard'): Promise<void> {
+  async reset(
+    path: string,
+    hash: string,
+    mode: "soft" | "mixed" | "hard",
+  ): Promise<void> {
     await invoke("git_reset", { path, hash, mode: `--${mode}` });
   }
 
@@ -56,19 +79,27 @@ export class TauriGitRepository implements IGitRepository {
   }
 
   async getRebaseState(path: string): Promise<boolean> {
-      return await invoke<boolean>("git_get_rebase_state", { path });
+    return await invoke<boolean>("git_get_rebase_state", { path });
   }
 
-  async rebaseInteractive(path: string, baseCommit: string, sequence: string): Promise<string> {
-      return await invoke<string>("git_rebase_interactive", { path, base_commit: baseCommit, sequence });
+  async rebaseInteractive(
+    path: string,
+    baseCommit: string,
+    sequence: string,
+  ): Promise<string> {
+    return await invoke<string>("git_rebase_interactive", {
+      path,
+      base_commit: baseCommit,
+      sequence,
+    });
   }
 
   async rebaseContinue(path: string): Promise<void> {
-      await invoke("git_rebase_continue", { path });
+    await invoke("git_rebase_continue", { path });
   }
 
   async rebaseAbort(path: string): Promise<void> {
-      await invoke("git_rebase_abort", { path });
+    await invoke("git_rebase_abort", { path });
   }
 
   async stashSave(path: string, message?: string): Promise<void> {
@@ -79,7 +110,9 @@ export class TauriGitRepository implements IGitRepository {
     await invoke("git_stash_pop", { path });
   }
 
-  async getStashes(path: string): Promise<import("../../domain/entities/GitEntities").StashEntry[]> {
+  async getStashes(
+    path: string,
+  ): Promise<import("../../domain/entities/GitEntities").StashEntry[]> {
     return await invoke("git_stash_list", { path });
   }
 
@@ -115,21 +148,49 @@ export class TauriGitRepository implements IGitRepository {
     await invoke("git_branch_create", { path, name, hash });
   }
 
-  async resolveConflict(path: string, file: string, strategy: 'ours' | 'theirs'): Promise<void> {
+  async deleteBranch(path: string, name: string, force: boolean = false): Promise<void> {
+    await invoke("git_branch_delete", { path, name, force });
+  }
+
+  async resolveConflict(
+    path: string,
+    file: string,
+    strategy: "ours" | "theirs",
+  ): Promise<void> {
     await invoke("git_resolve_conflict", { path, file, strategy });
   }
 
   async getCommitTree(path: string, hash: string): Promise<string[]> {
-      return await invoke<string[]>("get_commit_tree", { path, hash });
+    return await invoke<string[]>("get_commit_tree", { path, hash });
   }
 
-  async getFileContentAtCommit(path: string, hash: string, filePath: string): Promise<string> {
-      return await invoke<string>("get_file_content_at_commit", { path, hash, filePath });
+  async getFileContentAtCommit(
+    path: string,
+    hash: string,
+    filePath: string,
+  ): Promise<string> {
+    return await invoke<string>("get_file_content_at_commit", {
+      path,
+      hash,
+      filePath,
+    });
   }
 
-  async searchCommits(path: string, query: string, searchType: "all" | "message" | "author" | "file"): Promise<Commit[]> {
-      // In Rust the command name is search_commits, so the arguments are path, query, search_type
-      return await invoke<Commit[]>("search_commits", { path, query, searchType:      searchType
+  async searchCommits(
+    path: string,
+    query: string,
+    searchType: "all" | "message" | "author" | "file",
+    branches?: string[],
+    skip: number = 0,
+    limit: number = 50,
+  ): Promise<Commit[]> {
+    return await invoke<Commit[]>("search_commits", {
+      path,
+      query,
+      searchType,
+      branches: branches && branches.length > 0 ? branches : null,
+      skip,
+      limit,
     });
   }
 

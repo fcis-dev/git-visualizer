@@ -8,19 +8,39 @@ use std::path::Path;
 use walkdir::WalkDir;
 // use crate::config::AppState; // config logic stays in config.rs
 
-pub fn get_git_graph(path: &str, skip: usize, limit: usize) -> Result<Vec<CommitData>, String> {
+pub fn get_git_graph(
+    path: &str,
+    skip: usize,
+    limit: usize,
+    branches: Option<Vec<String>>,
+) -> Result<Vec<CommitData>, String> {
     let skip_str = skip.to_string();
     let limit_str = limit.to_string();
-    let args = vec![
+    let mut args = vec![
         "log",
-        "--all",
         "--topo-order",
-        "--format=%H%x00%an%x00%ct%x00%P%x00%D%x00%s", // Hash NULL Author NULL UnixTimestamp NULL Parents FULL NULL Refs NULL Subject
+        "--format=%H%x00%an%x00%ct%x00%P%x00%D%x00%s",
         "--skip",
         &skip_str,
         "-n",
         &limit_str,
     ];
+
+    // Keep branch strings alive for the borrow into args
+    let branch_strs: Vec<String>;
+    match &branches {
+        Some(bs) if !bs.is_empty() => {
+            // Insert each branch name after "log" (position 1)
+            // We insert in reverse order so indices stay correct
+            branch_strs = bs.clone();
+            for b in branch_strs.iter().rev() {
+                args.insert(1, b.as_str());
+            }
+        }
+        _ => {
+            args.insert(1, "--all");
+        }
+    }
 
     let output = run_git_cmd(path, &args)?;
 
@@ -541,6 +561,12 @@ pub fn git_checkout_branch(path: &str, branch: &str) -> Result<String, String> {
     run_git_cmd(path, &["checkout", branch])
 }
 
+/// Delete a local branch. If `force` is true, uses -D (force-delete even if not merged).
+pub fn git_branch_delete(path: &str, name: &str, force: bool) -> Result<String, String> {
+    let flag = if force { "-D" } else { "-d" };
+    run_git_cmd(path, &["branch", flag, name])
+}
+
 pub fn git_checkout_commit(path: &str, hash: &str) -> Result<String, String> {
     run_git_cmd(path, &["checkout", hash])
 }
@@ -700,11 +726,22 @@ pub fn search_commits(
     path: &str,
     query: &str,
     search_type: &str,
+    branches: Option<Vec<String>>,
+    skip: usize,
+    limit: usize,
 ) -> Result<Vec<CommitData>, String> {
     if search_type == "all" {
-        let msg_commits = search_commits_internal(path, query, "message").unwrap_or_default();
-        let author_commits = search_commits_internal(path, query, "author").unwrap_or_default();
-        let file_commits = search_commits_internal(path, query, "file").unwrap_or_default();
+        // Fetch enough from each sub-type to cover skip+limit after merge/dedup
+        let fetch_n = skip + limit + 1;
+        let msg_commits =
+            search_commits_internal(path, query, "message", branches.clone(), 0, fetch_n)
+                .unwrap_or_default();
+        let author_commits =
+            search_commits_internal(path, query, "author", branches.clone(), 0, fetch_n)
+                .unwrap_or_default();
+        let file_commits =
+            search_commits_internal(path, query, "file", branches.clone(), 0, fetch_n)
+                .unwrap_or_default();
 
         let mut seen = std::collections::HashSet::new();
         let mut merged = Vec::new();
@@ -720,24 +757,45 @@ pub fn search_commits(
         }
 
         merged.sort_by(|a, b| b.date.cmp(&a.date));
-        merged.truncate(200);
-        return Ok(merged);
+        // Return skip..skip+limit+1 so the caller knows if there is a next page
+        return Ok(merged.into_iter().skip(skip).take(limit + 1).collect());
     }
 
-    search_commits_internal(path, query, search_type)
+    search_commits_internal(path, query, search_type, branches, skip, limit)
 }
 
 fn search_commits_internal(
     path: &str,
     query: &str,
     search_type: &str,
+    branches: Option<Vec<String>>,
+    skip: usize,
+    limit: usize, // caller passes limit+1 so we can detect "has more"
 ) -> Result<Vec<CommitData>, String> {
+    let skip_str = skip.to_string();
+    let limit_str = limit.to_string();
     let mut args = vec![
         "log",
-        "--format=%H%x00%an%x00%ct%x00%P%x00%D%x00%s", // Hash NULL Author NULL UnixTimestamp NULL Parents FULL NULL Refs NULL Subject
+        "--format=%H%x00%an%x00%ct%x00%P%x00%D%x00%s",
+        "--skip",
+        &skip_str,
         "-n",
-        "200", // Limit to 200 results for performance
+        &limit_str,
     ];
+
+    // Scope to selected branches or fall back to --all
+    let branch_strs: Vec<String>;
+    match &branches {
+        Some(bs) if !bs.is_empty() => {
+            branch_strs = bs.clone();
+            for b in branch_strs.iter().rev() {
+                args.insert(1, b.as_str());
+            }
+        }
+        _ => {
+            args.insert(1, "--all");
+        }
+    }
 
     let query_string = query.to_string();
     let author_query;

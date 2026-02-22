@@ -16,8 +16,9 @@ pub async fn get_git_graph(
     path: &str,
     skip: usize,
     limit: usize,
+    branch: Option<Vec<String>>,
 ) -> Result<Vec<CommitData>, String> {
-    services::get_git_graph(path, skip, limit)
+    services::get_git_graph(path, skip, limit, branch)
 }
 
 #[tauri::command]
@@ -181,6 +182,11 @@ pub async fn git_checkout_branch(path: &str, branch: &str) -> Result<String, Str
 }
 
 #[tauri::command]
+pub async fn git_branch_delete(path: &str, name: &str, force: bool) -> Result<String, String> {
+    services::git_branch_delete(path, name, force)
+}
+
+#[tauri::command]
 pub async fn git_checkout_commit(path: &str, hash: &str) -> Result<String, String> {
     services::git_checkout_commit(path, hash)
 }
@@ -264,8 +270,11 @@ pub async fn search_commits(
     path: &str,
     query: &str,
     search_type: &str,
+    branches: Option<Vec<String>>,
+    skip: usize,
+    limit: usize,
 ) -> Result<Vec<CommitData>, String> {
-    services::search_commits(path, query, search_type)
+    services::search_commits(path, query, search_type, branches, skip, limit)
 }
 
 #[tauri::command]
