@@ -20,6 +20,7 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
   
   // Flatten repos for display
   const allRepos = Object.values(repos).flat().sort((a, b) => a.name.localeCompare(b.name));
+  const emptyFolders = Object.keys(repos).filter(folder => repos[folder].length === 0);
 
   useEffect(() => {
     loadFolders();
@@ -88,6 +89,23 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
     }
   };
 
+  const handleRemoveFolderDirect = async (folder: string) => {
+    try {
+        await invoke<string[]>('remove_folder', { path: folder });
+        
+        // If the active repo is inside the removed folder, clear it
+        if (activeRepoPath && activeRepoPath.startsWith(folder)) {
+            onClearActiveRepo();
+        }
+
+        const newRepos = { ...repos };
+        delete newRepos[folder];
+        setRepos(newRepos);
+    } catch (error) {
+        console.error("Failed to remove folder", error);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-slate-200 dark:border-slate-800/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/40">
@@ -102,7 +120,7 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-        {allRepos.length === 0 && (
+        {allRepos.length === 0 && emptyFolders.length === 0 && (
             <div className="text-center p-4 text-slate-500 text-sm">
                 No projects found.<br/>Click + to add a folder containing projects.
             </div>
@@ -145,6 +163,36 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
                 </button>
             </div>
         ))}
+
+        {emptyFolders.map(folder => {
+            const folderName = folder.split('/').pop() || folder;
+            return (
+                <div 
+                    key={folder}
+                    className="flex items-center space-x-2 p-2 rounded transition-colors group text-slate-400 dark:text-slate-500"
+                    title={`${folder} (No repos found)`}
+                >
+                    <Folder className="w-4 h-4 opacity-50" />
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between opacity-70">
+                            <span className="text-sm font-medium truncate italic">{folderName}</span>
+                        </div>
+                        <div className="text-[10px] truncate">{folder}</div>
+                    </div>
+                    
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveFolderDirect(folder);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 dark:hover:text-red-400 text-slate-400 dark:text-slate-500 rounded transition-all"
+                        title="Remove Folder"
+                    >
+                        <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+            );
+        })}
       </div>
     </div>
   );

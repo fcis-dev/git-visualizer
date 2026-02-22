@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug Backend (Rust)",
+      "cargo": {
+        "args": [
+          "build",
+          "--manifest-path=./src-tauri/Cargo.toml",
+          "--no-default-features"
+        ]
+      },
+      "env": {
+          "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS": "--remote-debugging-port=1421",
+          "TAURI_WEBVIEW_AUTOMATION": "true"
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "ui:dev"
+    },
+    {
+      "type": "chrome",
+      "request": "attach",
+      "name": "Attach Frontend",
+      "port": 1421,
+      "webRoot": "${workspaceFolder}/src",
+      "timeout": 30000
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack Debug",
+      "configurations": [
+        "Debug Backend (Rust)",
+        "Attach Frontend"
+      ]
+    }
+  ]
+}
