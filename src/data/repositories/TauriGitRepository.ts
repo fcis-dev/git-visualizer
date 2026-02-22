@@ -3,8 +3,8 @@ import { Commit, ReflogEntry, TagData } from "../../domain/entities/GitEntities"
 import { IGitRepository } from "../../domain/repositories/IGitRepository";
 
 export class TauriGitRepository implements IGitRepository {
-  async getCommits(path: string): Promise<Commit[]> {
-    return await invoke<Commit[]>("get_git_graph", { path });
+  async getCommits(path: string, skip: number = 0, limit: number = 150): Promise<Commit[]> {
+    return await invoke<Commit[]>("get_git_graph", { path, skip, limit });
   }
 
   async getCommitDetails(path: string, hash: string): Promise<any> {
@@ -15,9 +15,12 @@ export class TauriGitRepository implements IGitRepository {
     return await invoke<string>("get_current_branch", { path });
   }
 
-  async getBranches(path: string): Promise<string[]>;
   async getBranches(path: string): Promise<string[]> {
       return await invoke<string[]>("get_branches", { path });
+  }
+
+  async getBranchesInfo(path: string): Promise<import("../../domain/entities/GitEntities").BranchData[]> {
+      return await invoke<import("../../domain/entities/GitEntities").BranchData[]>("get_branches_info", { path });
   }
 
   async checkoutBranch(path: string, branch: string): Promise<void> {

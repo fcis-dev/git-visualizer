@@ -116,6 +116,11 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         return await repository.getTags(repoPath);
     };
 
+    const getBranchesInfo = async () => {
+        if (!repoPath) return [];
+        return await repository.getBranchesInfo(repoPath);
+    };
+
     return {
         checkoutCommit,
         checkoutBranch,
@@ -137,6 +142,7 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         commitAmend,
         getReflog,
         getTags,
+        getBranchesInfo,
         getStashes: async () => repoPath ? await repository.getStashes(repoPath) : [],
         applyStash: async (index: string) => {
             if (repoPath) {

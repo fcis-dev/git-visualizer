@@ -1,7 +1,7 @@
 import { Commit, ReflogEntry, TagData } from "../entities/GitEntities";
 
 export interface IGitRepository {
-  getCommits(path: string): Promise<Commit[]>;
+  getCommits(path: string, skip?: number, limit?: number): Promise<Commit[]>;
   getCurrentBranch(path: string): Promise<string>;
   getBranches(path: string): Promise<string[]>;
 

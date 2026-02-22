@@ -1,232 +1,334 @@
-import React, { useRef, useEffect } from 'react';
-import * as d3 from 'd3';
-import { Commit } from '../../domain/entities/GitEntities';
-import { calculateGraphLayout, LANE_COLORS } from '../utils/graphLayout';
-import { useTheme } from '../context/ThemeContext';
+import React, { useRef, useEffect } from "react";
+import * as d3 from "d3";
+import { Commit } from "../../domain/entities/GitEntities";
+import { calculateGraphLayout, LANE_COLORS } from "../utils/graphLayout";
+import { useTheme } from "../context/ThemeContext";
 
 interface GraphProps {
   commits: Commit[];
   selectedCommit: Commit | null;
   onSelectCommit: (commit: Commit) => void;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
+  hasMore?: boolean;
 }
 
-export const Graph: React.FC<GraphProps> = ({ commits, selectedCommit, onSelectCommit }) => {
+export const Graph: React.FC<GraphProps> = ({
+  commits,
+  selectedCommit,
+  onSelectCommit,
+  onLoadMore,
+  isLoadingMore = false,
+  hasMore = false,
+}) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
+
+  const [containerWidth, setContainerWidth] = React.useState(800);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    let timeoutId: number;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        clearTimeout(timeoutId);
+        timeoutId = window.setTimeout(() => {
+          setContainerWidth(Math.max(800, entry.contentRect.width));
+        }, 150);
+      }
+    });
+    
+    observer.observe(containerRef.current);
+    return () => {
+      clearTimeout(timeoutId);
+      observer.disconnect();
+    };
+  }, []);
+
+  // IntersectionObserver: fires onLoadMore when the sentinel at the bottom enters the viewport
+  useEffect(() => {
+    if (!sentinelRef.current || !onLoadMore) return;
+    const sentinel = sentinelRef.current;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          onLoadMore();
+        }
+      },
+      { root: containerRef.current, threshold: 0.1 }
+    );
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, [onLoadMore]);
 
   useEffect(() => {
     if (!svgRef.current) return;
 
     const svg = d3.select(svgRef.current);
-    
+
     // Always clear existing graph first
     svg.selectAll("*").remove();
 
     if (!commits.length) {
-       return;
+      return;
     }
 
     const { nodes, links } = calculateGraphLayout(commits);
 
-    // Increase row height for better spacing
-    const rowHeight = 44; 
-    // Dynamic width based on container, but ensuring minimum
-    const width = Math.max(800, containerRef.current?.clientWidth || 800);
-    const height = (nodes.length + 1) * rowHeight;
+    // Ensure row height matches `ROW_HEIGHT` in `graphLayout.ts` (56px)
+    const rowHeight = 56;
+    // Dynamic width based on state from ResizeObserver
+    const width = containerWidth;
+    // Calculate total height needed. nodes.length gives total rows.
+    const height = nodes.length * rowHeight + rowHeight + 20; // Extra padding at bottom
 
     svg.attr("width", width).attr("height", height);
 
     // Dynamic colors based on theme
-    const isDark = theme === 'dark';
+    const isDark = theme === "dark";
     // const textColor = isDark ? "#e2e8f0" : "#1e293b"; // slate-200 / slate-800
     const mutedColor = isDark ? "#64748b" : "#94a3b8"; // slate-500 / slate-400
+    const authorColor = isDark ? "#94a3b8" : "#64748b"; // slate-400 / slate-500
+    const dateColor = isDark ? "#475569" : "#cbd5e1"; // slate-600 / slate-300
 
-    // Draw link backgrounds (thicker stroke to create gap effect)
-    svg.append("g")
-      .selectAll("path.bg")
-      .data(links)
-      .enter()
-      .append("path")
-      .attr("class", "bg")
-      .attr("d", d => {
-        const pathGen = d3.path();
+    // Group links by color to drastically reduce DOM elements
+    const groupedLinks = new Map<string, typeof links>();
+    links.forEach((link) => {
+      if (!groupedLinks.has(link.color)) {
+        groupedLinks.set(link.color, []);
+      }
+      groupedLinks.get(link.color)!.push(link);
+    });
+    const groupedLinksArray = Array.from(groupedLinks.entries());
+
+    // Helper to generate path string for a group of segments
+    const generatePathData = (segments: typeof links) => {
+      const pathGen = d3.path();
+      segments.forEach((d) => {
         pathGen.moveTo(d.source.x, d.source.y);
-
-        if (d.source.x === d.target.x) {
+        if (!d.isCurve || !d.midPoint) {
           pathGen.lineTo(d.target.x, d.target.y);
         } else {
-          const dy = d.target.y - d.source.y;
-          if (dy > 0) {
-            pathGen.bezierCurveTo(
-              d.source.x, d.source.y + dy / 2,
-              d.target.x, d.target.y - dy / 2,
-              d.target.x, d.target.y
-            );
-          } else {
+          // The distance to shift lanes diagonally
+          const dy = d.midPoint.y - d.source.y;
+          pathGen.bezierCurveTo(
+            d.source.x,
+            d.source.y + dy / 2,
+            d.midPoint.x,
+            d.midPoint.y - dy / 2,
+            d.midPoint.x,
+            d.midPoint.y,
+          );
+          // If there is still vertical distance to cover after the shift (e.g. projecting downwards past intermediate commits)
+          if (d.midPoint.y < d.target.y) {
             pathGen.lineTo(d.target.x, d.target.y);
           }
         }
-        return pathGen.toString();
-      })
+      });
+      return pathGen.toString();
+    };
+
+    // Draw link backgrounds (thicker stroke to create gap effect)
+    svg
+      .append("g")
+      .selectAll("path.bg")
+      .data(groupedLinksArray)
+      .enter()
+      .append("path")
+      .attr("class", "bg")
+      .attr("d", (d) => generatePathData(d[1]))
       .attr("stroke", isDark ? "#0f172a" : "#ffffff") // Matches background to create gap
       .attr("stroke-width", 6)
       .attr("fill", "none")
       .attr("opacity", 1);
 
     // Draw links
-    svg.append("g")
+    svg
+      .append("g")
       .selectAll("path.fg")
-      .data(links)
+      .data(groupedLinksArray)
       .enter()
       .append("path")
       .attr("class", "fg")
-      .attr("d", d => {
-        const pathGen = d3.path();
-        pathGen.moveTo(d.source.x, d.source.y);
-
-        if (d.source.x === d.target.x) {
-          pathGen.lineTo(d.target.x, d.target.y);
-        } else {
-          const dy = d.target.y - d.source.y;
-          if (dy > 0) {
-            pathGen.bezierCurveTo(
-              d.source.x, d.source.y + dy / 2,
-              d.target.x, d.target.y - dy / 2,
-              d.target.x, d.target.y
-            );
-          } else {
-            pathGen.lineTo(d.target.x, d.target.y);
-          }
-        }
-        return pathGen.toString();
-      })
-      .attr("stroke", d => d.color)
+      .attr("d", (d) => generatePathData(d[1]))
+      .attr("stroke", (d) => d[0])
       .attr("stroke-width", 2)
       .attr("fill", "none")
       .attr("opacity", 0.9)
       .style("transition", "stroke-width 0.2s ease")
-      .on("mouseover", function() {
-        d3.select(this).attr("stroke-width", 4).attr("opacity", 1);
+      .on("mouseover", function () {
+        d3.select(this).attr("stroke-width", 3).attr("opacity", 1);
       })
-      .on("mouseout", function() {
+      .on("mouseout", function () {
         d3.select(this).attr("stroke-width", 2).attr("opacity", 0.9);
       });
 
     // Draw nodes
-    const nodeGroup = svg.append("g")
+    const nodeGroup = svg
+      .append("g")
       .selectAll("g")
       .data(nodes)
       .enter()
       .append("g")
-      .attr("transform", d => `translate(${d.x}, ${d.y})`)
+      .attr("transform", (d) => `translate(${d.x}, ${d.y})`)
       .style("cursor", "pointer")
       .on("click", (_event, d) => onSelectCommit(d))
-      .on("mouseover", function() {
+      .on("mouseover", function () {
         d3.select(this).select("circle").attr("r", 8).attr("stroke-width", 4);
-        d3.select(this).select("text").attr("fill", isDark ? "#fff" : "#000"); // Highlight text
+        d3.select(this)
+          .select(".commit-message")
+          .style("color", isDark ? "#fff" : "#000"); // Highlight text
       })
-      .on("mouseout", function() {
+      .on("mouseout", function () {
         // Reset to normal size if not selected
         const data = d3.select(this).datum() as any;
         const isSelected = selectedCommit?.hash === data.hash;
         if (!isSelected) {
-           d3.select(this).select("circle").attr("r", 6).attr("stroke-width", 3);
-           d3.select(this).select("text").attr("fill", mutedColor);
+          d3.select(this).select("circle").attr("r", 6).attr("stroke-width", 3);
+          d3.select(this).select(".commit-message").style("color", mutedColor);
         }
       });
 
     const bgFill = isDark ? "#0f172a" : "#ffffff";
 
     // Node Circle
-    nodeGroup.append("circle")
-      .attr("r", d => (selectedCommit?.hash === d.hash ? 8 : 6))
+    nodeGroup
+      .append("circle")
+      .attr("r", (d) => (selectedCommit?.hash === d.hash ? 8 : 6))
       .attr("fill", bgFill)
-      .attr("stroke", d => LANE_COLORS[d.lane % LANE_COLORS.length])
-      .attr("stroke-width", d => (selectedCommit?.hash === d.hash ? 4 : 3))
+      .attr("stroke", (d) => LANE_COLORS[d.lane % LANE_COLORS.length])
+      .attr("stroke-width", (d) => (selectedCommit?.hash === d.hash ? 4 : 3))
       .style("transition", "all 0.2s ease");
 
+    let maxContentWidth = containerWidth;
+
     // Commit Message and Refs
-    nodeGroup.each(function(d) {
-        const group = d3.select(this);
-        let currentX = 18;
+    nodeGroup.each(function (d) {
+      const group = d3.select(this);
+      // Find max lane among all nodes to determine common starting X
+      const maxLane =
+        nodes.length > 0 ? Math.max(...nodes.map((n) => n.lane || 0)) : 0;
+      const maxLaneX = maxLane * 20 + 20;
 
-        if (d.refs && d.refs.length > 0) {
-             d.refs.forEach(ref => {
-                 const g = group.append("g");
-                 
-                 // Determine color based on ref type (simple heuristic)
-                 // HEAD: Green/Bold
-                 // Remote: Blue/Purple
-                 // Tag: Yellow/Orange
-                 // Local: Default
-                 
-                 let bgFill = isDark ? "#334155" : "#e2e8f0";
-                 let textFill = isDark ? "#fff" : "#0f172a";
-                 let border = isDark ? "#475569" : "#cbd5e1";
+      // We start drawing text/refs to the right of the furthest possible lane.
+      // d.x gives the current node's x coordinate in the group's transform
+      // So we need to offset it to reach maxLaneX + some padding.
+      // Wait, the group is translated to d.x. So an offset of (maxLaneX - d.x + padding) is needed.
+      const currentX = maxLaneX - d.x + 18;
 
-                 const isTag = ref.startsWith("tag: ");
-                 const displayName = isTag ? ref.substring(5) : ref;
+      let tagsHtml = "";
+      if (d.refs && d.refs.length > 0) {
+        const tags = d.refs.map((ref) => {
+          let bgFill = isDark ? "#312e81" : "#e0e7ff";
+          let textFill = isDark ? "#e0e7ff" : "#4338ca";
+          let border = isDark ? "#3730a3" : "#c7d2fe";
 
-                 if (ref.includes("HEAD")) {
-                     bgFill = isDark ? "#065f46" : "#d1fae5"; // emerald-800 / emerald-100
-                     textFill = isDark ? "#d1fae5" : "#065f46";
-                     border = isDark ? "#047857" : "#6ee7b7";
-                 } else if (isTag) {
-                     bgFill = isDark ? "#422006" : "#fef3c7"; // amber-950 / amber-100
-                     textFill = isDark ? "#fde68a" : "#d97706";
-                     border = isDark ? "#d97706" : "#fcd34d";
-                 } else if (ref.includes("origin")) {
-                     bgFill = isDark ? "#1e3a8a" : "#dbeafe"; // blue-900 / blue-100
-                     textFill = isDark ? "#dbeafe" : "#1e40af";
-                     border = isDark ? "#1d4ed8" : "#93c5fd";
-                 }
+          const isTag = ref.startsWith("tag: ");
+          const displayName = isTag ? ref.substring(5) : ref;
 
-                 const text = g.append("text")
-                    .text(displayName)
-                    .attr("font-size", "10px")
-                    .attr("font-family", "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace")
-                    .attr("fill", textFill)
-                    .attr("y", 3);
-                 
-                 const bbox = text.node()?.getBBox();
-                 const paddingX = 8;
-                 const width = (bbox?.width || 0) + paddingX;
-                 
-                 g.insert("rect", "text")
-                    .attr("x", 0)
-                    .attr("y", -8)
-                    .attr("width", width)
-                    .attr("height", 15)
-                    .attr("rx", 3)
-                    .attr("fill", bgFill)
-                    .attr("stroke", border)
-                    .attr("stroke-width", 1);
-                 
-                 text.attr("x", paddingX / 2);
-                 
-                 g.attr("transform", `translate(${currentX}, 0)`);
-                 
-                 currentX += width + 6;
-            });
+          if (ref.includes("HEAD") || isTag) {
+            bgFill = isDark ? "#064e3b" : "#d1fae5";
+            textFill = isDark ? "#d1fae5" : "#059669";
+            border = isDark ? "#065f46" : "#6ee7b7";
+          } else if (ref.includes("origin")) {
+            bgFill = isDark ? "#3730a3" : "#c7d2fe";
+            textFill = isDark ? "#e0e7ff" : "#3730a3";
+            border = isDark ? "#4338ca" : "#a5b4fc";
+          }
+          
+          const safeDisplayName = displayName.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          return `<div style="background-color: ${bgFill}; color: ${textFill}; border: 1px solid ${border}; border-radius: 4px; padding: 1px 6px; font-size: 10px; line-height: 14px; white-space: nowrap; pointer-events: auto;">${safeDisplayName}</div>`;
+        }).join('');
+        
+        tagsHtml = `<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;">${tags}</div>`;
+      }
+
+        const absoluteX = (d as any).x + currentX;
+        const minTextWidth = 450;
+        const foWidth = Math.max(minTextWidth, width - absoluteX - 16);
+        const foHeight = 88; // Increased heavily to allow wrapping of tags without clipping
+        
+        if (absoluteX + foWidth + 16 > maxContentWidth) {
+          maxContentWidth = absoluteX + foWidth + 16;
         }
+        
+        const commitDate = new Date(d.date * 1000);
+        
+        const datePart = commitDate.toLocaleDateString(undefined, {
+            year: 'numeric',
+            month: 'short', 
+            day: 'numeric'
+        });
+        const timePart = commitDate.toLocaleTimeString(undefined, {
+            hour: '2-digit', 
+            minute: '2-digit'
+        });
 
-        group.append("text")
+        const msgColor = selectedCommit?.hash === d.hash ? (isDark ? "#fff" : "#000") : mutedColor;
+        const msgWeight = selectedCommit?.hash === d.hash ? "bold" : "normal";
+
+        const fo = group.append("foreignObject")
           .attr("x", currentX)
-          .attr("y", 5)
-          .text(d.message)
-          .attr("fill", (selectedCommit?.hash === d.hash ? (isDark ? "#fff" : "#000") : mutedColor))
-          .attr("font-size", "13px")
-          .attr("font-weight", (selectedCommit?.hash === d.hash ? "bold" : "normal"))
-          .attr("font-family", "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace")
-          .style("pointer-events", "all");
+          .attr("y", -16) // Shifted up slightly
+          .attr("width", foWidth)
+          .attr("height", foHeight)
+          .style("pointer-events", "none")
+          .style("overflow", "visible"); // Allow overflow just in case
+
+        // Use standard double quotes for the template string and escape quotes in data
+        const safeMsg = d.message.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const safeAuthor = d.author.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        fo.append("xhtml:div")
+          .style("display", "flex")
+          .style("align-items", "flex-start")
+          .style("gap", "16px")
+          .style("width", "100%")
+          .style("font-family", "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace")
+          .style("font-size", "12px")
+          .html(`
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+                <div class="commit-message" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; color: ${msgColor}; font-weight: ${msgWeight}; pointer-events: auto; transition: color 0.1s;" title="${safeMsg}">
+                  ${safeMsg}
+                </div>
+                ${tagsHtml}
+            </div>
+            <div style="width: 130px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${authorColor}; text-align: left; pointer-events: auto;" title="${safeAuthor}">
+              ${safeAuthor}
+            </div>
+            <div style="width: 100px; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; color: ${dateColor}; pointer-events: auto; white-space: nowrap;" title="${datePart} ${timePart}">
+              <span>${datePart}</span>
+              <span style="font-size: 10px; opacity: 0.7;">${timePart}</span>
+            </div>
+          `);
     });
 
-  }, [commits, onSelectCommit, selectedCommit, theme]);
+    // Expand the SVG canvas width if the content overflowed the container
+    svg.attr("width", maxContentWidth);
+
+  }, [commits, onSelectCommit, selectedCommit, theme, containerWidth]);
 
   return (
     <div ref={containerRef} className="overflow-auto flex-1 custom-scrollbar">
-      <svg ref={svgRef} className="w-full block" />
+      <svg ref={svgRef} className="min-w-full block" />
+      {/* Sentinel for IntersectionObserver – always rendered at the bottom */}
+      <div ref={sentinelRef} style={{ height: 1 }} />
+      {isLoadingMore && (
+        <div className="flex items-center justify-center py-4 text-slate-400 text-sm gap-2">
+          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10" strokeWidth="3" strokeDasharray="31.4 31.4" />
+          </svg>
+          Cargando más commits…
+        </div>
+      )}
+      {!hasMore && commits.length > 0 && (
+        <div className="flex items-center justify-center py-3 text-slate-600 text-xs">
+          · Fin del historial ·
+        </div>
+      )}
     </div>
   );
 };

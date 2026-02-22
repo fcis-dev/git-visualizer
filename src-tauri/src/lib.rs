@@ -53,6 +53,7 @@ pub fn run() {
             commands::git_blame,
             commands::git_resolve_conflict,
             commands::get_branches,
+            commands::get_branches_info,
             commands::get_git_config_user,
             commands::set_git_config_user,
             commands::git_discard_changes,

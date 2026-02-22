@@ -7,7 +7,7 @@ import {
   Filter,
   LifeBuoy,
   Tag,
-  Check
+  Check,
 } from "lucide-react";
 import { SourceControl } from "./Sidebar/SourceControl";
 import { Graph } from "./Graph";
@@ -16,6 +16,7 @@ import { CommitDetails } from "./CommitDetails";
 import { HistoricalFileContentView } from "./HistoricalFileContentView";
 import { ReflogModal } from "./ReflogModal";
 import { TagsModal } from "./TagsModal";
+import { BranchManagerModal } from "./BranchManagerModal";
 import { CreateBranchModal } from "./CreateBranchModal";
 import { useGit } from "../hooks/useGit";
 import { useGitActions } from "../hooks/useGitActions";
@@ -44,7 +45,7 @@ export function RepositoryWorkspace({
     path: string;
     commitHash?: string;
   } | null>(null);
-  
+
   const [contentTarget, setContentTarget] = useState<{
     path: string;
     commitHash: string;
@@ -52,26 +53,45 @@ export function RepositoryWorkspace({
 
   const [isReflogModalOpen, setIsReflogModalOpen] = useState(false);
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
-  const [createBranchTarget, setCreateBranchTarget] = useState<string | null>(null);
+  const [isBranchManagerOpen, setIsBranchManagerOpen] = useState(false);
+  const [createBranchTarget, setCreateBranchTarget] = useState<string | null>(
+    null,
+  );
 
   // Global search state
-  const [searchType, setSearchType] = useState<"all" | "message" | "author" | "file">("all");
-  const [globalSearchResults, setGlobalSearchResults] = useState<Commit[] | null>(null);
+  const [searchType, setSearchType] = useState<
+    "all" | "message" | "author" | "file"
+  >("all");
+  const [globalSearchResults, setGlobalSearchResults] = useState<
+    Commit[] | null
+  >(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const searchTimeoutRef = useRef<number | null>(null);
 
   // Using existing hooks
-  const { commits, branchName, availableBranches, checkoutBranch, loadCommits, setError } = useGit(repoPath);
+  const {
+    commits,
+    branchName,
+    availableBranches,
+    checkoutBranch,
+    loadCommits,
+    loadMoreCommits,
+    isLoadingMore,
+    hasMore,
+    setError,
+  } = useGit(repoPath);
 
   // Filter commits based on search query
-  const filteredLocalCommits = commits.filter(commit => 
+  const filteredLocalCommits = commits.filter(
+    (commit) =>
       commit.message.toLowerCase().includes(commitSearchQuery.toLowerCase()) ||
       commit.hash.toLowerCase().includes(commitSearchQuery.toLowerCase()) ||
-      commit.author.toLowerCase().includes(commitSearchQuery.toLowerCase())
+      commit.author.toLowerCase().includes(commitSearchQuery.toLowerCase()),
   );
 
-  const displayCommits = globalSearchResults !== null ? globalSearchResults : filteredLocalCommits;
+  const displayCommits =
+    globalSearchResults !== null ? globalSearchResults : filteredLocalCommits;
 
   const { showConfirm, showInput, showAlert } = useDialog();
 
@@ -85,31 +105,32 @@ export function RepositoryWorkspace({
   // Perform global backend search when query changes
   useEffect(() => {
     if (commitSearchQuery.trim().length === 0) {
-        setGlobalSearchResults(null);
-        setIsSearching(false);
-        return;
+      setGlobalSearchResults(null);
+      setIsSearching(false);
+      return;
     }
 
     if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
+      clearTimeout(searchTimeoutRef.current);
     }
 
     setIsSearching(true);
     searchTimeoutRef.current = window.setTimeout(() => {
-        gitActions.searchCommits(commitSearchQuery, searchType)
-            .then(results => {
-                setGlobalSearchResults(results);
-                setIsSearching(false);
-            })
-            .catch(err => {
-                console.error("Search failed:", err);
-                setGlobalSearchResults(null);
-                setIsSearching(false);
-            });
+      gitActions
+        .searchCommits(commitSearchQuery, searchType)
+        .then((results) => {
+          setGlobalSearchResults(results);
+          setIsSearching(false);
+        })
+        .catch((err) => {
+          console.error("Search failed:", err);
+          setGlobalSearchResults(null);
+          setIsSearching(false);
+        });
     }, 500); // 500ms debounce
 
     return () => {
-        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     };
   }, [commitSearchQuery, searchType, repoPath]);
 
@@ -168,7 +189,7 @@ export function RepositoryWorkspace({
   const handleCreateBranch = (hash: string) => {
     setCreateBranchTarget(hash);
   };
-  
+
   const handleCreateTag = (hash: string) => {
     showInput("Create Tag", "Tag name:", async (name) => {
       if (!name) return;
@@ -248,7 +269,7 @@ export function RepositoryWorkspace({
   return (
     <div className="flex-1 w-full flex flex-col h-full min-w-0 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 overflow-hidden">
       {/* Header */}
-      <header className="h-14 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 bg-white dark:bg-slate-950 z-10">
+      <header className="relative h-14 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 bg-white dark:bg-slate-950 z-20">
         <div className="flex items-center space-x-4">
           <button
             onClick={onBack}
@@ -279,11 +300,11 @@ export function RepositoryWorkspace({
               <GitBranch className="w-4 h-4" />
               <span>{branchName || "..."}</span>
             </button>
-            
+
             {isBranchDropdownOpen && (
               <>
-                <div 
-                  className="fixed inset-0 z-30" 
+                <div
+                  className="fixed inset-0 z-30"
                   onClick={() => setIsBranchDropdownOpen(false)}
                 />
                 <div className="absolute left-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-40 overflow-hidden animate-in slide-in-from-top-2 duration-150">
@@ -291,25 +312,30 @@ export function RepositoryWorkspace({
                     Local Branches
                   </div>
                   <div className="max-h-64 overflow-y-auto custom-scrollbar">
-                    {availableBranches.map(branch => (
+                    {availableBranches.map((branch) => (
                       <button
                         key={branch}
                         onClick={async () => {
-                           try {
-                             await checkoutBranch(branch);
-                             setIsBranchDropdownOpen(false);
-                             showAlert("Branch Switched", `Successfully checked out ${branch}`);
-                           } catch (e: any) {
-                             setIsBranchDropdownOpen(false);
-                             showAlert("Checkout Failed", e.toString());
-                           }
+                          try {
+                            await checkoutBranch(branch);
+                            setIsBranchDropdownOpen(false);
+                            showAlert(
+                              "Branch Switched",
+                              `Successfully checked out ${branch}`,
+                            );
+                          } catch (e: any) {
+                            setIsBranchDropdownOpen(false);
+                            showAlert("Checkout Failed", e.toString());
+                          }
                         }}
                         className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between
                            ${branch === branchName ? "text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50/50 dark:bg-indigo-900/10" : "text-slate-700 dark:text-slate-300"}
                         `}
                       >
-                         <span className="truncate">{branch}</span>
-                         {branch === branchName && <Check className="w-3.5 h-3.5" />}
+                        <span className="truncate">{branch}</span>
+                        {branch === branchName && (
+                          <Check className="w-3.5 h-3.5" />
+                        )}
                       </button>
                     ))}
                     {availableBranches.length === 0 && (
@@ -326,10 +352,19 @@ export function RepositoryWorkspace({
 
         <div className="flex items-center space-x-2">
           {/* Actions */}
-          
+
+          <button
+            onClick={() => setIsBranchManagerOpen(true)}
+            className="flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg transition-colors border border-indigo-200 dark:border-indigo-500/20 text-sm font-medium"
+            title="Manage Branches"
+          >
+            <GitBranch className="w-4 h-4" />
+            <span>Branches</span>
+          </button>
+
           <button
             onClick={() => setIsTagsModalOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg transition-colors border border-blue-200 dark:border-blue-500/20 text-sm font-medium"
+            className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg transition-colors border border-emerald-200 dark:border-emerald-500/20 text-sm font-medium"
             title="Manage Tags"
           >
             <Tag className="w-4 h-4" />
@@ -359,7 +394,6 @@ export function RepositoryWorkspace({
 
       {/* Main Content (Unified 3 Columns) */}
       <main className="flex-1 overflow-hidden relative flex bg-slate-50 dark:bg-slate-900">
-          
         {/* Left Column: Source Control (Changes) */}
         <div className="w-80 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col z-10">
           <SourceControl
@@ -374,143 +408,148 @@ export function RepositoryWorkspace({
 
         {/* Middle Column: History Graph & Search (and Overlay Diff) */}
         <div className="flex-1 flex flex-col relative overflow-hidden bg-white dark:bg-slate-950">
-            
-            {/* Search Bar */}
-            <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex space-x-2">
-                <div className="relative flex-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="w-4 h-4 text-slate-400" />
-                    </div>
-                    <input 
-                        type="text" 
-                        placeholder={
-                            searchType === "all" ? "Search globally by message, author..." :
-                            searchType === "message" ? "Search commit messages globally..." :
-                            searchType === "author" ? "Search by commit author globally..." :
-                            "Search by changed file path globally..."
-                        }
-                        value={commitSearchQuery}
-                        onChange={(e) => setCommitSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-slate-800 dark:text-slate-200 placeholder-slate-400 transition-colors"
-                    />
-                    {isSearching && (
-                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                             <div className="animate-spin rounded-full h-3.5 w-3.5 border-t-2 border-b-2 border-indigo-500"></div>
-                        </div>
-                    )}
+          {/* Search Bar */}
+          <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex space-x-2">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="w-4 h-4 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                placeholder={
+                  searchType === "all"
+                    ? "Search globally by message, author..."
+                    : searchType === "message"
+                      ? "Search commit messages globally..."
+                      : searchType === "author"
+                        ? "Search by commit author globally..."
+                        : "Search by changed file path globally..."
+                }
+                value={commitSearchQuery}
+                onChange={(e) => setCommitSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:focus:ring-indigo-400 text-slate-800 dark:text-slate-200 placeholder-slate-400 transition-colors"
+              />
+              {isSearching && (
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-t-2 border-b-2 border-indigo-500"></div>
                 </div>
-                
-                <div className="relative shrink-0 flex items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded">
-                    <div className="pl-3 pr-2 border-r border-slate-200 dark:border-slate-800 text-slate-400">
-                        <Filter className="w-4 h-4" />
-                    </div>
-                    <select
-                        value={searchType}
-                        onChange={(e) => setSearchType(e.target.value as any)}
-                        className="py-2 pl-2 pr-6 text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-slate-700 dark:text-slate-300 appearance-none cursor-pointer"
-                    >
-                        <option value="all">Everywhere</option>
-                        <option value="message">Message</option>
-                        <option value="author">Author</option>
-                        <option value="file">File Path</option>
-                    </select>
-                </div>
+              )}
             </div>
 
-            {/* Global Search Notice */}
-            {globalSearchResults !== null && (
-                <div className="bg-indigo-50 dark:bg-indigo-500/10 border-b border-indigo-100 dark:border-indigo-500/20 px-3 py-1.5 flex justify-between items-center text-xs">
-                    <span className="text-indigo-700 dark:text-indigo-300">
-                        Showing <strong>{globalSearchResults.length}</strong> global search results for "{commitSearchQuery}"
-                    </span>
-                    <button 
-                         onClick={() => setCommitSearchQuery("")}
-                         className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 font-medium underline"
-                    >
-                        Clear Search
-                    </button>
-                </div>
-            )}
-
-            {/* Graph */}
-            <div className="flex-1 overflow-hidden flex flex-col relative">
-               <Graph
-                    commits={displayCommits}
-                    selectedCommit={selectedCommit}
-                    onSelectCommit={setSelectedCommit}
-                />
+            <div className="relative shrink-0 flex items-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded">
+              <div className="pl-3 pr-2 border-r border-slate-200 dark:border-slate-800 text-slate-400">
+                <Filter className="w-4 h-4" />
+              </div>
+              <select
+                value={searchType}
+                onChange={(e) => setSearchType(e.target.value as any)}
+                className="py-2 pl-2 pr-6 text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-slate-700 dark:text-slate-300 appearance-none cursor-pointer"
+              >
+                <option value="all">Everywhere</option>
+                <option value="message">Message</option>
+                <option value="author">Author</option>
+                <option value="file">File Path</option>
+              </select>
             </div>
+          </div>
 
-            {/* Diff View Overlay (over the middle column) */}
-            {diffTarget && (
-               <div className="absolute inset-0 z-20 bg-white dark:bg-slate-950 flex flex-col animate-in slide-in-from-bottom-4 duration-200 shadow-2xl">
-                    <header className="h-12 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 bg-slate-50 dark:bg-slate-900/50">
-                        <div className="flex items-center space-x-2">
-                        <button
-                            onClick={() => setDiffTarget(null)}
-                            className="flex items-center space-x-1 text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                        >
-                            <ArrowLeft className="w-4 h-4" />
-                            <span>Back</span>
-                        </button>
-                        <span className="text-slate-300 dark:text-slate-700">|</span>
-                        <span className="font-medium text-slate-700 dark:text-slate-200 truncate max-w-xl">
-                            {diffTarget.path}
-                        </span>
-                        </div>
-                    </header>
-                    <div className="flex-1 overflow-hidden">
-                        <DiffView
-                        repoPath={repoPath}
-                        filePath={diffTarget.path}
-                        commitHash={diffTarget.commitHash}
-                        onClose={() => setDiffTarget(null)}
-                        />
-                    </div>
+          {/* Global Search Notice */}
+          {globalSearchResults !== null && (
+            <div className="bg-indigo-50 dark:bg-indigo-500/10 border-b border-indigo-100 dark:border-indigo-500/20 px-3 py-1.5 flex justify-between items-center text-xs">
+              <span className="text-indigo-700 dark:text-indigo-300">
+                Showing <strong>{globalSearchResults.length}</strong> global
+                search results for "{commitSearchQuery}"
+              </span>
+              <button
+                onClick={() => setCommitSearchQuery("")}
+                className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-200 font-medium underline"
+              >
+                Clear Search
+              </button>
+            </div>
+          )}
+
+          {/* Graph */}
+          <div className="flex-1 overflow-hidden flex flex-col relative">
+            <Graph
+              commits={displayCommits}
+              selectedCommit={selectedCommit}
+              onSelectCommit={setSelectedCommit}
+              onLoadMore={globalSearchResults === null ? loadMoreCommits : undefined}
+              isLoadingMore={isLoadingMore}
+              hasMore={globalSearchResults === null ? hasMore : false}
+            />
+          </div>
+
+          {/* Diff View Overlay (over the middle column) */}
+          {diffTarget && (
+            <div className="absolute inset-0 z-20 bg-white dark:bg-slate-950 flex flex-col animate-in slide-in-from-bottom-4 duration-200 shadow-2xl">
+              <header className="h-12 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 bg-slate-50 dark:bg-slate-900/50">
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setDiffTarget(null)}
+                    className="flex items-center space-x-1 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Back</span>
+                  </button>
+                  <span className="text-slate-300 dark:text-slate-700">|</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-200 truncate max-w-xl">
+                    {diffTarget.path}
+                  </span>
                 </div>
-            )}
-
-            {/* Historical File Content View Overlay */}
-            {contentTarget && (
-                <HistoricalFileContentView
-                    repoPath={repoPath}
-                    filePath={contentTarget.path}
-                    commitHash={contentTarget.commitHash}
-                    onClose={() => setContentTarget(null)}
+              </header>
+              <div className="flex-1 overflow-hidden">
+                <DiffView
+                  repoPath={repoPath}
+                  filePath={diffTarget.path}
+                  commitHash={diffTarget.commitHash}
+                  onClose={() => setDiffTarget(null)}
                 />
-            )}
+              </div>
+            </div>
+          )}
+
+          {/* Historical File Content View Overlay */}
+          {contentTarget && (
+            <HistoricalFileContentView
+              repoPath={repoPath}
+              filePath={contentTarget.path}
+              commitHash={contentTarget.commitHash}
+              onClose={() => setContentTarget(null)}
+            />
+          )}
         </div>
 
         {/* Right Column: Commit Details */}
         {selectedCommit && (
-            <div className="w-96 shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 animate-in slide-in-from-right duration-200 z-10 shadow-xl overflow-y-auto">
-                <CommitDetails
-                    repoPath={repoPath}
-                    commit={selectedCommit}
-                    details={commitDetails}
-                    detailsLoading={detailsLoading}
-                    currentBranch={branchName}
-                    onClose={() => setSelectedCommit(null)}
-                    onCopyHash={(h) => navigator.clipboard.writeText(h)}
-                    onSelectFile={(p) =>
-                        setDiffTarget({ path: p, commitHash: selectedCommit.hash })
-                    }
-                    onViewHistoricalFile={(p) =>
-                        setContentTarget({ path: p, commitHash: selectedCommit.hash })
-                    }
-                    onCheckout={handleCheckoutCommit}
-                    onCreateBranch={handleCreateBranch}
-                    onCreateTag={handleCreateTag}
-                    onMerge={handleMerge}
-                    onRevert={handleRevert}
-                    onCherryPick={handleCherryPick}
-                    onRebase={handleRebase}
-                    onReset={handleReset}
-                    onRefreshGraph={() => loadCommits()}
-                />
-            </div>
+          <div className="w-96 shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 animate-in slide-in-from-right duration-200 z-10 shadow-xl overflow-y-auto">
+            <CommitDetails
+              repoPath={repoPath}
+              commit={selectedCommit}
+              details={commitDetails}
+              detailsLoading={detailsLoading}
+              currentBranch={branchName}
+              onClose={() => setSelectedCommit(null)}
+              onCopyHash={(h) => navigator.clipboard.writeText(h)}
+              onSelectFile={(p) =>
+                setDiffTarget({ path: p, commitHash: selectedCommit.hash })
+              }
+              onViewHistoricalFile={(p) =>
+                setContentTarget({ path: p, commitHash: selectedCommit.hash })
+              }
+              onCheckout={handleCheckoutCommit}
+              onCreateBranch={handleCreateBranch}
+              onCreateTag={handleCreateTag}
+              onMerge={handleMerge}
+              onRevert={handleRevert}
+              onCherryPick={handleCherryPick}
+              onRebase={handleRebase}
+              onReset={handleReset}
+              onRefreshGraph={() => loadCommits()}
+            />
+          </div>
         )}
-
       </main>
 
       {/* Overlays */}
@@ -519,6 +558,14 @@ export function RepositoryWorkspace({
           repoPath={repoPath}
           onClose={() => setIsReflogModalOpen(false)}
           onRestore={() => loadCommits()}
+        />
+      )}
+      {isBranchManagerOpen && (
+        <BranchManagerModal
+          repoPath={repoPath}
+          currentBranch={branchName}
+          onClose={() => setIsBranchManagerOpen(false)}
+          onRefreshGraph={() => loadCommits()}
         />
       )}
       {isTagsModalOpen && (

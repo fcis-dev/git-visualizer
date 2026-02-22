@@ -14,14 +14,14 @@ export interface Repository {
 }
 
 export interface FileChange {
-    path: string;
-    status: string; // "A", "M", "D", "R", "conflicted", etc.
-    insertions: number;
-    deletions: number;
+  path: string;
+  status: string; // "A", "M", "D", "R", "conflicted", etc.
+  insertions: number;
+  deletions: number;
 }
 
 export interface CommitDetails extends Commit {
-    files: FileChange[];
+  files: FileChange[];
 }
 
 export interface ReflogEntry {
@@ -36,6 +36,14 @@ export interface TagData {
   message: string;
   date: number;
   hash: string;
+}
+
+export interface BranchData {
+  name: string;
+  hash: string;
+  date: number;
+  message: string;
+  is_remote: boolean;
 }
 
 export interface StashEntry {

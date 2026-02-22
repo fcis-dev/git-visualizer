@@ -1,6 +1,8 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
 import { Commit } from "../../domain/entities/GitEntities";
+
+const PAGE_SIZE = 150;
 
 export function useGit(repoPath: string) {
   const [commits, setCommits] = useState<Commit[]>([]);
@@ -8,6 +10,11 @@ export function useGit(repoPath: string) {
   const [availableBranches, setAvailableBranches] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+
+  // Use a ref to always have the latest commit count without stale closures
+  const commitCountRef = useRef(0);
 
   const repository = new TauriGitRepository();
 
@@ -15,25 +22,53 @@ export function useGit(repoPath: string) {
     if (!repoPath) return;
     setIsLoading(true);
     setError(null);
+    setHasMore(true);
     try {
       const [commitsData, branch, branchesList] = await Promise.all([
-        repository.getCommits(repoPath),
+        repository.getCommits(repoPath, 0, PAGE_SIZE),
         repository.getCurrentBranch(repoPath),
         repository.getBranches(repoPath),
       ]);
       setCommits(commitsData);
+      commitCountRef.current = commitsData.length;
       setBranchName(branch);
       setAvailableBranches(branchesList);
+      if (commitsData.length < PAGE_SIZE) {
+        setHasMore(false);
+      }
     } catch (err: any) {
       console.error(err);
       setError(err.toString());
       setCommits([]);
+      commitCountRef.current = 0;
       setBranchName("");
       setAvailableBranches([]);
     } finally {
       setIsLoading(false);
     }
   }, [repoPath]);
+
+  const loadMoreCommits = useCallback(async () => {
+    if (!repoPath || isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+    try {
+      const newCommits = await repository.getCommits(repoPath, commitCountRef.current, PAGE_SIZE);
+      if (newCommits.length === 0 || newCommits.length < PAGE_SIZE) {
+        setHasMore(false);
+      }
+      if (newCommits.length > 0) {
+        setCommits((prev) => {
+          const updated = [...prev, ...newCommits];
+          commitCountRef.current = updated.length;
+          return updated;
+        });
+      }
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [repoPath, isLoadingMore, hasMore]);
 
   const checkoutBranch = async (branch: string) => {
     if (!repoPath) return;
@@ -69,7 +104,10 @@ export function useGit(repoPath: string) {
     availableBranches,
     error,
     isLoading,
+    isLoadingMore,
+    hasMore,
     loadCommits,
+    loadMoreCommits,
     checkoutBranch,
     fetch,
     setError

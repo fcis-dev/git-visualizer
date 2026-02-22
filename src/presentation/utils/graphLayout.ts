@@ -11,10 +11,13 @@ export interface GraphNode extends Commit {
   lane: number;
 }
 
+// Refined GraphLink with midPoint for perfect routing
 export interface GraphLink {
   source: Point;
   target: Point;
   color: string;
+  isCurve: boolean;
+  midPoint?: Point;
 }
 
 export const LANE_COLORS = [
@@ -32,28 +35,21 @@ export function calculateGraphLayout(commits: Commit[]) {
   const nodes: GraphNode[] = [];
   const links: GraphLink[] = [];
 
-  // Maps commit hash to its assigned lane
   const laneMap = new Map<string, number>();
-  // Tracks used lanes at current row
   const activeLanes: (string | null)[] = [];
+  const commitRows = new Map<string, number>();
 
+  const ROW_HEIGHT = 56;
+  const COL_WIDTH = 20;
+  const PADDING_Y = 25;
+  const PADDING_X = 20;
+
+  // Pass 1: Assign lanes and rows
   commits.forEach((commit, index) => {
-    let lane = -1;
-
-    // Check if this commit is already expected in a lane (because a child pointed to it)
-    // We treat the first parent as the "main" continuation of the lane.
-    // If commit hash is in activeLanes, we reuse that lane.
-
-    // Simplification: just find if this commit hash is in activeLanes
-    const existingLaneIndex = activeLanes.indexOf(commit.hash);
-
-    if (existingLaneIndex !== -1) {
-      lane = existingLaneIndex;
-      activeLanes[existingLaneIndex] = null; // Consume the expectation
-    } else {
-      // New branch tip or detached
-      // Find first empty lane
-      lane = activeLanes.findIndex((l) => l === null || l === undefined);
+    let lane = activeLanes.indexOf(commit.hash);
+    
+    if (lane === -1) {
+      lane = activeLanes.findIndex((l) => l === null);
       if (lane === -1) {
         lane = activeLanes.length;
         activeLanes.push(null);
@@ -61,100 +57,70 @@ export function calculateGraphLayout(commits: Commit[]) {
     }
 
     laneMap.set(commit.hash, lane);
-    activeLanes[lane] = null; // Occupied by current commit temporarily
+    commitRows.set(commit.hash, index);
+    activeLanes[lane] = null; // Node placed here, consuming the lane expectation
 
-    // Prepare for parents
-    // Parent 0 continues the current lane (usually)
-    // Parent 1+ are merges, they might be in other lanes or need new lanes
-
-    commit.parents.forEach((parentHash, i) => {
-      if (i === 0) {
-        // Primary parent keeps the lane if possible
-        if (activeLanes[lane] === null) {
-          activeLanes[lane] = parentHash;
-        } else {
-          // Lane occupied? (Should not happen in simple logic, but maybe)
-          // If occupied, we might need to branch out, but here we are going down.
-          // Actually parent 0 *should* take the lane.
-          // If multiple children point to same parent, the first one seen (newest) takes it.
-          // Subsequent children pointing to same parent will find it already in a lane?
-          // Wait, if P is in activeLanes, it means it's already "taken".
-          // If P is already in activeLanes, we connect to it.
-          // This logic needs to be careful about not duplicating activeLanes entries for same parent.
-        }
-      } else {
-        // Verify if parent is already active
-        if (!activeLanes.includes(parentHash)) {
-          // Assign a new lane or find empty
-          let targetLane = activeLanes.findIndex((l) => l === null);
-          if (targetLane === -1) {
-            targetLane = activeLanes.length;
-            activeLanes.push(parentHash);
-          } else {
-            activeLanes[targetLane] = parentHash;
-          }
-        }
-      }
-    });
-
-    // If multiple parents point to same hash, ensure we don't duplicate.
-    // The simplified logic above might overwrite.
-    // Better:
-    // clear current commit from activeLanes (done)
-    // For each parent:
-    //   if parent is already in activeLanes: calculate link to it
-    //   else: place parent in a lane (current lane for p0, new/empty for others)
-
-    // Refined step:
-    // 1. Identify lane for current commit C. (Done above)
-    // 2. Create Node C.
-    // 3. For each parent P:
-    //    3a. Check if P is already in activeLanes (seen by a sibling of C? No, C's siblings would be processed earlier if they are newer? No, siblings merges...
-    //        Actually if multiple branches merge into P, P is parent of multiple children.
-    //        The first child processed will assign P to a lane.
-    //        Subsequent children will find P in activeLanes.
-
-    // Redo loop for parents to set strict "next" state
-
-    // We need to know which lane parents end up in to draw lines.
-
-    // Re-eval activeLanes update:
-
-    const parentLanes: number[] = [];
-
-    commit.parents.forEach((parentHash, i) => {
-      let pLane = activeLanes.indexOf(parentHash);
-      if (pLane === -1) {
+    commit.parents.forEach((pHash, i) => {
+      if (activeLanes.indexOf(pHash) === -1) {
+        let pLane = -1;
         if (i === 0 && activeLanes[lane] === null) {
-          pLane = lane;
-          activeLanes[lane] = parentHash;
+          pLane = lane; // Primary parent keeps the main line straight
         } else {
           pLane = activeLanes.findIndex((l) => l === null);
           if (pLane === -1) {
             pLane = activeLanes.length;
-            activeLanes.push(parentHash);
-          } else {
-            activeLanes[pLane] = parentHash;
+            activeLanes.push(null);
           }
         }
+        activeLanes[pLane] = pHash;
+        laneMap.set(pHash, pLane); // Lock the parent to this lane column
       }
-      parentLanes.push(pLane);
-
-      // Link
-      links.push({
-        source: { x: lane * 20 + 20, y: index * 40 + 25 },
-        target: { x: pLane * 20 + 20, y: (index + 1) * 40 + 25 },
-        color: LANE_COLORS[lane % LANE_COLORS.length],
-      });
     });
+  });
 
-    // If no parents (initial commit), lane becomes empty (activeLanes[lane] is null) - correct.
-
+  // Pass 2: Create Nodes and routing Links
+  commits.forEach((commit, index) => {
+    const lane = laneMap.get(commit.hash)!;
+    
     nodes.push({
       ...commit,
-      x: lane * 20 + 20,
-      y: index * 40 + 25,
+      x: lane * COL_WIDTH + PADDING_X,
+      y: index * ROW_HEIGHT + PADDING_Y,
       lane,
+    });
+
+    const source = { x: lane * COL_WIDTH + PADDING_X, y: index * ROW_HEIGHT + PADDING_Y };
+
+    commit.parents.forEach((pHash) => {
+       const pLane = laneMap.get(pHash);
+       if (pLane === undefined) return;
+
+       const pRow = commitRows.get(pHash);
+       const isParentInView = pRow !== undefined;
+       
+       // If parent is outside the loaded commits, project it to the bottom
+       const targetRow = isParentInView ? pRow : commits.length;
+       const target = { x: pLane * COL_WIDTH + PADDING_X, y: targetRow * ROW_HEIGHT + PADDING_Y };
+       
+       if (lane === pLane) {
+         // Straight vertical line connection
+         links.push({
+           source,
+           target,
+           color: LANE_COLORS[pLane % LANE_COLORS.length],
+           isCurve: false
+         });
+       } else {
+         // Diagonal branching/merging connection
+         const midPoint = { x: pLane * COL_WIDTH + PADDING_X, y: (index + 1) * ROW_HEIGHT + PADDING_Y };
+         links.push({
+           source,
+           target,
+           color: LANE_COLORS[pLane % LANE_COLORS.length],
+           isCurve: true,
+           midPoint
+         });
+       }
     });
   });
 

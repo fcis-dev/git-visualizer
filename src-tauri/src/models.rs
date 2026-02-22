@@ -58,6 +58,15 @@ pub struct TagData {
 }
 
 #[derive(Debug, Serialize)]
+pub struct BranchData {
+    pub name: String,
+    pub hash: String,
+    pub date: i64,
+    pub message: String,
+    pub is_remote: bool,
+}
+
+#[derive(Debug, Serialize)]
 pub struct StashEntry {
     pub index: String,
     pub message: String,

@@ -97,7 +97,8 @@ export function DiffView({
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              {error.includes("no such path") ? (
+              {error.includes("no such path") ||
+              error.includes("Not Committed Yet") ? (
                 <>
                   <div className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Not Committed Yet
@@ -105,6 +106,16 @@ export function DiffView({
                   <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
                     Blame information is not available because this file has not
                     been committed to the repository yet.
+                  </p>
+                </>
+              ) : error.includes("ambiguous argument") ? (
+                <>
+                  <div className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    File Deleted
+                  </div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
+                    Blame information is not available because this file was
+                    deleted in this or a previous commit.
                   </p>
                 </>
               ) : (

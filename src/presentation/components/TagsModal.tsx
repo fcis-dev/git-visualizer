@@ -14,6 +14,7 @@ export function TagsModal({ repoPath, onClose, onRefreshGraph }: TagsModalProps)
   const [tags, setTags] = useState<TagData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const gitActions = useGitActions(repoPath);
   const { showConfirm, showAlert } = useDialog();
@@ -98,6 +99,17 @@ export function TagsModal({ repoPath, onClose, onRefreshGraph }: TagsModalProps)
           </div>
         </div>
 
+        {/* Search Bar */}
+        <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800">
+            <input
+              type="text"
+              placeholder="Search tags..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded focus:outline-none focus:border-indigo-500"
+            />
+        </div>
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-0">
           {error && (
@@ -116,8 +128,20 @@ export function TagsModal({ repoPath, onClose, onRefreshGraph }: TagsModalProps)
                No tags found. Select a commit to create one.
              </div>
           ) : (
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {tags.map((tag, idx) => (
+            <>
+              {tags.filter((tag) => 
+                tag.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                tag.message.toLowerCase().includes(searchQuery.toLowerCase())
+              ).length === 0 && (
+                <div className="p-8 text-center text-slate-500">
+                  No tags matching your search.
+                </div>
+              )}
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {tags.filter((tag) => 
+                  tag.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                  tag.message.toLowerCase().includes(searchQuery.toLowerCase())
+                ).map((tag, idx) => (
                 <div key={`${tag.name}-${idx}`} className="group flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                   <div className="flex flex-col min-w-0 flex-1 mr-4">
                      <div className="flex items-center space-x-2 text-sm mb-1">
@@ -148,7 +172,8 @@ export function TagsModal({ repoPath, onClose, onRefreshGraph }: TagsModalProps)
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            </>
           )}
         </div>
       </div>

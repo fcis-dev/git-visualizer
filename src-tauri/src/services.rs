@@ -1,65 +1,73 @@
 use crate::models::{
-    CommitData, CommitDetails, FileChange, FileStatus, ReflogEntry, RepoData, StashEntry, TagData,
+    BranchData, CommitData, CommitDetails, FileChange, FileStatus, ReflogEntry, RepoData,
+    StashEntry, TagData,
 };
-use git2::{Repository, Sort};
+use git2::Repository;
 use std::fs;
 use std::path::Path;
 use walkdir::WalkDir;
 // use crate::config::AppState; // config logic stays in config.rs
 
-pub fn get_git_graph(path: &str) -> Result<Vec<CommitData>, String> {
-    let repo = Repository::open(path).map_err(|e| e.to_string())?;
-    let mut revwalk = repo.revwalk().map_err(|e| e.to_string())?;
+pub fn get_git_graph(path: &str, skip: usize, limit: usize) -> Result<Vec<CommitData>, String> {
+    let skip_str = skip.to_string();
+    let limit_str = limit.to_string();
+    let args = vec![
+        "log",
+        "--all",
+        "--topo-order",
+        "--format=%H%x00%an%x00%ct%x00%P%x00%D%x00%s", // Hash NULL Author NULL UnixTimestamp NULL Parents FULL NULL Refs NULL Subject
+        "--skip",
+        &skip_str,
+        "-n",
+        &limit_str,
+    ];
 
-    revwalk.push_head().ok();
-    revwalk
-        .push_glob("refs/heads/*")
-        .map_err(|e| e.to_string())?;
-    revwalk
-        .push_glob("refs/remotes/*")
-        .map_err(|e| e.to_string())?;
-    revwalk
-        .push_glob("refs/tags/*")
-        .map_err(|e| e.to_string())?;
-    revwalk
-        .set_sorting(Sort::TOPOLOGICAL | Sort::TIME)
-        .map_err(|e| e.to_string())?;
+    let output = run_git_cmd(path, &args)?;
 
-    let mut refs_map: std::collections::HashMap<String, Vec<String>> =
-        std::collections::HashMap::new();
-    if let Ok(references) = repo.references() {
-        for ref_result in references {
-            if let Ok(reference) = ref_result {
-                let name = reference.shorthand().unwrap_or("").to_string();
-                if let Ok(resolved) = reference.peel_to_commit() {
-                    let id = resolved.id().to_string();
-                    let display_name = if reference.is_tag() {
-                        format!("tag: {}", name)
-                    } else {
-                        name
-                    };
-                    refs_map.entry(id).or_default().push(display_name);
-                }
-            }
+    let mut commits = Vec::new();
+    for line in output.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        let parts: Vec<&str> = line.split('\x00').collect();
+        if parts.len() >= 6 {
+            let hash = parts[0].to_string();
+            let author = parts[1].to_string();
+            let date = parts[2].parse::<i64>().unwrap_or(0);
+            let parents: Vec<String> = parts[3].split_whitespace().map(|s| s.to_string()).collect();
+
+            let refs_str = parts[4].trim();
+            let refs: Vec<String> = if refs_str.is_empty() {
+                Vec::new()
+            } else {
+                refs_str
+                    .split(", ")
+                    .map(|s| {
+                        let s = s.trim();
+                        if s.starts_with("tag: ") {
+                            s.to_string()
+                        } else if let Some(stripped) = s.strip_prefix("HEAD -> ") {
+                            stripped.to_string()
+                        } else {
+                            s.to_string()
+                        }
+                    })
+                    .collect()
+            };
+
+            let message = parts[5].to_string();
+
+            commits.push(CommitData {
+                hash,
+                message,
+                author,
+                date,
+                parents,
+                refs,
+            });
         }
     }
 
-    let mut commits = Vec::new();
-    for oid in revwalk.take(1000) {
-        let oid = oid.map_err(|e| e.to_string())?;
-        let commit = repo.find_commit(oid).map_err(|e| e.to_string())?;
-        let parents: Vec<String> = commit.parent_ids().map(|p| p.to_string()).collect();
-        let refs = refs_map.get(&oid.to_string()).cloned().unwrap_or_default();
-
-        commits.push(CommitData {
-            hash: oid.to_string(),
-            message: commit.message().unwrap_or("").to_string(),
-            author: commit.author().name().unwrap_or("").to_string(),
-            date: commit.time().seconds(),
-            parents,
-            refs,
-        });
-    }
     Ok(commits)
 }
 
@@ -477,6 +485,9 @@ pub fn git_diff(path: &str, file: Option<String>, hash: Option<String>) -> Resul
     } else {
         args.push("diff");
         args.push("HEAD");
+        if normalized_file.is_some() {
+            args.push("--");
+        }
     }
 
     if let Some(f) = &normalized_file {
@@ -569,8 +580,48 @@ pub fn git_blame(path: &str, file: &str, hash: Option<String>) -> Result<String,
 }
 
 pub fn get_branches(path: &str) -> Result<Vec<String>, String> {
-    let output = run_git_cmd(path, &["branch", "-a", "--format=%(refname:short)"])?;
+    let output = run_git_cmd(path, &["branch", "--format=%(refname:short)"])?;
     Ok(output.lines().map(|s| s.to_string()).collect())
+}
+
+pub fn get_branches_info(path: &str) -> Result<Vec<BranchData>, String> {
+    let output = run_git_cmd(
+        path,
+        &[
+            "for-each-ref",
+            "--format=%(refname:short)|%(authordate:unix)|%(subject)|%(objectname)",
+            "refs/heads/",
+            "refs/remotes/",
+        ],
+    )?;
+
+    let mut branches = Vec::new();
+    for line in output.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        let parts: Vec<&str> = line.split('|').collect();
+        if parts.len() >= 4 {
+            let name = parts[0].to_string();
+            let date = parts[1].parse::<i64>().unwrap_or(0);
+            let message = parts[2].to_string();
+            let hash = parts[3].to_string();
+
+            // Typical format for remote branches from for-each-ref might simply include the remote name (e.g. origin/main)
+            // Since we queried refs/remotes/, we can identify them:
+            let is_remote = name.contains('/');
+
+            branches.push(BranchData {
+                name,
+                hash,
+                date,
+                message,
+                is_remote,
+            });
+        }
+    }
+
+    Ok(branches)
 }
 
 pub fn get_git_config_user(_path: &str) -> Result<(String, String), String> {
@@ -683,7 +734,7 @@ fn search_commits_internal(
 ) -> Result<Vec<CommitData>, String> {
     let mut args = vec![
         "log",
-        "--format=%H%x00%an%x00%ct%x00%p%x00%D%x00%s", // Hash NULL Author NULL UnixTimestamp NULL Parents NULL Refs NULL Subject
+        "--format=%H%x00%an%x00%ct%x00%P%x00%D%x00%s", // Hash NULL Author NULL UnixTimestamp NULL Parents FULL NULL Refs NULL Subject
         "-n",
         "200", // Limit to 200 results for performance
     ];
