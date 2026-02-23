@@ -7,15 +7,19 @@ import {
   LifeBuoy,
   Tag,
   Check,
+  FolderGit2,
+  RefreshCw,
+  ArrowDown,
+  ArrowUp,
 } from "lucide-react";
 import { SourceControl } from "./Sidebar/SourceControl";
+import { BranchesSidebar } from "./Sidebar/BranchesSidebar";
+import { TagsSidebar } from "./Sidebar/TagsSidebar";
+import { RescueSidebar } from "./Sidebar/RescueSidebar";
 import { Graph, GraphHandle } from "./Graph";
 import { DiffView } from "./DiffView";
 import { CommitDetails } from "./CommitDetails";
 import { HistoricalFileContentView } from "./HistoricalFileContentView";
-import { ReflogModal } from "./ReflogModal";
-import { TagsModal } from "./TagsModal";
-import { BranchManagerModal } from "./BranchManagerModal";
 import { CreateBranchModal } from "./CreateBranchModal";
 import { useGit } from "../hooks/useGit";
 import { useGitActions } from "../hooks/useGitActions";
@@ -51,9 +55,9 @@ export function RepositoryWorkspace({
     commitHash: string;
   } | null>(null);
 
-  const [isReflogModalOpen, setIsReflogModalOpen] = useState(false);
-  const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
-  const [isBranchManagerOpen, setIsBranchManagerOpen] = useState(false);
+  type SidebarTab = "changes" | "branches" | "tags" | "rescue";
+  const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>("changes");
+
   const [createBranchTarget, setCreateBranchTarget] = useState<string | null>(
     null,
   );
@@ -536,57 +540,174 @@ export function RepositoryWorkspace({
         </div>
 
         <div className="flex items-center space-x-2">
-          {/* Actions */}
-
+          {/* Sync Actions (Fetch, Pull, Push) */}
           <button
-            onClick={() => setIsBranchManagerOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 rounded-lg transition-colors border border-indigo-200 dark:border-indigo-500/20 text-sm font-medium"
-            title="Manage Branches"
+            onClick={() => handleFetch(true)}
+            disabled={isFetchingManual || isAutoFetching}
+            className="flex flex-col items-center justify-center p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-wait"
+            title="Fetch (con Prune)"
           >
-            <GitBranch className="w-4 h-4" />
-            <span>Branches</span>
+            <RefreshCw className={`w-4 h-4 ${(isFetchingManual || isAutoFetching) ? 'animate-spin' : ''}`} />
           </button>
 
           <button
-            onClick={() => setIsTagsModalOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg transition-colors border border-emerald-200 dark:border-emerald-500/20 text-sm font-medium"
-            title="Manage Tags"
+            onClick={handlePull}
+            disabled={isPulling}
+            className={`relative flex items-center space-x-1 px-2.5 py-1.5 rounded text-xs font-medium transition-colors border disabled:opacity-60 disabled:cursor-wait ${
+              behindCount > 0
+                ? "bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20"
+                : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-transparent"
+            }`}
+            title={behindCount > 0 ? `Pull (${behindCount} detrás)` : "Pull"}
           >
-            <Tag className="w-4 h-4" />
-            <span>Tags</span>
+            {isPulling ? (
+              <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10" strokeWidth="3" strokeDasharray="31.4 31.4" />
+              </svg>
+            ) : (
+              <ArrowDown className="w-3.5 h-3.5" />
+            )}
+            <span>Pull</span>
+            {behindCount > 0 && !isPulling && (
+              <span className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[1.2rem] text-[9px] font-bold rounded-full bg-amber-500 text-white leading-none shadow-sm">
+                {behindCount}
+              </span>
+            )}
           </button>
 
           <button
-            onClick={() => setIsReflogModalOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-lg transition-colors border border-amber-200 dark:border-amber-500/20 text-sm font-medium"
-            title="Rescue Center (Reflog)"
+            onClick={handlePush}
+            disabled={isPushing}
+            className={`relative flex items-center space-x-1 px-2.5 py-1.5 rounded text-xs font-medium transition-colors border disabled:opacity-60 disabled:cursor-wait ${
+              aheadCount > 0
+                ? "bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20"
+                : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-transparent"
+            }`}
+            title={aheadCount > 0 ? `Push (${aheadCount} arriba)` : "Push"}
           >
-            <LifeBuoy className="w-4 h-4" />
-            <span>Rescue</span>
+            {isPushing ? (
+              <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10" strokeWidth="3" strokeDasharray="31.4 31.4" />
+              </svg>
+            ) : (
+              <ArrowUp className="w-3.5 h-3.5" />
+            )}
+            <span>Push</span>
+            {aheadCount > 0 && !isPushing && (
+              <span className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[1.2rem] text-[9px] font-bold rounded-full bg-indigo-500 text-white leading-none shadow-sm">
+                {aheadCount}
+              </span>
+            )}
           </button>
         </div>
       </header>
 
-      {/* Main Content (Unified 3 Columns) */}
+      {/* Main Content (Activity Bar + Sidebar + Main Area) */}
       <main className="flex-1 overflow-hidden relative flex bg-slate-50 dark:bg-slate-900">
-        {/* Left Column: Source Control (Changes) */}
-        <div className="w-80 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col z-10">
-          <SourceControl
-            repoPath={repoPath}
-            latestCommit={commits.length > 0 ? commits[0] : null}
-            onSelectFile={(file) => {
-              setDiffTarget({ path: file });
-            }}
-            onCommit={loadCommits}
-            aheadCount={aheadCount}
-            behindCount={behindCount}
-            isAutoFetching={isAutoFetching || isFetchingManual}
-            isPulling={isPulling}
-            isPushing={isPushing}
-            onFetch={handleFetch}
-            onPull={handlePull}
-            onPush={handlePush}
-          />
+        {/* Activity Bar (Leftmost Column) */}
+        <div className="w-14 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col items-center py-4 z-20 space-y-4">
+          <div className="flex-1 w-full flex flex-col items-center space-y-4">
+            <button
+              onClick={() => setActiveSidebarTab("changes")}
+              className={`p-3 rounded-xl transition-all relative ${
+                activeSidebarTab === "changes"
+                  ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 shadow-sm"
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+              title="Changes"
+            >
+              <FolderGit2 className="w-6 h-6 stroke-[1.5]" />
+              {activeSidebarTab === "changes" && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-r-full -ml-[9px]"></div>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveSidebarTab("branches")}
+              className={`p-3 rounded-xl transition-all relative ${
+                activeSidebarTab === "branches"
+                  ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 shadow-sm"
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+              title="Branches"
+            >
+              <GitBranch className="w-6 h-6 stroke-[1.5]" />
+              {activeSidebarTab === "branches" && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-r-full -ml-[9px]"></div>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveSidebarTab("tags")}
+              className={`p-3 rounded-xl transition-all relative ${
+                activeSidebarTab === "tags"
+                  ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 shadow-sm"
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+              title="Tags"
+            >
+              <Tag className="w-6 h-6 stroke-[1.5]" />
+              {activeSidebarTab === "tags" && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-600 dark:bg-emerald-500 rounded-r-full -ml-[9px]"></div>
+              )}
+            </button>
+          </div>
+
+          {/* Bottom Actions of Activity Bar */}
+          <div className="w-full flex flex-col items-center pb-2">
+            <button
+              onClick={() => setActiveSidebarTab("rescue")}
+              className={`p-3 rounded-xl transition-all relative ${
+                activeSidebarTab === "rescue"
+                  ? "text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-500/10 shadow-sm"
+                  : "text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10"
+              }`}
+              title="Rescue (Reflog)"
+            >
+              <LifeBuoy className="w-6 h-6 stroke-[1.5]" />
+              {activeSidebarTab === "rescue" && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-amber-500 rounded-r-full -ml-[9px]"></div>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Dynamic Sidebar (Changes / Branches / Rescue) */}
+        <div className="w-80 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col z-10 transition-all">
+          {activeSidebarTab === "changes" && (
+            <SourceControl
+              repoPath={repoPath}
+              latestCommit={commits.length > 0 ? commits[0] : null}
+              onSelectFile={(file) => {
+                setDiffTarget({ path: file });
+              }}
+              onCommit={loadCommits}
+              isAutoFetching={isAutoFetching || isFetchingManual}
+              onFetch={handleFetch}
+            />
+          )}
+
+          {activeSidebarTab === "branches" && (
+            <BranchesSidebar 
+              repoPath={repoPath} 
+              currentBranch={branchName}
+              onRefreshGraph={loadCommits}
+            />
+          )}
+
+          {activeSidebarTab === "tags" && (
+            <TagsSidebar 
+              repoPath={repoPath} 
+              onRefreshGraph={loadCommits}
+            />
+          )}
+
+          {activeSidebarTab === "rescue" && (
+            <RescueSidebar 
+              repoPath={repoPath}
+              onRestore={loadCommits}
+            />
+          )}
         </div>
 
         {/* Middle Column: History Graph & Search (and Overlay Diff) */}
@@ -828,28 +949,6 @@ export function RepositoryWorkspace({
       </main>
 
       {/* Overlays */}
-      {isReflogModalOpen && (
-        <ReflogModal
-          repoPath={repoPath}
-          onClose={() => setIsReflogModalOpen(false)}
-          onRestore={() => loadCommits()}
-        />
-      )}
-      {isBranchManagerOpen && (
-        <BranchManagerModal
-          repoPath={repoPath}
-          currentBranch={branchName}
-          onClose={() => setIsBranchManagerOpen(false)}
-          onRefreshGraph={() => loadCommits()}
-        />
-      )}
-      {isTagsModalOpen && (
-        <TagsModal
-          repoPath={repoPath}
-          onClose={() => setIsTagsModalOpen(false)}
-          onRefreshGraph={() => loadCommits()}
-        />
-      )}
       {createBranchTarget && (
         <CreateBranchModal
           baseCommit={createBranchTarget}

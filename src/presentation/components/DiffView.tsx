@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { X } from "lucide-react";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface DiffViewProps {
   repoPath: string;
@@ -20,6 +22,43 @@ export function DiffView({
   const [viewMode, setViewMode] = useState<"diff" | "blame">("diff");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+      const checkDarkMode = () => setIsDarkMode(document.documentElement.classList.contains('dark'));
+      checkDarkMode();
+      const observer = new MutationObserver(checkDarkMode);
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      return () => observer.disconnect();
+  }, []);
+
+  const getLanguage = (path: string) => {
+      const ext = path.split('.').pop()?.toLowerCase();
+      switch (ext) {
+          case 'js':
+          case 'jsx': return 'javascript';
+          case 'ts':
+          case 'tsx': return 'typescript';
+          case 'rs': return 'rust';
+          case 'py': return 'python';
+          case 'json': return 'json';
+          case 'html': return 'html';
+          case 'css': return 'css';
+          case 'md': return 'markdown';
+          case 'yml':
+          case 'yaml': return 'yaml';
+          case 'go': return 'go';
+          case 'java': return 'java';
+          case 'cpp':
+          case 'c':
+          case 'h':
+          case 'hpp': return 'cpp';
+          case 'cs': return 'csharp';
+          case 'sh': return 'bash';
+          case 'toml': return 'toml';
+          default: return 'text';
+      }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -108,14 +147,14 @@ export function DiffView({
                     been committed to the repository yet.
                   </p>
                 </>
-              ) : error.includes("ambiguous argument") ? (
+              ) : error.includes("ambiguous argument") || error.includes("Cannot lstat") || error.includes("No such file or directory") ? (
                 <>
                   <div className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    File Deleted
+                    File Not Found
                   </div>
                   <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
                     Blame information is not available because this file was
-                    deleted in this or a previous commit.
+                    deleted, moved, or did not exist in this commit.
                   </p>
                 </>
               ) : (
@@ -273,8 +312,22 @@ export function DiffView({
                           <td className="py-0.5 px-4 text-slate-400 dark:text-slate-500 text-right font-mono text-xs select-none">
                             {lineNum}
                           </td>
-                          <td className="py-0.5 px-4 text-slate-700 dark:text-slate-300 whitespace-pre w-full font-mono text-xs leading-tight border-l border-slate-100 dark:border-slate-800">
-                            {content}
+                          <td className="py-0.5 px-0 text-slate-700 dark:text-slate-300 whitespace-pre w-full font-mono text-xs leading-tight border-l border-slate-100 dark:border-slate-800">
+                            <SyntaxHighlighter
+                              language={getLanguage(filePath)}
+                              style={isDarkMode ? vscDarkPlus : vs}
+                              customStyle={{
+                                margin: 0,
+                                padding: '2px 16px',
+                                background: 'transparent',
+                                fontSize: 'inherit',
+                                lineHeight: 'inherit',
+                                fontFamily: 'inherit'
+                              }}
+                              PreTag="div"
+                            >
+                              {content || ' '}
+                            </SyntaxHighlighter>
                           </td>
                         </tr>
                       );

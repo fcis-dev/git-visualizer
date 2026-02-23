@@ -659,7 +659,7 @@ pub fn get_branches_info(path: &str) -> Result<Vec<BranchData>, String> {
         path,
         &[
             "for-each-ref",
-            "--format=%(refname:short)|%(authordate:unix)|%(subject)|%(objectname)",
+            "--format=%(refname)|%(authordate:unix)|%(subject)|%(objectname)",
             "refs/heads/",
             "refs/remotes/",
         ],
@@ -672,14 +672,23 @@ pub fn get_branches_info(path: &str) -> Result<Vec<BranchData>, String> {
         }
         let parts: Vec<&str> = line.split('|').collect();
         if parts.len() >= 4 {
-            let name = parts[0].to_string();
+            let refname = parts[0].to_string();
             let date = parts[1].parse::<i64>().unwrap_or(0);
             let message = parts[2].to_string();
             let hash = parts[3].to_string();
 
-            // Typical format for remote branches from for-each-ref might simply include the remote name (e.g. origin/main)
-            // Since we queried refs/remotes/, we can identify them:
-            let is_remote = name.contains('/');
+            let is_remote = refname.starts_with("refs/remotes/");
+
+            let name = if is_remote {
+                refname.trim_start_matches("refs/remotes/").to_string()
+            } else {
+                refname.trim_start_matches("refs/heads/").to_string()
+            };
+
+            // Ignore HEAD references like origin/HEAD
+            if name.ends_with("/HEAD") || name == "HEAD" {
+                continue;
+            }
 
             branches.push(BranchData {
                 name,

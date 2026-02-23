@@ -50,14 +50,16 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
   }, [repoPath, filterBranches.join(",")]);
 
   const loadMoreCommits = useCallback(async () => {
-    if (!repoPath || isLoadingMore || !hasMore) return;
+    if (!repoPath || isLoading || isLoadingMore || !hasMore) return;
     setIsLoadingMore(true);
     try {
       const newCommits = await repository.getCommits(repoPath, commitCountRef.current, PAGE_SIZE, filterBranches.length > 0 ? filterBranches : undefined);
       if (newCommits.length === 0 || newCommits.length < PAGE_SIZE) setHasMore(false);
       if (newCommits.length > 0) {
         setCommits((prev) => {
-          const updated = [...prev, ...newCommits];
+          const existingHashes = new Set(prev.map(c => c.hash));
+          const uniqueNewCommits = newCommits.filter(c => !existingHashes.has(c.hash));
+          const updated = [...prev, ...uniqueNewCommits];
           commitCountRef.current = updated.length;
           return updated;
         });
