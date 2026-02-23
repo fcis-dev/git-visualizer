@@ -30,6 +30,10 @@ export class TauriGitRepository implements IGitRepository {
     return await invoke<string>("get_current_branch", { path });
   }
 
+  async getHeadHash(path: string): Promise<string> {
+    return await invoke<string>("get_head_hash", { path });
+  }
+
   async getBranches(path: string): Promise<string[]> {
     return await invoke<string[]>("get_branches", { path });
   }
@@ -148,7 +152,11 @@ export class TauriGitRepository implements IGitRepository {
     await invoke("git_branch_create", { path, name, hash });
   }
 
-  async deleteBranch(path: string, name: string, force: boolean = false): Promise<void> {
+  async deleteBranch(
+    path: string,
+    name: string,
+    force: boolean = false,
+  ): Promise<void> {
     await invoke("git_branch_delete", { path, name, force });
   }
 
@@ -204,5 +212,32 @@ export class TauriGitRepository implements IGitRepository {
 
   async getTags(path: string): Promise<TagData[]> {
     return await invoke<TagData[]>("get_tags", { path });
+  }
+
+  /** Returns the number of commits the current branch is behind its upstream. 0 if no upstream or up to date. */
+  async checkBehind(path: string): Promise<number> {
+    try {
+      return await invoke<number>("git_check_behind", { path });
+    } catch {
+      return 0;
+    }
+  }
+
+  /** Returns the number of commits the current branch is ahead of its upstream. 0 if no upstream or up to date. */
+  async checkAhead(path: string): Promise<number> {
+    try {
+      return await invoke<number>("git_check_ahead", { path });
+    } catch {
+      return 0;
+    }
+  }
+
+  /** Returns local branch names whose remote tracking ref has been deleted (gone). */
+  async getPrunedBranches(path: string): Promise<string[]> {
+    try {
+      return await invoke<string[]>("git_get_pruned_branches", { path });
+    } catch {
+      return [];
+    }
   }
 }

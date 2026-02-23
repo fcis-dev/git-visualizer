@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
   GitBranch,
-  RefreshCw,
   ArrowLeft,
   Search,
   Filter,
@@ -20,6 +19,7 @@ import { BranchManagerModal } from "./BranchManagerModal";
 import { CreateBranchModal } from "./CreateBranchModal";
 import { useGit } from "../hooks/useGit";
 import { useGitActions } from "../hooks/useGitActions";
+import { useAutoFetch } from "../hooks/useAutoFetch";
 import { useDialog } from "../context/DialogContext";
 import {
   Commit,
@@ -68,21 +68,27 @@ export function RepositoryWorkspace({
   const [isSearching, setIsSearching] = useState(false);
   const [hasMoreSearch, setHasMoreSearch] = useState(false);
   const [isLoadingMoreSearch, setIsLoadingMoreSearch] = useState(false);
+  const searchTimeoutRef = useRef<number | null>(null);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isScrollingToHead, setIsScrollingToHead] = useState(false);
   const [graphBranches, setGraphBranches] = useState<string[]>([]); // empty = all branches
   const [isBranchFilterOpen, setIsBranchFilterOpen] = useState(false);
-  const searchTimeoutRef = useRef<number | null>(null);
   const graphRef = useRef<GraphHandle>(null);
   const commitsRef = useRef<Commit[]>([]);
   const hasMoreRef = useRef<boolean>(true);
   const isLoadingMoreRef = useRef<boolean>(false);
 
-  // Using existing hooks
+  // Loading states for async buttons
+  const [isPulling, setIsPulling] = useState(false);
+  const [isPushing, setIsPushing] = useState(false);
+  const [isFetchingManual, setIsFetchingManual] = useState(false);
+  const [checkoutingBranch, setCheckoutingBranch] = useState<string | null>(null);
+
   const {
     commits,
     branchName,
     availableBranches,
+    headHash,
     checkoutBranch,
     loadCommits,
     loadMoreCommits,
@@ -116,37 +122,71 @@ export function RepositoryWorkspace({
 
   const gitActions = useGitActions(repoPath, onActionSuccess);
 
+  // Auto-fetch hook — periodic silent fetch every 3 minutes
+  const { aheadCount, behindCount, prunedBranches: _prunedBranches, isFetching: isAutoFetching, triggerFetch } = useAutoFetch(repoPath, {
+    onFetchDone: (_behind, pruned, withPrune) => {
+      // After fetch, if requested, offer to delete pruned branches (those whose remote was deleted)
+      if (withPrune && pruned.length > 0) {
+        showConfirm(
+          "Ramas remotas eliminadas",
+          `Las siguientes ramas locales rastrean refs remotas ya borradas:\n\n${pruned.join(", ")}\n\n¿Eliminarlas localmente?`,
+          async () => {
+            for (const branch of pruned) {
+              try {
+                await gitActions.deleteBranch(branch, false);
+              } catch {
+                try { await gitActions.deleteBranch(branch, true); } catch { /* ignore */ }
+              }
+            }
+            loadCommits();
+          },
+        );
+      }
+    },
+  });
+
   // Scroll the graph to the HEAD commit of the current branch.
-  // If the commit hasn't been loaded yet, keeps loading more pages until it appears.
   const handleScrollToHead = async () => {
-    if (!branchName || isScrollingToHead) return;
+    if (isScrollingToHead) return;
+
+    // Helper to identify HEAD either by precise hash or by refs
+    const isHead = (c: Commit) => {
+        if (headHash && c.hash === headHash) return true;
+        if (!c.refs) return false;
+        return c.refs.some(r => r === "HEAD" || r.toUpperCase().startsWith("HEAD ->"));
+    };
 
     // Try immediately with already-loaded commits
-    const found = graphRef.current?.scrollToHash(
-      commitsRef.current.find((c) => c.refs?.includes(branchName))?.hash ?? ""
-    );
-    if (found) return;
+    const foundLocal = commitsRef.current.find(isHead);
+    if (foundLocal) {
+        const found = graphRef.current?.scrollToHash(foundLocal.hash);
+        if (found) return;
+    }
 
     setIsScrollingToHead(true);
+    let pagesSearched = 0;
+    const MAX_PAGES = 10; // Avoid truly infinite loops if HEAD is not in the current filter
     try {
-      // Keep loading pages until we find the commit or run out
-      while (hasMoreRef.current) {
+      // Keep loading pages until we find the commit or hit the limit
+      while (hasMoreRef.current && pagesSearched < MAX_PAGES) {
         if (isLoadingMoreRef.current) {
-          // Wait for the ongoing load to finish
           await new Promise((r) => setTimeout(r, 300));
           continue;
         }
         await loadMoreCommits();
-        // Small yield so React can flush the state update
+        pagesSearched++;
         await new Promise((r) => setTimeout(r, 50));
-        const headCommit = commitsRef.current.find((c) => c.refs?.includes(branchName));
+        const headCommit = commitsRef.current.find(isHead);
         if (headCommit) {
           graphRef.current?.scrollToHash(headCommit.hash);
           return;
         }
       }
-      // If we exhausted all commits and still didn't find it, just scroll to top
+      // If we exhausted all commits or hit limit, just scroll to top
       graphRef.current?.scrollToTop();
+      if (pagesSearched >= MAX_PAGES && !commitsRef.current.find(isHead)) {
+          showAlert("HEAD no encontrado", "No se encontró el commit HEAD en el gráfico actual.");
+      }
     } finally {
       setIsScrollingToHead(false);
     }
@@ -239,15 +279,49 @@ export function RepositoryWorkspace({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCommit?.hash]);
 
-  const handleFetch = async () => {
+  const handleFetch = async (withPrune: boolean = false) => {
+    if (isFetchingManual || isAutoFetching) return;
+    setIsFetchingManual(true);
     try {
-      await gitActions.fetch();
-      showAlert(
-        "Fetch Successful",
-        "Repository fetched and pruned successfully.",
-      );
+      await triggerFetch(withPrune);
+      loadCommits();
     } catch (e: any) {
       setError(e.toString());
+    } finally {
+      setIsFetchingManual(false);
+    }
+  };
+
+  const handlePull = async () => {
+    if (isPulling) return;
+    setIsPulling(true);
+    try {
+      await gitActions.fetch(); // fetch first to update remote tracking
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("git_pull", { path: repoPath });
+      await triggerFetch(); // Refresh ahead/behind counts
+      loadCommits();
+      showAlert("Pull Completado", "Los cambios remotos se han descargado correctamente.");
+    } catch (e: any) {
+      setError(e.toString());
+    } finally {
+      setIsPulling(false);
+    }
+  };
+
+  const handlePush = async () => {
+    if (isPushing) return;
+    setIsPushing(true);
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      await invoke("git_push", { path: repoPath });
+      await triggerFetch(); // Refresh ahead/behind counts
+      loadCommits();
+      showAlert("Push Completado", "Los cambios locales se han subido correctamente.");
+    } catch (e: any) {
+      setError(e.toString());
+    } finally {
+      setIsPushing(false);
     }
   };
 
@@ -395,8 +469,10 @@ export function RepositoryWorkspace({
                     {availableBranches.map((branch) => (
                       <button
                         key={branch}
+                        disabled={checkoutingBranch === branch}
                         onClick={async () => {
                           try {
+                            setCheckoutingBranch(branch);
                             await checkoutBranch(branch);
                             setIsBranchDropdownOpen(false);
                             showAlert(
@@ -406,16 +482,22 @@ export function RepositoryWorkspace({
                           } catch (e: any) {
                             setIsBranchDropdownOpen(false);
                             showAlert("Checkout Failed", e.toString());
+                          } finally {
+                            setCheckoutingBranch(null);
                           }
                         }}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between disabled:opacity-60 disabled:cursor-wait
                            ${branch === branchName ? "text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50/50 dark:bg-indigo-900/10" : "text-slate-700 dark:text-slate-300"}
                         `}
                       >
                         <span className="truncate">{branch}</span>
-                        {branch === branchName && (
+                        {checkoutingBranch === branch ? (
+                          <svg className="animate-spin w-3.5 h-3.5 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="12" cy="12" r="10" strokeWidth="3" strokeDasharray="31.4 31.4" />
+                          </svg>
+                        ) : branch === branchName ? (
                           <Check className="w-3.5 h-3.5" />
-                        )}
+                        ) : null}
                       </button>
                     ))}
                     {availableBranches.length === 0 && (
@@ -482,16 +564,6 @@ export function RepositoryWorkspace({
             <LifeBuoy className="w-4 h-4" />
             <span>Rescue</span>
           </button>
-
-          <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2" />
-
-          <button
-            onClick={handleFetch}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
-            title="Fetch & Prune"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
         </div>
       </header>
 
@@ -506,6 +578,14 @@ export function RepositoryWorkspace({
               setDiffTarget({ path: file });
             }}
             onCommit={loadCommits}
+            aheadCount={aheadCount}
+            behindCount={behindCount}
+            isAutoFetching={isAutoFetching || isFetchingManual}
+            isPulling={isPulling}
+            isPushing={isPushing}
+            onFetch={handleFetch}
+            onPull={handlePull}
+            onPush={handlePush}
           />
         </div>
 

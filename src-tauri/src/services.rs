@@ -319,6 +319,16 @@ pub fn get_current_branch(path: &str) -> Result<String, String> {
     }
 }
 
+pub fn get_head_hash(path: &str) -> Result<String, String> {
+    let repo = Repository::open(path).map_err(|e| e.to_string())?;
+    let head = repo.head().map_err(|e| e.to_string())?;
+    if let Some(oid) = head.target() {
+        Ok(oid.to_string())
+    } else {
+        Err("HEAD does not point to a commit".to_string())
+    }
+}
+
 fn run_git_cmd(path: &str, args: &[&str]) -> Result<String, String> {
     use std::process::Command;
     #[cfg(target_os = "windows")]
@@ -590,6 +600,40 @@ pub fn git_remote_add(path: &str, name: &str, url: &str) -> Result<String, Strin
 
 pub fn git_remote_remove(path: &str, name: &str) -> Result<String, String> {
     run_git_cmd(path, &["remote", "remove", name])
+}
+
+/// Returns the number of commits the current branch is behind its upstream (0 = up to date).
+/// Returns Err if the branch has no upstream configured.
+pub fn git_check_behind(path: &str) -> Result<u32, String> {
+    let out = run_git_cmd(path, &["rev-list", "--count", "HEAD..@{u}"])?;
+    Ok(out.trim().parse::<u32>().unwrap_or(0))
+}
+
+/// Returns the number of commits the current branch is ahead of its upstream (0 = up to date).
+/// Returns Err if the branch has no upstream configured.
+pub fn git_check_ahead(path: &str) -> Result<u32, String> {
+    let out = run_git_cmd(path, &["rev-list", "--count", "@{u}..HEAD"])?;
+    Ok(out.trim().parse::<u32>().unwrap_or(0))
+}
+
+/// Returns local branch names whose remote-tracking ref is marked as ': gone]'
+/// (i.e. the remote branch was deleted and the local tracking ref no longer exists).
+pub fn git_get_pruned_branches(path: &str) -> Result<Vec<String>, String> {
+    let out = run_git_cmd(path, &["branch", "-vv"])?;
+    let pruned = out
+        .lines()
+        .filter(|l| l.contains(": gone]"))
+        .filter_map(|l| {
+            l.trim()
+                .trim_start_matches('*')
+                .trim()
+                .split_whitespace()
+                .next()
+                .map(|s| s.to_string())
+        })
+        .filter(|s| !s.is_empty())
+        .collect();
+    Ok(pruned)
 }
 
 pub fn git_blame(path: &str, file: &str, hash: Option<String>) -> Result<String, String> {

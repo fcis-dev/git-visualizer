@@ -9,7 +9,9 @@ import {
   Trash2,
   ArrowRight,
   Settings,
+  ArrowDown,
 } from "lucide-react";
+import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
 
 interface RepoData {
   path: string;
@@ -22,6 +24,8 @@ interface ProjectSelectionViewProps {
   onOpenSettings: () => void;
 }
 
+const repository = new TauriGitRepository();
+
 export function ProjectSelectionView({
   onSelectRepo,
   onOpenSettings,
@@ -29,6 +33,9 @@ export function ProjectSelectionView({
   const [repos, setRepos] = useState<Record<string, RepoData[]>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  /** Path → number of commits behind remote (0 = up to date / unknown) */
+  const [behindCounts, setBehindCounts] = useState<Record<string, number>>({});
+  const [isFetchingAll, setIsFetchingAll] = useState(false);
 
   // Flatten repos for display
   const allRepos = Object.values(repos)
@@ -52,17 +59,40 @@ export function ProjectSelectionView({
     loadFolders();
   }, []);
 
+  /** After repos are loaded, silently fetch + check behind counts for all of them */
+  const refreshBehindCounts = async (repoList: RepoData[]) => {
+    if (repoList.length === 0) return;
+    setIsFetchingAll(true);
+    try {
+      // Fire-and-forget fetch for every repo in parallel
+      await Promise.allSettled(repoList.map((r) => repository.fetch(r.path)));
+      // Now check behind counts in parallel
+      const results = await Promise.allSettled(
+        repoList.map((r) => repository.checkBehind(r.path)),
+      );
+      const counts: Record<string, number> = {};
+      results.forEach((result, idx) => {
+        counts[repoList[idx].path] =
+          result.status === "fulfilled" ? result.value : 0;
+      });
+      setBehindCounts(counts);
+    } finally {
+      setIsFetchingAll(false);
+    }
+  };
+
   const loadFolders = async () => {
     setLoading(true);
     try {
       const loadedFolders = await invoke<string[]>("list_folders");
 
-      // Load repos for each folder
-      // We do this concurrently for speed
       const promises = loadedFolders.map((folder) =>
         loadReposForFolder(folder),
       );
-      await Promise.all(promises);
+      const folderResults = await Promise.all(promises);
+      const flatRepos = folderResults.flat();
+      // Kick off background fetch + behind-count check after repos are known
+      refreshBehindCounts(flatRepos);
     } catch (error) {
       console.error("Failed to load folders", error);
     } finally {
@@ -70,14 +100,16 @@ export function ProjectSelectionView({
     }
   };
 
-  const loadReposForFolder = async (folder: string) => {
+  const loadReposForFolder = async (folder: string): Promise<RepoData[]> => {
     try {
       const folderRepos = await invoke<RepoData[]>("get_repos_in_folder", {
         path: folder,
       });
       setRepos((prev) => ({ ...prev, [folder]: folderRepos }));
+      return folderRepos;
     } catch (error) {
       console.error(`Failed to load repos for ${folder}`, error);
+      return [];
     }
   };
 
@@ -220,13 +252,27 @@ export function ProjectSelectionView({
                   {repo.path}
                 </p>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 flex-wrap gap-y-1.5">
                   <div className="flex items-center space-x-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs font-medium text-slate-600 dark:text-slate-300">
                     <GitBranch className="w-3.5 h-3.5" />
                     <span className="truncate max-w-[150px]">
                       {repo.branch || "..."}
                     </span>
                   </div>
+                  {/* Behind-count badge */}
+                  {isFetchingAll ? (
+                    <div className="flex items-center space-x-1 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-400 dark:text-slate-500">
+                      <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10" strokeWidth="3" strokeDasharray="31.4 31.4" />
+                      </svg>
+                      <span>Syncing…</span>
+                    </div>
+                  ) : (behindCounts[repo.path] ?? 0) > 0 ? (
+                    <div className="flex items-center space-x-1 px-2 py-1 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded text-xs font-semibold text-amber-700 dark:text-amber-400">
+                      <ArrowDown className="w-3 h-3" />
+                      <span>{behindCounts[repo.path]} detrás</span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ))}

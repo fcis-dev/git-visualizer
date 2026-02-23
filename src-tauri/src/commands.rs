@@ -99,6 +99,11 @@ pub async fn get_current_branch(path: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub async fn get_head_hash(path: &str) -> Result<String, String> {
+    services::get_head_hash(path)
+}
+
+#[tauri::command]
 pub async fn git_fetch_prune(path: &str) -> Result<String, String> {
     services::git_fetch_prune(path)
 }
@@ -219,6 +224,21 @@ pub async fn git_remote_add(path: &str, name: &str, url: &str) -> Result<String,
 #[tauri::command]
 pub async fn git_remote_remove(path: &str, name: &str) -> Result<String, String> {
     services::git_remote_remove(path, name)
+}
+
+#[tauri::command]
+pub async fn git_check_behind(path: &str) -> Result<u32, String> {
+    services::git_check_behind(path)
+}
+
+#[tauri::command]
+pub async fn git_check_ahead(path: &str) -> Result<u32, String> {
+    services::git_check_ahead(path)
+}
+
+#[tauri::command]
+pub async fn git_get_pruned_branches(path: &str) -> Result<Vec<String>, String> {
+    services::git_get_pruned_branches(path)
 }
 
 #[tauri::command]

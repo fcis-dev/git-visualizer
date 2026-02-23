@@ -12,6 +12,7 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [headHash, setHeadHash] = useState<string>("");
 
   const commitCountRef = useRef(0);
   const repository = new TauriGitRepository();
@@ -22,15 +23,17 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
     setError(null);
     setHasMore(true);
     try {
-      const [commitsData, branch, branchesList] = await Promise.all([
+      const [commitsData, branch, branchesList, headHashStr] = await Promise.all([
         repository.getCommits(repoPath, 0, PAGE_SIZE, filterBranches.length > 0 ? filterBranches : undefined),
         repository.getCurrentBranch(repoPath),
         repository.getBranches(repoPath),
+        repository.getHeadHash(repoPath).catch(() => ""),
       ]);
       setCommits(commitsData);
       commitCountRef.current = commitsData.length;
       setBranchName(branch);
       setAvailableBranches(branchesList);
+      setHeadHash(headHashStr);
       if (commitsData.length < PAGE_SIZE) setHasMore(false);
     } catch (err: any) {
       console.error(err);
@@ -39,6 +42,7 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
       commitCountRef.current = 0;
       setBranchName("");
       setAvailableBranches([]);
+      setHeadHash("");
     } finally {
       setIsLoading(false);
     }
@@ -98,6 +102,7 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
     commits,
     branchName,
     availableBranches,
+    headHash,
     error,
     isLoading,
     isLoadingMore,

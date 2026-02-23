@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { RefreshCw, Play, Check, X, ArrowUp, ArrowDown, Archive, Globe, Plus, Trash2, RotateCcw } from 'lucide-react';
 import { useDialog } from '../../context/DialogContext';
@@ -15,9 +15,30 @@ interface SourceControlProps {
   latestCommit?: Commit | null;
   onSelectFile: (file: string) => void;
   onCommit?: () => void;
+  aheadCount?: number;
+  behindCount?: number;
+  isAutoFetching?: boolean;
+  isPulling?: boolean;
+  isPushing?: boolean;
+  onFetch?: (withPrune?: boolean) => Promise<void>;
+  onPull?: () => Promise<void>;
+  onPush?: () => Promise<void>;
 }
 
-export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }: SourceControlProps) {
+export function SourceControl({
+  repoPath,
+  latestCommit,
+  onSelectFile,
+  onCommit,
+  aheadCount = 0,
+  behindCount = 0,
+  isAutoFetching = false,
+  isPulling = false,
+  isPushing = false,
+  onFetch,
+  onPull,
+  onPush
+}: SourceControlProps) {
   const [stagedFiles, setStagedFiles] = useState<FileStatus[]>([]);
   const [changes, setChanges] = useState<FileStatus[]>([]);
   const [conflictedFiles, setConflictedFiles] = useState<FileStatus[]>([]);
@@ -33,6 +54,9 @@ export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }
 
   const [isStashesModalOpen, setIsStashesModalOpen] = useState(false);
   const [isRebasing, setIsRebasing] = useState(false);
+
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isSyncLongPress = useRef(false);
 
   const { showInput, showAlert, showConfirm } = useDialog();
 
@@ -184,33 +208,16 @@ export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }
   };
 
   const handlePush = async () => {
-    if (!repoPath) return;
-    setPushPullLoading(true);
-    try {
-        await invoke('git_push', { path: repoPath });
-        setError(null);
-        showAlert("Push Successful", "Changes pushed to remote successfully.");
-    } catch (err: any) {
-        console.error("Failed to push", err);
-        setError("Push failed: " + err.toString());
-    } finally {
-        setPushPullLoading(false);
+    if (onPush) {
+      await onPush();
+      loadStatus();
     }
   };
 
   const handlePull = async () => {
-    if (!repoPath) return;
-    setPushPullLoading(true);
-    try {
-        await invoke('git_pull', { path: repoPath });
-        setError(null);
-        loadStatus(); // Reload status after pull
-        showAlert("Pull Successful", "Changes pulled from remote successfully.");
-    } catch (err: any) {
-        console.error("Failed to pull", err);
-        setError("Pull failed: " + err.toString());
-    } finally {
-        setPushPullLoading(false);
+    if (onPull) {
+      await onPull();
+      loadStatus();
     }
   };
 
@@ -296,11 +303,35 @@ export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }
         <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">SOURCE CONTROL</span>
         <div className="flex space-x-1">
              <button 
-                onClick={loadStatus} 
-                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition-colors"
-                disabled={loading}
+                onMouseDown={() => {
+                    isSyncLongPress.current = false;
+                    syncTimeoutRef.current = setTimeout(async () => {
+                        isSyncLongPress.current = true;
+                        syncTimeoutRef.current = null;
+                        await loadStatus();
+                        if (onFetch) await onFetch(true);
+                    }, 600);
+                }}
+                onMouseUp={async () => {
+                    if (syncTimeoutRef.current) {
+                        clearTimeout(syncTimeoutRef.current);
+                        syncTimeoutRef.current = null;
+                        // It was a short press
+                        await loadStatus();
+                        if (onFetch) await onFetch(false);
+                    }
+                }}
+                onMouseLeave={() => {
+                    if (syncTimeoutRef.current) {
+                        clearTimeout(syncTimeoutRef.current);
+                        syncTimeoutRef.current = null;
+                    }
+                }}
+                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition-colors disabled:opacity-50 disabled:cursor-wait"
+                disabled={loading || isAutoFetching}
+                title="Sincronizar (Mantén pulsado para borrar ramas remotas eliminadas)"
             >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${(loading || isAutoFetching) ? 'animate-spin' : ''}`} />
             </button>
         </div>
       </div>
@@ -370,19 +401,51 @@ export function SourceControl({ repoPath, latestCommit, onSelectFile, onCommit }
         <div className="flex space-x-2">
             <button
                 onClick={handlePull}
-                disabled={pushPullLoading}
-                className="flex-1 flex items-center justify-center space-x-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 py-1.5 rounded text-xs transition-colors"
+                disabled={isPulling}
+                title={behindCount > 0 ? `Pull (${behindCount} detrás)` : "Pull"}
+                className={`flex-1 relative flex items-center justify-center space-x-2 py-1.5 rounded text-xs transition-colors border disabled:opacity-60 disabled:cursor-wait ${
+                    behindCount > 0
+                        ? "bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20"
+                        : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-transparent"
+                }`}
             >
-                <ArrowDown className="w-3.5 h-3.5" />
+                {isPulling ? (
+                    <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10" strokeWidth="3" strokeDasharray="31.4 31.4" />
+                    </svg>
+                ) : (
+                    <ArrowDown className="w-3.5 h-3.5" />
+                )}
                 <span>Pull</span>
+                {behindCount > 0 && !isPulling && (
+                    <span className="absolute right-2 px-1.5 py-0.5 min-w-[1.2rem] text-[9px] font-bold rounded-full bg-amber-500 text-white leading-none">
+                        {behindCount}
+                    </span>
+                )}
             </button>
             <button
                 onClick={handlePush}
-                disabled={pushPullLoading}
-                className="flex-1 flex items-center justify-center space-x-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 py-1.5 rounded text-xs transition-colors"
+                disabled={isPushing}
+                title={aheadCount > 0 ? `Push (${aheadCount} arriba)` : "Push"}
+                className={`flex-1 relative flex items-center justify-center space-x-2 py-1.5 rounded text-xs transition-colors border disabled:opacity-60 disabled:cursor-wait ${
+                    aheadCount > 0
+                        ? "bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20"
+                        : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-transparent"
+                }`}
             >
-                <ArrowUp className="w-3.5 h-3.5" />
+                {isPushing ? (
+                    <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10" strokeWidth="3" strokeDasharray="31.4 31.4" />
+                    </svg>
+                ) : (
+                    <ArrowUp className="w-3.5 h-3.5" />
+                )}
                 <span>Push</span>
+                {aheadCount > 0 && !isPushing && (
+                    <span className="absolute right-2 px-1.5 py-0.5 min-w-[1.2rem] text-[9px] font-bold rounded-full bg-indigo-500 text-white leading-none">
+                        {aheadCount}
+                    </span>
+                )}
             </button>
         </div>
 

@@ -29,6 +29,7 @@ pub fn run() {
             commands::git_push_tags,
             commands::git_pull,
             commands::get_current_branch,
+            commands::get_head_hash,
             commands::git_fetch_prune,
             commands::git_merge,
             commands::git_stash_save,
@@ -66,7 +67,10 @@ pub fn run() {
             commands::git_get_rebase_state,
             commands::git_rebase_interactive,
             commands::git_rebase_continue,
-            commands::git_rebase_abort
+            commands::git_rebase_abort,
+            commands::git_check_behind,
+            commands::git_check_ahead,
+            commands::git_get_pruned_branches
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
