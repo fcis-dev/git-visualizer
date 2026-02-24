@@ -270,7 +270,7 @@ export function ProjectSelectionView({
                   ) : (behindCounts[repo.path] ?? 0) > 0 ? (
                     <div className="flex items-center space-x-1 px-2 py-1 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded text-xs font-semibold text-amber-700 dark:text-amber-400">
                       <ArrowDown className="w-3 h-3" />
-                      <span>{behindCounts[repo.path]} detrás</span>
+                      <span>{behindCounts[repo.path]} behind</span>
                     </div>
                   ) : null}
                 </div>

@@ -4,6 +4,7 @@ import { GitBranch, Trash2, Check, ChevronDown, ChevronRight, Search, Globe, Plu
 import { BranchData } from '../../../domain/entities/GitEntities';
 import { useGitActions } from '../../hooks/useGitActions';
 import { useDialog } from '../../context/DialogContext';
+import { buildBranchTree, sortTreeNodes, BranchTreeNode } from '../../utils/branchTreeUtils';
 
 interface BranchesSidebarProps {
   repoPath: string | null;
@@ -55,6 +56,25 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
         const parts = branch.name.split("/");
         const localName = parts.length > 1 ? parts.slice(1).join("/") : branch.name;
         
+        const localExists = branches.find(b => !b.is_remote && b.name === localName);
+        if (localExists) {
+          showConfirm(
+            "Branch Exists",
+            `A local branch named '${localName}' already exists. Do you want to switch to it instead?`,
+            async () => {
+              try {
+                await gitActions.checkoutBranch(localName);
+                showAlert("Success", `Checked out ${localName}.`);
+                onRefreshGraph();
+                loadBranches();
+              } catch (err: any) {
+                setError(err.toString());
+              }
+            }
+          );
+          return;
+        }
+
         showConfirm(
           "Checkout Remote Branch", 
           `Do you want to create and checkout a local tracking branch named '${localName}'?`,
@@ -219,45 +239,15 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
             </div>
             
             {isLocalExpanded && !loadingBranches && (
-                <div className="pl-2 pr-1 py-1 space-y-0.5">
-                    {localBranches.length > 0 ? localBranches.map((branch, idx) => {
-                        const isActive = branch.name === currentBranch;
-                        return (
-                            <div 
-                                key={`local-${branch.name}-${idx}`} 
-                                onClick={() => !isActive && handleCheckoutBranch(branch)}
-                                className={`group flex items-center justify-between p-1.5 rounded cursor-pointer transition-colors ${isActive ? 'bg-indigo-50 dark:bg-indigo-500/10' : 'hover:bg-slate-100 dark:hover:bg-slate-800/50'}`}
-                            >
-                                <div className="flex items-center space-x-2 truncate flex-1 md:max-w-[200px]">
-                                    <GitBranch className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
-                                    <span className={`text-sm truncate ${isActive ? 'text-indigo-700 dark:text-indigo-300 font-medium' : 'text-slate-600 dark:text-slate-300'}`} title={branch.name}>
-                                        {branch.name}
-                                    </span>
-                                </div>
-                                <div className="flex space-x-1">
-                                    {isActive ? (
-                                        <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-500 mr-1" />
-                                    ) : (
-                                        <>
-                                         <button 
-                                            className="opacity-0 group-hover:opacity-100 p-1 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors text-slate-400"
-                                            title="Checkout Branch"
-                                        >
-                                            <Check className="w-3.5 h-3.5" />
-                                        </button>
-                                        <button 
-                                            onClick={(e) => handleDeleteBranch(branch, e)}
-                                            className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors text-slate-400"
-                                            title="Delete Branch"
-                                        >
-                                            <Trash2 className="w-3.5 h-3.5" />
-                                        </button>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    }) : (
+                <div className="space-y-0.5">
+                    {localBranches.length > 0 ? (
+                        <BranchNodeRenderer 
+                            node={buildBranchTree(localBranches, b => b.name)} 
+                            currentBranch={currentBranch}
+                            onCheckout={handleCheckoutBranch}
+                            onDelete={handleDeleteBranch}
+                        />
+                    ) : (
                         <div className="text-xs text-slate-400 italic px-2 py-1">No local branches found</div>
                     )}
                 </div>
@@ -276,36 +266,16 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
             </div>
             
             {isRemoteExpanded && !loadingBranches && (
-                <div className="pl-2 pr-1 py-1 space-y-0.5 pt-1">
-                    {remoteBranches.length > 0 ? remoteBranches.map((branch, idx) => (
-                        <div 
-                            key={`remote-${branch.name}-${idx}`} 
-                            onClick={() => handleCheckoutBranch(branch)}
-                            className="group flex items-center justify-between p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded cursor-pointer transition-colors"
-                        >
-                            <div className="flex items-center space-x-2 truncate flex-1 md:max-w-[200px]">
-                                <GitBranch className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                                <span className="text-sm text-slate-600 dark:text-slate-300 truncate" title={branch.name}>
-                                    {branch.name}
-                                </span>
-                            </div>
-                            <div className="flex space-x-1">
-                                    <button 
-                                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors text-slate-400"
-                                        title="Checkout Remote Branch"
-                                    >
-                                        <Check className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button 
-                                        onClick={(e) => handleDeleteBranch(branch, e)}
-                                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors text-slate-400"
-                                        title="Delete Remote Branch"
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                            </div>
-                        </div>
-                    )) : (
+                <div className="space-y-0.5 pt-1">
+                    {remoteBranches.length > 0 ? (
+                        <BranchNodeRenderer 
+                            node={buildBranchTree(remoteBranches, b => b.name)} 
+                            currentBranch={currentBranch}
+                            onCheckout={handleCheckoutBranch}
+                            onDelete={handleDeleteBranch}
+                            isRemote={true}
+                        />
+                    ) : (
                         <div className="text-xs text-slate-400 italic px-2 py-1">No remote branches found</div>
                     )}
                 </div>
@@ -366,4 +336,113 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
       </div>
     </div>
   );
+}
+
+function BranchNodeRenderer({
+    node,
+    currentBranch,
+    onCheckout,
+    onDelete,
+    isRemote = false,
+    level = 0
+}: {
+    node: BranchTreeNode<BranchData>;
+    currentBranch: string;
+    onCheckout: (b: BranchData) => void;
+    onDelete: (b: BranchData, e: React.MouseEvent) => void;
+    isRemote?: boolean;
+    level?: number;
+}) {
+    const [expanded, setExpanded] = useState(true); // Default expand trees initially
+    
+    const children = sortTreeNodes(node);
+    const isFolder = !node.isLeaf && children.length > 0;
+    
+    if (node.name === "root") {
+        return (
+            <div className="space-y-0.5">
+                {children.map(child => (
+                    <BranchNodeRenderer 
+                        key={child.path} 
+                        node={child} 
+                        currentBranch={currentBranch}
+                        onCheckout={onCheckout}
+                        onDelete={onDelete}
+                        isRemote={isRemote}
+                        level={level} 
+                    />
+                ))}
+            </div>
+        );
+    }
+
+    if (isFolder) {
+        return (
+            <div className="flex flex-col">
+                <div 
+                    onClick={() => setExpanded(!expanded)}
+                    className="flex items-center space-x-1.5 p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer select-none transition-colors"
+                    style={{ paddingLeft: `${level * 12 + 6}px` }}
+                >
+                    {expanded ? <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />}
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate" title={node.path}>{node.name}/</span>
+                </div>
+                {expanded && (
+                    <div className="flex flex-col space-y-0.5 pt-0.5">
+                        {children.map(child => (
+                            <BranchNodeRenderer 
+                                key={child.path} 
+                                node={child} 
+                                currentBranch={currentBranch}
+                                onCheckout={onCheckout}
+                                onDelete={onDelete}
+                                isRemote={isRemote}
+                                level={level + 1} 
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    const branch = node.data!;
+    const isActive = branch.name === currentBranch && !isRemote;
+
+    return (
+        <div 
+            onClick={() => !isActive && onCheckout(branch)}
+            className={`group flex items-center justify-between py-1.5 pr-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded cursor-pointer transition-colors ${isActive ? 'bg-indigo-50 dark:bg-indigo-500/10' : ''}`}
+            style={{ paddingLeft: `${level * 12 + (node.isLeaf && level === 0 ? 8 : 22)}px` }}
+        >
+            <div className="flex items-center space-x-2 truncate flex-1 md:max-w-[200px]">
+                {isActive && <div className="absolute left-0 w-0.5 h-4 bg-indigo-500 rounded-r"></div>}
+                <GitBranch className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
+                <span className={`text-sm truncate ${isActive ? 'text-indigo-700 dark:text-indigo-300 font-medium' : 'text-slate-600 dark:text-slate-300'}`} title={branch.name}>
+                    {node.name}
+                </span>
+            </div>
+            <div className="flex space-x-1 pl-2">
+                {isActive ? (
+                    <Check className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-500 mr-1" />
+                ) : (
+                    <>
+                     <button 
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors text-slate-400"
+                        title={isRemote ? "Checkout Remote Branch" : "Checkout Branch"}
+                    >
+                        <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                        onClick={(e) => onDelete(branch, e)}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors text-slate-400"
+                        title={isRemote ? "Delete Remote Branch" : "Delete Branch"}
+                    >
+                        <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    </>
+                )}
+            </div>
+        </div>
+    );
 }

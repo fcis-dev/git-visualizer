@@ -27,6 +27,7 @@ const repository = new TauriGitRepository();
 
 export function useAutoFetch(
   repoPath: string,
+  branchName: string,
   options?: UseAutoFetchOptions,
 ): UseAutoFetchResult {
   const [behindCount, setBehindCount] = useState(0);
@@ -90,7 +91,7 @@ export function useAutoFetch(
       cancelled = true;
       clearInterval(interval);
     };
-  }, [repoPath, runFetch]);
+  }, [repoPath, branchName, runFetch]);
 
   // Reset when repo changes
   useEffect(() => {

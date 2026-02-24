@@ -11,6 +11,8 @@ import {
   RefreshCw,
   ArrowDown,
   ArrowUp,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { SourceControl } from "./Sidebar/SourceControl";
 import { BranchesSidebar } from "./Sidebar/BranchesSidebar";
@@ -25,6 +27,7 @@ import { useGit } from "../hooks/useGit";
 import { useGitActions } from "../hooks/useGitActions";
 import { useAutoFetch } from "../hooks/useAutoFetch";
 import { useDialog } from "../context/DialogContext";
+import { buildBranchTree, sortTreeNodes, BranchTreeNode } from "../utils/branchTreeUtils";
 import {
   Commit,
   CommitDetails as CommitDetailsType,
@@ -127,7 +130,7 @@ export function RepositoryWorkspace({
   const gitActions = useGitActions(repoPath, onActionSuccess);
 
   // Auto-fetch hook — periodic silent fetch every 3 minutes
-  const { aheadCount, behindCount, prunedBranches: _prunedBranches, isFetching: isAutoFetching, triggerFetch } = useAutoFetch(repoPath, {
+  const { aheadCount, behindCount, prunedBranches: _prunedBranches, isFetching: isAutoFetching, triggerFetch } = useAutoFetch(repoPath, branchName, {
     onFetchDone: (_behind, pruned, withPrune) => {
       // After fetch, if requested, offer to delete pruned branches (those whose remote was deleted)
       if (withPrune && pruned.length > 0) {
@@ -470,11 +473,12 @@ export function RepositoryWorkspace({
                     Local Branches
                   </div>
                   <div className="max-h-64 overflow-y-auto custom-scrollbar">
-                    {availableBranches.map((branch) => (
-                      <button
-                        key={branch}
-                        disabled={checkoutingBranch === branch}
-                        onClick={async () => {
+                    {availableBranches.length > 0 ? (
+                      <DropdownBranchNodeRenderer 
+                        node={buildBranchTree(availableBranches, b => b)} 
+                        branchName={branchName}
+                        checkoutingBranch={checkoutingBranch}
+                        onCheckout={async (branch) => {
                           try {
                             setCheckoutingBranch(branch);
                             await checkoutBranch(branch);
@@ -490,21 +494,8 @@ export function RepositoryWorkspace({
                             setCheckoutingBranch(null);
                           }
                         }}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between disabled:opacity-60 disabled:cursor-wait
-                           ${branch === branchName ? "text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50/50 dark:bg-indigo-900/10" : "text-slate-700 dark:text-slate-300"}
-                        `}
-                      >
-                        <span className="truncate">{branch}</span>
-                        {checkoutingBranch === branch ? (
-                          <svg className="animate-spin w-3.5 h-3.5 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <circle cx="12" cy="12" r="10" strokeWidth="3" strokeDasharray="31.4 31.4" />
-                          </svg>
-                        ) : branch === branchName ? (
-                          <Check className="w-3.5 h-3.5" />
-                        ) : null}
-                      </button>
-                    ))}
-                    {availableBranches.length === 0 && (
+                      />
+                    ) : (
                       <div className="px-3 py-4 text-center text-xs text-slate-400">
                         No branches found
                       </div>
@@ -558,7 +549,7 @@ export function RepositoryWorkspace({
                 ? "bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20"
                 : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-transparent"
             }`}
-            title={behindCount > 0 ? `Pull (${behindCount} detrás)` : "Pull"}
+            title={behindCount > 0 ? `Pull (${behindCount} behind)` : "Pull"}
           >
             {isPulling ? (
               <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -569,7 +560,7 @@ export function RepositoryWorkspace({
             )}
             <span>Pull</span>
             {behindCount > 0 && !isPulling && (
-              <span className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[1.2rem] text-[9px] font-bold rounded-full bg-amber-500 text-white leading-none shadow-sm">
+              <span className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[1.2rem] text-[9px] font-bold rounded-full bg-amber-500 text-white leading-none shadow-sm text-center">
                 {behindCount}
               </span>
             )}
@@ -583,7 +574,7 @@ export function RepositoryWorkspace({
                 ? "bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20"
                 : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-transparent"
             }`}
-            title={aheadCount > 0 ? `Push (${aheadCount} arriba)` : "Push"}
+            title={aheadCount > 0 ? `Push (${aheadCount} ahead)` : "Push"}
           >
             {isPushing ? (
               <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -594,7 +585,7 @@ export function RepositoryWorkspace({
             )}
             <span>Push</span>
             {aheadCount > 0 && !isPushing && (
-              <span className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[1.2rem] text-[9px] font-bold rounded-full bg-indigo-500 text-white leading-none shadow-sm">
+              <span className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[1.2rem] text-[9px] font-bold rounded-full bg-indigo-500 text-white leading-none shadow-sm text-center">
                 {aheadCount}
               </span>
             )}
@@ -765,35 +756,20 @@ export function RepositoryWorkspace({
                       <span>All branches</span>
                     </button>
                     <div className="max-h-52 overflow-y-auto custom-scrollbar">
-                      {availableBranches.map((b) => {
-                        const checked = graphBranches.includes(b);
-                        return (
-                          <button
-                            key={b}
-                            onClick={() => {
-                              setGraphBranches((prev) =>
-                                prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]
-                              );
-                              setSelectedCommit(null);
-                              setCommitSearchQuery("");
-                            }}
-                            className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${
-                              checked ? "text-indigo-700 dark:text-indigo-300" : "text-slate-700 dark:text-slate-300"
-                            }`}
-                          >
-                            <span className={`w-4 h-4 flex items-center justify-center rounded border shrink-0 transition-colors ${
-                              checked ? "bg-indigo-500 border-indigo-500 text-white" : "border-slate-300 dark:border-slate-600"
-                            }`}>
-                              {checked && <Check className="w-3 h-3" />}
-                            </span>
-                            <GitBranch className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-                            <span className="truncate">{b}</span>
-                            {b === branchName && (
-                              <span className="ml-auto text-xs text-indigo-500 dark:text-indigo-400 shrink-0">current</span>
-                            )}
-                          </button>
-                        );
-                      })}
+                      {availableBranches.length > 0 && (
+                        <FilterBranchNodeRenderer 
+                          node={buildBranchTree(availableBranches, b => b)} 
+                          graphBranches={graphBranches}
+                          branchName={branchName}
+                          onToggle={(b) => {
+                            setGraphBranches((prev) =>
+                              prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]
+                            );
+                            setSelectedCommit(null);
+                            setCommitSearchQuery("");
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
                 </>
@@ -967,4 +943,180 @@ export function RepositoryWorkspace({
       )}
     </div>
   );
+}
+
+function DropdownBranchNodeRenderer({
+    node,
+    branchName,
+    checkoutingBranch,
+    onCheckout,
+    level = 0
+}: {
+    node: BranchTreeNode<string>;
+    branchName: string;
+    checkoutingBranch: string | null;
+    onCheckout: (b: string) => void;
+    level?: number;
+}) {
+    const [expanded, setExpanded] = useState(true);
+    const children = sortTreeNodes(node);
+    const isFolder = !node.isLeaf && children.length > 0;
+
+    if (node.name === "root") {
+        return (
+            <>
+                {children.map(child => (
+                    <DropdownBranchNodeRenderer 
+                        key={child.path} 
+                        node={child} 
+                        branchName={branchName}
+                        checkoutingBranch={checkoutingBranch}
+                        onCheckout={onCheckout}
+                        level={level} 
+                    />
+                ))}
+            </>
+        );
+    }
+
+    if (isFolder) {
+        return (
+            <div className="flex flex-col">
+                <button 
+                    onClick={(e) => { e.preventDefault(); setExpanded(!expanded); }}
+                    className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center text-slate-500 dark:text-slate-400 font-medium"
+                    style={{ paddingLeft: `${level * 12 + 12}px` }}
+                    type="button"
+                >
+                    {expanded ? <ChevronDown className="w-3.5 h-3.5 mr-1" /> : <ChevronRight className="w-3.5 h-3.5 mr-1" />}
+                    <span className="truncate">{node.name}/</span>
+                </button>
+                {expanded && (
+                    <div className="flex flex-col">
+                        {children.map(child => (
+                            <DropdownBranchNodeRenderer 
+                                key={child.path} 
+                                node={child} 
+                                branchName={branchName}
+                                checkoutingBranch={checkoutingBranch}
+                                onCheckout={onCheckout}
+                                level={level + 1} 
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    const branch = node.data!;
+    return (
+        <button
+            disabled={checkoutingBranch === branch}
+            onClick={() => onCheckout(branch)}
+            className={`w-full text-left pr-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between disabled:opacity-60 disabled:cursor-wait
+                ${branch === branchName ? "text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50/50 dark:bg-indigo-900/10" : "text-slate-700 dark:text-slate-300"}
+            `}
+            style={{ paddingLeft: `${level * 12 + 24}px` }}
+            type="button"
+        >
+            <span className="truncate">{node.name}</span>
+            {checkoutingBranch === branch ? (
+                <svg className="animate-spin w-3.5 h-3.5 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10" strokeWidth="3" strokeDasharray="31.4 31.4" />
+                </svg>
+            ) : branch === branchName ? (
+                <Check className="w-3.5 h-3.5" />
+            ) : null}
+        </button>
+    );
+}
+
+function FilterBranchNodeRenderer({
+    node,
+    graphBranches,
+    branchName,
+    onToggle,
+    level = 0
+}: {
+    node: BranchTreeNode<string>;
+    graphBranches: string[];
+    branchName: string;
+    onToggle: (b: string) => void;
+    level?: number;
+}) {
+    const [expanded, setExpanded] = useState(true);
+    const children = sortTreeNodes(node);
+    const isFolder = !node.isLeaf && children.length > 0;
+
+    if (node.name === "root") {
+        return (
+            <>
+                {children.map(child => (
+                    <FilterBranchNodeRenderer 
+                        key={child.path} 
+                        node={child} 
+                        graphBranches={graphBranches}
+                        branchName={branchName}
+                        onToggle={onToggle}
+                        level={level} 
+                    />
+                ))}
+            </>
+        );
+    }
+
+    if (isFolder) {
+        return (
+            <div className="flex flex-col">
+                <button 
+                    onClick={(e) => { e.preventDefault(); setExpanded(!expanded); }}
+                    className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center text-slate-500 dark:text-slate-400 font-medium"
+                    style={{ paddingLeft: `${level * 12 + 12}px` }}
+                    type="button"
+                >
+                    {expanded ? <ChevronDown className="w-3.5 h-3.5 mr-1" /> : <ChevronRight className="w-3.5 h-3.5 mr-1" />}
+                    <span className="truncate">{node.name}/</span>
+                </button>
+                {expanded && (
+                    <div className="flex flex-col">
+                        {children.map(child => (
+                            <FilterBranchNodeRenderer 
+                                key={child.path} 
+                                node={child} 
+                                graphBranches={graphBranches}
+                                branchName={branchName}
+                                onToggle={onToggle}
+                                level={level + 1} 
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    const b = node.data!;
+    const checked = graphBranches.includes(b);
+    return (
+        <button
+            onClick={() => onToggle(b)}
+            className={`w-full text-left pr-3 py-2 text-sm flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${
+                checked ? "text-indigo-700 dark:text-indigo-300" : "text-slate-700 dark:text-slate-300"
+            }`}
+            style={{ paddingLeft: `${level * 12 + 24}px` }}
+            type="button"
+        >
+            <span className={`w-4 h-4 flex items-center justify-center rounded border shrink-0 transition-colors ${
+                checked ? "bg-indigo-500 border-indigo-500 text-white" : "border-slate-300 dark:border-slate-600"
+            }`}>
+                {checked && <Check className="w-3 h-3" />}
+            </span>
+            <GitBranch className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+            <span className="truncate">{node.name}</span>
+            {b === branchName && (
+                <span className="ml-auto text-xs text-indigo-500 dark:text-indigo-400 shrink-0">current</span>
+            )}
+        </button>
+    );
 }
