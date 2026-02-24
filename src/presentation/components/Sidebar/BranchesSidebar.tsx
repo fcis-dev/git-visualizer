@@ -23,8 +23,21 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
   const [remotes, setRemotes] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    branch: BranchData | null;
+  }>({ visible: false, x: 0, y: 0, branch: null });
+
   const gitActions = useGitActions(repoPath || "");
   const { showAlert, showConfirm, showInput } = useDialog();
+
+  useEffect(() => {
+    const closeContextMenu = () => setContextMenu(prev => ({ ...prev, visible: false }));
+    document.addEventListener("click", closeContextMenu);
+    return () => document.removeEventListener("click", closeContextMenu);
+  }, []);
 
   useEffect(() => {
     if (repoPath) {
@@ -137,6 +150,140 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
     );
   };
 
+  const handleMergeBranch = async (branch: BranchData) => {
+    showConfirm(
+      "Merge Branch",
+      `Merge '${branch.name}' into current branch '${currentBranch}'?`,
+      async () => {
+        try {
+          await gitActions.merge(branch.name);
+          showAlert("Success", `Successfully merged ${branch.name}.`);
+          onRefreshGraph();
+          loadBranches();
+        } catch (e: any) {
+          setError(e.toString());
+        }
+      }
+    );
+  };
+
+  const handleRenameBranch = async (branch: BranchData) => {
+    showInput(
+      "Rename Branch",
+      "New branch name:",
+      async (newName) => {
+        if (!newName || newName === branch.name) return;
+        try {
+          await gitActions.renameBranch(branch.name, newName);
+          showAlert("Success", `Renamed branch to ${newName}.`);
+          onRefreshGraph();
+          loadBranches();
+        } catch (e: any) {
+          setError(e.toString());
+        }
+      },
+      branch.name
+    );
+  };
+
+  const handleCreateBranchFrom = (branch: BranchData) => {
+    showInput(
+      "Create Branch",
+      `New branch name (from ${branch.name}):`,
+      async (newName) => {
+        if (!newName) return;
+        try {
+          await gitActions.createBranch(newName, branch.hash);
+          showAlert("Success", `Created branch ${newName} from ${branch.name}.`);
+          onRefreshGraph();
+          loadBranches();
+        } catch (e: any) {
+          setError(e.toString());
+        }
+      }
+    );
+  };
+
+  const handleCreateTagFrom = (branch: BranchData) => {
+    showInput(
+      "Create Tag",
+      `New tag name (at ${branch.name}):`,
+      async (tagName) => {
+        if (!tagName) return;
+        try {
+          await gitActions.createTag(tagName, branch.hash);
+          showAlert("Success", `Created tag ${tagName} at ${branch.name}.`);
+          onRefreshGraph();
+        } catch (e: any) {
+          setError(e.toString());
+        }
+      }
+    );
+  };
+
+  const handleCherryPickBranch = (branch: BranchData) => {
+    showConfirm(
+      "Cherry Pick",
+      `Cherry pick the tip commit of '${branch.name}' (${branch.hash.substring(0, 7)}) into current branch?`,
+      async () => {
+        try {
+          await gitActions.cherryPick(branch.hash);
+          showAlert("Success", `Cherry picked ${branch.name}.`);
+          onRefreshGraph();
+        } catch (e: any) {
+          setError(e.toString());
+        }
+      }
+    );
+  };
+
+  const handleRebaseOnto = (branch: BranchData) => {
+    showConfirm(
+      "Rebase",
+      `Rebase current branch '${currentBranch}' onto '${branch.name}'?`,
+      async () => {
+        try {
+          await gitActions.rebase(branch.name);
+          showAlert("Success", `Rebased onto ${branch.name}.`);
+          onRefreshGraph();
+        } catch (e: any) {
+          setError(e.toString());
+        }
+      }
+    );
+  };
+
+  const handleResetTo = (branch: BranchData, mode: "soft" | "mixed" | "hard") => {
+    const isHard = mode === "hard";
+    const msg = isHard 
+        ? `Are you sure you want to HARD reset current branch to '${branch.name}'? ALL uncommitted changes will be lost.`
+        : `Reset current branch to '${branch.name}' using ${mode} mode?`;
+        
+    showConfirm(
+      `Reset to ${branch.name}`,
+      msg,
+      async () => {
+        try {
+          await gitActions.reset(branch.hash, mode);
+          showAlert("Success", `Reset to ${branch.name} (${mode}).`);
+          onRefreshGraph();
+        } catch (e: any) {
+          setError(e.toString());
+        }
+      }
+    );
+  };
+
+  const handleContextMenu = (branch: BranchData, e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      branch
+    });
+  };
+
   const loadRemotes = async () => {
       if (!repoPath) return;
       try {
@@ -246,6 +393,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                             currentBranch={currentBranch}
                             onCheckout={handleCheckoutBranch}
                             onDelete={handleDeleteBranch}
+                            onContextMenu={handleContextMenu}
                         />
                     ) : (
                         <div className="text-xs text-slate-400 italic px-2 py-1">No local branches found</div>
@@ -273,6 +421,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                             currentBranch={currentBranch}
                             onCheckout={handleCheckoutBranch}
                             onDelete={handleDeleteBranch}
+                            onContextMenu={handleContextMenu}
                             isRemote={true}
                         />
                     ) : (
@@ -334,6 +483,142 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
             )}
         </div>
       </div>
+
+      {contextMenu.visible && contextMenu.branch && (
+        <div 
+          className="fixed z-50 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg min-w-[160px] text-sm overflow-hidden"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 truncate max-w-[200px]" title={contextMenu.branch.name}>
+            {contextMenu.branch.name}
+          </div>
+          
+          <button 
+            className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+            onClick={() => {
+              handleCheckoutBranch(contextMenu.branch!);
+              setContextMenu({ ...contextMenu, visible: false });
+            }}
+          >
+            Checkout
+          </button>
+
+          {!contextMenu.branch.is_remote && (
+            <button 
+              className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+              onClick={() => {
+                handleRenameBranch(contextMenu.branch!);
+                setContextMenu({ ...contextMenu, visible: false });
+              }}
+            >
+              Rename
+            </button>
+          )}
+
+          <button 
+            className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+            onClick={() => {
+              handleCreateBranchFrom(contextMenu.branch!);
+              setContextMenu({ ...contextMenu, visible: false });
+            }}
+          >
+            Create branch from here...
+          </button>
+
+          <button 
+            className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+            onClick={() => {
+              handleCreateTagFrom(contextMenu.branch!);
+              setContextMenu({ ...contextMenu, visible: false });
+            }}
+          >
+            Create tag here...
+          </button>
+
+          {contextMenu.branch.name !== currentBranch && (
+            <>
+              <div className="border-t border-slate-100 dark:border-slate-800 my-1"></div>
+              
+              <button 
+                className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                onClick={() => {
+                  handleMergeBranch(contextMenu.branch!);
+                  setContextMenu({ ...contextMenu, visible: false });
+                }}
+              >
+                Merge into current
+              </button>
+
+              <button 
+                className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                onClick={() => {
+                  handleRebaseOnto(contextMenu.branch!);
+                  setContextMenu({ ...contextMenu, visible: false });
+                }}
+              >
+                Rebase current onto this
+              </button>
+
+              <button 
+                className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                onClick={() => {
+                  handleCherryPickBranch(contextMenu.branch!);
+                  setContextMenu({ ...contextMenu, visible: false });
+                }}
+              >
+                Cherry-pick tip
+              </button>
+
+              <div className="border-t border-slate-100 dark:border-slate-800 my-1"></div>
+              <div className="px-4 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reset Current To Here</div>
+              
+              <button 
+                className="w-full text-left px-4 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                onClick={() => {
+                  handleResetTo(contextMenu.branch!, "soft");
+                  setContextMenu({ ...contextMenu, visible: false });
+                }}
+              >
+                Soft (keep changes)
+              </button>
+              <button 
+                className="w-full text-left px-4 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                onClick={() => {
+                  handleResetTo(contextMenu.branch!, "mixed");
+                  setContextMenu({ ...contextMenu, visible: false });
+                }}
+              >
+                Mixed
+              </button>
+              <button 
+                className="w-full text-left px-4 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-red-600 dark:text-red-400 font-medium"
+                onClick={() => {
+                  handleResetTo(contextMenu.branch!, "hard");
+                  setContextMenu({ ...contextMenu, visible: false });
+                }}
+              >
+                Hard (discard changes)
+              </button>
+            </>
+          )}
+
+          {contextMenu.branch.name !== currentBranch && (
+            <>
+              <div className="border-t border-slate-100 dark:border-slate-800 my-1"></div>
+              <button 
+                className="w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-red-600 dark:text-red-400 hover:text-red-700"
+                onClick={(e) => {
+                handleDeleteBranch(contextMenu.branch!, e);
+                setContextMenu({ ...contextMenu, visible: false });
+              }}
+            >
+              Delete
+            </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -343,6 +628,7 @@ function BranchNodeRenderer({
     currentBranch,
     onCheckout,
     onDelete,
+    onContextMenu,
     isRemote = false,
     level = 0
 }: {
@@ -350,6 +636,7 @@ function BranchNodeRenderer({
     currentBranch: string;
     onCheckout: (b: BranchData) => void;
     onDelete: (b: BranchData, e: React.MouseEvent) => void;
+    onContextMenu: (b: BranchData, e: React.MouseEvent) => void;
     isRemote?: boolean;
     level?: number;
 }) {
@@ -368,6 +655,7 @@ function BranchNodeRenderer({
                         currentBranch={currentBranch}
                         onCheckout={onCheckout}
                         onDelete={onDelete}
+                        onContextMenu={onContextMenu}
                         isRemote={isRemote}
                         level={level} 
                     />
@@ -396,6 +684,7 @@ function BranchNodeRenderer({
                                 currentBranch={currentBranch}
                                 onCheckout={onCheckout}
                                 onDelete={onDelete}
+                                onContextMenu={onContextMenu}
                                 isRemote={isRemote}
                                 level={level + 1} 
                             />
@@ -412,6 +701,7 @@ function BranchNodeRenderer({
     return (
         <div 
             onClick={() => !isActive && onCheckout(branch)}
+            onContextMenu={(e) => onContextMenu(branch, e)}
             className={`group flex items-center justify-between py-1.5 pr-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded cursor-pointer transition-colors ${isActive ? 'bg-indigo-50 dark:bg-indigo-500/10' : ''}`}
             style={{ paddingLeft: `${level * 12 + (node.isLeaf && level === 0 ? 8 : 22)}px` }}
         >

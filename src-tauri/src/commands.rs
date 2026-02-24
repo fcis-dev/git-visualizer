@@ -182,6 +182,15 @@ pub async fn git_branch_create(path: &str, name: &str, hash: &str) -> Result<Str
 }
 
 #[tauri::command]
+pub async fn git_branch_rename(
+    path: &str,
+    old_name: &str,
+    new_name: &str,
+) -> Result<String, String> {
+    services::git_branch_rename(path, old_name, new_name)
+}
+
+#[tauri::command]
 pub async fn git_checkout_branch(path: &str, branch: &str) -> Result<String, String> {
     services::git_checkout_branch(path, branch)
 }

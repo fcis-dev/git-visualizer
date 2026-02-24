@@ -3,7 +3,7 @@ import { Dialog, DialogType } from '../components/Dialog';
 
 interface DialogContextType {
     showConfirm: (title: string, message: string, onConfirm: () => void) => void;
-    showInput: (title: string, message: string, onConfirm: (val?: string) => void) => void;
+    showInput: (title: string, message: string, onConfirm: (val?: string) => void, defaultValue?: string) => void;
     showAlert: (title: string, message: string) => void;
 }
 
@@ -15,6 +15,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
         title: string;
         message: string;
         type: DialogType;
+        defaultValue?: string;
         onConfirm: (val?: string) => void;
     }>({ title: '', message: '', type: 'alert', onConfirm: () => {} });
 
@@ -28,10 +29,11 @@ export function DialogProvider({ children }: { children: ReactNode }) {
         setIsOpen(true);
     };
 
-    const showInput = (title: string, message: string, onConfirm: (val?: string) => void) => {
+    const showInput = (title: string, message: string, onConfirm: (val?: string) => void, defaultValue?: string) => {
         setConfig({
             title,
             message,
+            defaultValue,
             type: 'input',
             onConfirm: (val) => onConfirm(val),
         });
@@ -56,6 +58,7 @@ export function DialogProvider({ children }: { children: ReactNode }) {
                 title={config.title}
                 message={config.message}
                 type={config.type}
+                defaultValue={config.defaultValue}
                 onConfirm={config.onConfirm}
                 onClose={() => setIsOpen(false)}
             />

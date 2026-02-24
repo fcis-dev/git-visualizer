@@ -75,6 +75,12 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         onSuccess?.();
     };
 
+    const renameBranch = async (oldName: string, newName: string) => {
+        if (!repoPath) return;
+        await repository.renameBranch(repoPath, oldName, newName);
+        onSuccess?.();
+    };
+
     const deleteBranch = async (name: string, force = false) => {
         if (!repoPath) return;
         await repository.deleteBranch(repoPath, name, force);
@@ -140,6 +146,7 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         pushTags,
         deleteTag,
         createBranch,
+        renameBranch,
         deleteBranch,
         getCommitDetails,
         resolveConflict,

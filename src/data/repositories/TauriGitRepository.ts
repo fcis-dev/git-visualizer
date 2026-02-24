@@ -152,6 +152,10 @@ export class TauriGitRepository implements IGitRepository {
     await invoke("git_branch_create", { path, name, hash });
   }
 
+  async renameBranch(path: string, oldName: string, newName: string): Promise<void> {
+    await invoke("git_branch_rename", { path, old_name: oldName, new_name: newName });
+  }
+
   async deleteBranch(
     path: string,
     name: string,

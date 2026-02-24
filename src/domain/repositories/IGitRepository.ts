@@ -38,6 +38,8 @@ export interface IGitRepository {
   createTag(path: string, name: string, hash?: string): Promise<void>;
   deleteTag(path: string, name: string): Promise<void>;
   createBranch(path: string, name: string, hash: string): Promise<void>;
+  renameBranch(path: string, oldName: string, newName: string): Promise<void>;
+  deleteBranch(path: string, name: string, force?: boolean): Promise<void>;
 
   getCommitTree(path: string, hash: string): Promise<string[]>;
   getFileContentAtCommit(
