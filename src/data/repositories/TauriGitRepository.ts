@@ -268,4 +268,8 @@ export class TauriGitRepository implements IGitRepository {
   async removeSubmodule(path: string, name: string): Promise<void> {
     await invoke("git_submodule_remove", { path, name });
   }
+
+  async getRepositoryStats(path: string): Promise<import("../../domain/entities/GitEntities").RepositoryStats> {
+    return await invoke<import("../../domain/entities/GitEntities").RepositoryStats>("git_get_repository_stats", { path });
+  }
 }

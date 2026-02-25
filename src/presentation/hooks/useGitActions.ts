@@ -229,5 +229,8 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
                  onSuccess?.();
              }
         },
+        
+        // Insights
+        getRepositoryStats: async () => repoPath ? await repository.getRepositoryStats(repoPath) : null,
     };
 }

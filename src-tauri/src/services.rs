@@ -1,6 +1,6 @@
 use crate::models::{
-    BranchData, CommitData, CommitDetails, FileChange, FileStatus, ReflogEntry, RepoData,
-    StashEntry, SubmoduleInfo, TagData,
+    ActivityTimeline, BranchData, CommitData, CommitDetails, ContributorStat, FileChange,
+    FileStatus, ReflogEntry, RepoData, RepositoryStats, StashEntry, SubmoduleInfo, TagData,
 };
 use git2::Repository;
 use std::fs;
@@ -1137,4 +1137,74 @@ pub fn git_submodule_remove(path: &str, name: &str) -> Result<(), String> {
     run_git_cmd(path, &["rm", "-f", name])?;
 
     Ok(())
+}
+
+pub fn git_get_repository_stats(path: &str) -> Result<RepositoryStats, String> {
+    use std::collections::HashMap;
+
+    let output = run_git_cmd(path, &["log", "--format=%ct|%an"])?;
+
+    let mut total_commits = 0;
+    let mut author_counts: HashMap<String, usize> = HashMap::new();
+    let mut daily_counts: HashMap<String, (i64, usize)> = HashMap::new();
+
+    for line in output.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+
+        let parts: Vec<&str> = line.split('|').collect();
+        if parts.len() >= 2 {
+            let timestamp_str = parts[0];
+            let author_name = parts[1].to_string();
+
+            if let Ok(timestamp) = timestamp_str.parse::<i64>() {
+                total_commits += 1;
+
+                // Count by author
+                *author_counts.entry(author_name).or_insert(0) += 1;
+
+                // For chart: format YYYY-MM-DD manually (basic math for UTC offset ignoring leaps if rough, or prefer full timezone lib).
+                // To keep it simple without adding `chrono` if we don't have to, we will pass the JS timestamps.
+                // Or better, let's just group by rounded JS days (timestamp / 86400).
+                let day_id = timestamp / 86400;
+                let entry = daily_counts
+                    .entry(day_id.to_string())
+                    .or_insert((day_id * 86400, 0));
+                entry.1 += 1;
+            }
+        }
+    }
+
+    let mut top_contributors: Vec<ContributorStat> = author_counts
+        .into_iter()
+        .map(|(name, commits)| ContributorStat { name, commits })
+        .collect();
+
+    // Sort descending by commit count
+    top_contributors.sort_by(|a, b| b.commits.cmp(&a.commits));
+
+    // Take top 10
+    if top_contributors.len() > 10 {
+        top_contributors.truncate(10);
+    }
+
+    let mut timeline: Vec<ActivityTimeline> = daily_counts
+        .into_iter()
+        .map(|(_, (ts, count))| ActivityTimeline {
+            timestamp: ts,
+            date: "".to_string(),
+            count,
+        })
+        .collect();
+
+    // Sort ascending by timestamp
+    timeline.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+
+    Ok(RepositoryStats {
+        total_commits,
+        timeline,
+        top_contributors,
+    })
 }

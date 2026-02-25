@@ -59,3 +59,20 @@ export interface SubmoduleInfo {
   status: string; // "", "+", "-", "U"
   hash: string;
 }
+
+export interface ActivityTimeline {
+    timestamp: number;
+    date: string;
+    count: number;
+}
+
+export interface ContributorStat {
+    name: string;
+    commits: number;
+}
+
+export interface RepositoryStats {
+    total_commits: number;
+    timeline: ActivityTimeline[];
+    top_contributors: ContributorStat[];
+}

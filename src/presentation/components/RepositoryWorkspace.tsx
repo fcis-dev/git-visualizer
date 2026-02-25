@@ -14,6 +14,7 @@ import {
   ArrowUp,
   ChevronRight,
   ChevronDown,
+  TrendingUp,
 } from "lucide-react";
 import { SourceControl } from "./Sidebar/SourceControl";
 import { BranchesSidebar } from "./Sidebar/BranchesSidebar";
@@ -24,6 +25,7 @@ import { DiffView } from "./DiffView";
 import { CommitDetails } from "./CommitDetails";
 import { HistoricalFileContentView } from "./HistoricalFileContentView";
 import { CreateBranchModal } from "./CreateBranchModal";
+import { RepositoryStatsModal } from "./RepositoryStatsModal";
 import { useGit } from "../hooks/useGit";
 import { useGitActions } from "../hooks/useGitActions";
 import { useAutoFetch } from "../hooks/useAutoFetch";
@@ -55,6 +57,7 @@ export function RepositoryWorkspace({
     null,
   );
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
   const [diffTarget, setDiffTarget] = useState<{
     path: string;
     commitHash?: string;
@@ -620,6 +623,17 @@ export function RepositoryWorkspace({
         </div>
 
         <div className="flex items-center space-x-2">
+          {/* Insights Action */}
+          <button
+            onClick={() => setIsStatsModalOpen(true)}
+            className="flex flex-col items-center justify-center p-1.5 text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 rounded hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"
+            title="Repository Statistics"
+          >
+            <TrendingUp className="w-4 h-4" />
+          </button>
+          
+          <div className="w-px h-5 bg-slate-200 dark:bg-slate-800 mx-1" />
+
           {/* Sync Actions (Fetch, Pull, Push) */}
           <button
             onClick={() => handleFetch(true)}
@@ -1113,6 +1127,13 @@ export function RepositoryWorkspace({
               showAlert("Success", `Branch '${name}' created.`);
             }
           }}
+        />
+      )}
+
+      {isStatsModalOpen && (
+        <RepositoryStatsModal 
+          repoPath={repoPath} 
+          onClose={() => setIsStatsModalOpen(false)} 
         />
       )}
     </div>

@@ -81,3 +81,23 @@ pub struct SubmoduleInfo {
     pub status: String, // e.g., "", "+", "-", "U"
     pub hash: String,
 }
+
+#[derive(Debug, Serialize)]
+pub struct ActivityTimeline {
+    pub timestamp: i64,
+    pub date: String,
+    pub count: usize,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ContributorStat {
+    pub name: String,
+    pub commits: usize,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RepositoryStats {
+    pub total_commits: usize,
+    pub timeline: Vec<ActivityTimeline>,
+    pub top_contributors: Vec<ContributorStat>,
+}

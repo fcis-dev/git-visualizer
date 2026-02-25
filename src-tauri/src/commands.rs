@@ -369,3 +369,12 @@ pub async fn git_submodule_remove(path: String, name: String) -> Result<(), Stri
         .await
         .map_err(|e| format!("Task panicked: {}", e))?
 }
+
+#[tauri::command]
+pub async fn git_get_repository_stats(
+    path: String,
+) -> Result<crate::models::RepositoryStats, String> {
+    tauri::async_runtime::spawn_blocking(move || services::git_get_repository_stats(&path))
+        .await
+        .map_err(|e| format!("Task panicked: {}", e))?
+}

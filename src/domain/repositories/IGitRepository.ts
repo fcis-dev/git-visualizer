@@ -66,4 +66,6 @@ export interface IGitRepository {
   syncSubmodules(path: string): Promise<void>;
   addSubmodule(path: string, url: string, name: string): Promise<void>;
   removeSubmodule(path: string, name: string): Promise<void>;
+  
+  getRepositoryStats(path: string): Promise<import("../entities/GitEntities").RepositoryStats>;
 }

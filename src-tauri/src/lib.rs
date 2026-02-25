@@ -77,7 +77,8 @@ pub fn run() {
             commands::git_submodule_update,
             commands::git_submodule_sync,
             commands::git_submodule_add,
-            commands::git_submodule_remove
+            commands::git_submodule_remove,
+            commands::git_get_repository_stats
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
