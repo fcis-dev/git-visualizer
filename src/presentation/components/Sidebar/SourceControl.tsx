@@ -13,10 +13,11 @@ interface FileStatus {
 interface SourceControlProps {
   repoPath: string | null;
   latestCommit?: Commit | null;
-  onSelectFile: (file: string) => void;
+  onSelectFile: (file: string, cached?: boolean) => void;
   onCommit?: () => void;
   isAutoFetching?: boolean;
   onFetch?: (withPrune?: boolean) => Promise<void>;
+  onViewFileHistory?: (path: string) => void;
 }
 
 export function SourceControl({
@@ -24,6 +25,7 @@ export function SourceControl({
   latestCommit,
   onSelectFile,
   onCommit,
+  onViewFileHistory,
 }: SourceControlProps) {
   const [stagedFiles, setStagedFiles] = useState<FileStatus[]>([]);
   const [changes, setChanges] = useState<FileStatus[]>([]);
@@ -39,8 +41,22 @@ export function SourceControl({
   const [isStashesModalOpen, setIsStashesModalOpen] = useState(false);
   const [isRebasing, setIsRebasing] = useState(false);
 
+  // Context menu for file history
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    path: string | null;
+  }>({ visible: false, x: 0, y: 0, path: null });
+
 
   const { showInput, showConfirm } = useDialog();
+
+  useEffect(() => {
+    const closeContextMenu = () => setContextMenu(prev => ({ ...prev, visible: false }));
+    document.addEventListener("click", closeContextMenu);
+    return () => document.removeEventListener("click", closeContextMenu);
+  }, []);
 
   useEffect(() => {
     if (repoPath) {
@@ -206,7 +222,16 @@ export function SourceControl({
     );
   };
 
-
+  const handleContextMenu = (path: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      path
+    });
+  };
+    
   if (!repoPath) {
     return <div className="p-4 text-center text-slate-400 dark:text-slate-500 text-sm">No repository open.</div>;
   }
@@ -413,7 +438,8 @@ export function SourceControl({
                 <div 
                     key={file.path} 
                     className="group flex items-center justify-between p-1 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded cursor-pointer"
-                    onClick={() => onSelectFile(file.path)}
+                    onClick={() => onSelectFile(file.path, true)}
+                    onContextMenu={(e) => handleContextMenu(file.path, e)}
                 >
                     <span className="text-sm text-slate-600 dark:text-slate-300 truncate flex-1" title={file.path}>
                         {file.path}
@@ -470,6 +496,7 @@ export function SourceControl({
                     key={file.path} 
                     className="group flex items-center justify-between p-1 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded cursor-pointer"
                     onClick={() => onSelectFile(file.path)}
+                    onContextMenu={(e) => handleContextMenu(file.path, e)}
                 >
                     <span className={`text-sm truncate flex-1 ${
                         file.status === 'deleted' ? 'text-red-500 dark:text-red-400 line-through' : 
@@ -509,6 +536,29 @@ export function SourceControl({
               if (onCommit) onCommit(); // Trigger graph reload
           }}
         />
+      )}
+
+      {/* File History Context Menu */}
+      {contextMenu.visible && contextMenu.path && onViewFileHistory && (
+        <div 
+          className="fixed z-50 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg min-w-[160px] text-sm overflow-hidden"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 truncate max-w-[200px]" title={contextMenu.path}>
+            {contextMenu.path.split('/').pop()}
+          </div>
+          
+          <button 
+            className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+            onClick={() => {
+              onViewFileHistory(contextMenu.path!);
+              setContextMenu({ ...contextMenu, visible: false });
+            }}
+          >
+            View file history
+          </button>
+        </div>
       )}
     </div>
   );

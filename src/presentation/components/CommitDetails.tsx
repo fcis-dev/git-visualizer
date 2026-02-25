@@ -26,6 +26,8 @@ interface CommitDetailsProps {
     onRebase: (hash: string) => void;
     onReset: (hash: string, mode: "soft" | "mixed" | "hard") => void;
     onRefreshGraph: () => void;
+    onViewFileHistory?: (path: string) => void;
+    fileFilter?: string;
 }
 
 export function CommitDetails({
@@ -46,13 +48,30 @@ export function CommitDetails({
     onReset,
     onViewHistoricalFile,
     repoPath,
-    onRefreshGraph
+    onRefreshGraph,
+    onViewFileHistory,
+    fileFilter
 }: CommitDetailsProps) {
     const [activeTab, setActiveTab] = useState<'changes' | 'tree'>('changes');
     const [treeFiles, setTreeFiles] = useState<string[]>([]);
     const [treeLoading, setTreeLoading] = useState(false);
     const [isRebaseModalOpen, setIsRebaseModalOpen] = useState(false);
+    
+    // Context menu for file history
+    const [fileContextMenu, setFileContextMenu] = useState<{
+        visible: boolean;
+        x: number;
+        y: number;
+        path: string | null;
+    }>({ visible: false, x: 0, y: 0, path: null });
+
     const { getCommitTree } = useGitActions(repoPath);
+
+    useEffect(() => {
+        const closeContextMenu = () => setFileContextMenu(prev => ({ ...prev, visible: false }));
+        document.addEventListener("click", closeContextMenu);
+        return () => document.removeEventListener("click", closeContextMenu);
+    }, []);
 
     useEffect(() => {
         let mounted = true;
@@ -258,8 +277,32 @@ export function CommitDetails({
                     </div>
                 </div>
 
+                {/* FileFilter Banner */}
+                {fileFilter && (
+                    <div className="mx-4 mb-4 bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded flex flex-col p-3">
+                        <div className="flex items-center space-x-2 text-indigo-700 dark:text-indigo-400 font-medium text-sm mb-2">
+                            <FileText className="w-4 h-4" />
+                            <span className="truncate" title={fileFilter}>Viewing history for: {fileFilter.split('/').pop()}</span>
+                        </div>
+                        <div className="flex space-x-2">
+                            <button 
+                                onClick={() => onSelectFile(fileFilter)}
+                                className="flex-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded py-1.5 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                            >
+                                View Diff
+                            </button>
+                            <button 
+                                onClick={() => onViewHistoricalFile(fileFilter)}
+                                className="flex-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded py-1.5 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                            >
+                                View File
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Tabs */}
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex space-x-4 mb-2">
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex space-x-4 px-4 mb-2">
                     <button
                         onClick={() => setActiveTab('changes')}
                         className={`flex items-center space-x-1.5 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'changes' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
@@ -296,6 +339,15 @@ export function CommitDetails({
                                         key={idx}
                                         className="flex items-center space-x-2 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer group transition-colors"
                                         onClick={() => onSelectFile(file.path)}
+                                        onContextMenu={(e) => {
+                                            e.preventDefault();
+                                            setFileContextMenu({
+                                                visible: true,
+                                                x: e.clientX,
+                                                y: e.clientY,
+                                                path: file.path
+                                            });
+                                        }}
                                     >
                                         <span className={`
                                             w-4 h-4 flex items-center justify-center rounded text-[10px] font-bold shrink-0
@@ -326,7 +378,7 @@ export function CommitDetails({
                                  <span className="ml-2 text-xs text-slate-400">Loading tree...</span>
                             </div>
                         ) : (
-                            <FileTreeViewer files={treeFiles} onSelectFile={onViewHistoricalFile} />
+                            <FileTreeViewer files={treeFiles} onSelectFile={onViewHistoricalFile} onViewFileHistory={onViewFileHistory} />
                         )}
                     </div>
                 )}
@@ -341,6 +393,29 @@ export function CommitDetails({
                 onClose={() => setIsRebaseModalOpen(false)}
                 onRefreshGraph={onRefreshGraph}
             />
+        )}
+        
+        {/* File History Context Menu */}
+        {fileContextMenu.visible && fileContextMenu.path && onViewFileHistory && (
+          <div 
+            className="fixed z-50 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg min-w-[160px] text-sm overflow-hidden"
+            style={{ top: fileContextMenu.y, left: fileContextMenu.x }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 truncate max-w-[200px]" title={fileContextMenu.path}>
+              {fileContextMenu.path.split('/').pop()}
+            </div>
+            
+            <button 
+              className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+              onClick={() => {
+                onViewFileHistory(fileContextMenu.path!);
+                setFileContextMenu({ ...fileContextMenu, visible: false });
+              }}
+            >
+              View file history
+            </button>
+          </div>
         )}
       </>
     );

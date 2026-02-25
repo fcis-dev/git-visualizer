@@ -499,7 +499,12 @@ pub fn git_rebase_abort(path: &str) -> Result<String, String> {
     run_git_cmd(path, &["rebase", "--abort"])
 }
 
-pub fn git_diff(path: &str, file: Option<String>, hash: Option<String>) -> Result<String, String> {
+pub fn git_diff(
+    path: &str,
+    file: Option<String>,
+    hash: Option<String>,
+    cached: Option<bool>,
+) -> Result<String, String> {
     let normalized_file = file.map(|f| f.replace("\\", "/"));
 
     let mut args = Vec::new();
@@ -514,7 +519,11 @@ pub fn git_diff(path: &str, file: Option<String>, hash: Option<String>) -> Resul
         }
     } else {
         args.push("diff");
-        args.push("HEAD");
+        if let Some(true) = cached {
+            args.push("--cached");
+        } else if cached.is_none() {
+            args.push("HEAD");
+        }
         if normalized_file.is_some() {
             args.push("--");
         }
@@ -967,6 +976,54 @@ pub fn get_git_reflog(path: &str) -> Result<Vec<ReflogEntry>, String> {
     }
 
     Ok(entries)
+}
+
+pub fn git_apply_patch(path: &str, patch: &str, reverse: bool) -> Result<(), String> {
+    use std::io::Write;
+    use std::process::{Command, Stdio};
+    #[cfg(target_os = "windows")]
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+    let mut cmd = Command::new("git");
+    cmd.current_dir(path);
+    cmd.arg("apply");
+    cmd.arg("--cached");
+
+    if reverse {
+        cmd.arg("-R");
+    }
+
+    cmd.arg("-"); // read from stdin
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    cmd.stdin(Stdio::piped());
+    cmd.stdout(Stdio::piped());
+    cmd.stderr(Stdio::piped());
+
+    let mut child = cmd
+        .spawn()
+        .map_err(|e| format!("Failed to spawn git apply: {}", e))?;
+
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin
+            .write_all(patch.as_bytes())
+            .map_err(|e| format!("Failed to write patch to stdin: {}", e))?;
+    }
+
+    let output = child
+        .wait_with_output()
+        .map_err(|e| format!("Failed to read git apply output: {}", e))?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).to_string())
+    }
 }
 
 pub fn get_tags(path: &str) -> Result<Vec<TagData>, String> {

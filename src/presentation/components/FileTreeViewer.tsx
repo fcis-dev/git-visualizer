@@ -4,6 +4,7 @@ import { ChevronRight, ChevronDown, File, Folder } from 'lucide-react';
 interface FileTreeViewerProps {
     files: string[];
     onSelectFile: (path: string) => void;
+    onViewFileHistory?: (path: string) => void;
 }
 
 interface TreeNode {
@@ -59,7 +60,7 @@ function buildTree(paths: string[]): TreeNode[] {
     return root;
 }
 
-function TreeNodeView({ node, onSelectFile }: { node: TreeNode, onSelectFile: (path: string) => void }) {
+function TreeNodeView({ node, onSelectFile, onViewFileHistory }: { node: TreeNode, onSelectFile: (path: string) => void, onViewFileHistory?: (path: string) => void }) {
     const [isOpen, setIsOpen] = useState(false);
 
     if (!node.isDirectory) {
@@ -67,6 +68,21 @@ function TreeNodeView({ node, onSelectFile }: { node: TreeNode, onSelectFile: (p
             <div 
                 className="flex items-center space-x-2 py-1 px-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer text-sm text-slate-700 dark:text-slate-300 ml-4 group"
                 onClick={() => onSelectFile(node.path)}
+                onContextMenu={(e) => {
+                    if (onViewFileHistory) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Special event payload to let the parent handle the right-click menu positioning
+                        const customEvent = new CustomEvent('file-tree-context-menu', {
+                            detail: {
+                                path: node.path,
+                                x: e.clientX,
+                                y: e.clientY
+                            }
+                        });
+                        document.dispatchEvent(customEvent);
+                    }
+                }}
                 title={node.path}
             >
                 <div className="w-4 h-4 shrink-0 flex items-center justify-center opacity-0"></div>
@@ -100,7 +116,33 @@ function TreeNodeView({ node, onSelectFile }: { node: TreeNode, onSelectFile: (p
     );
 }
 
-export function FileTreeViewer({ files, onSelectFile }: FileTreeViewerProps) {
+export function FileTreeViewer({ files, onSelectFile, onViewFileHistory }: FileTreeViewerProps) {
+    const [contextMenu, setContextMenu] = useState<{
+        visible: boolean;
+        x: number;
+        y: number;
+        path: string | null;
+    }>({ visible: false, x: 0, y: 0, path: null });
+
+    // Handle custom context menu event from tree nodes
+    import('react').then(({ useEffect }) => {
+        useEffect(() => {
+            const handleCustomMenu = (e: any) => {
+                const { path, x, y } = e.detail;
+                setContextMenu({ visible: true, x, y, path });
+            };
+            const closeContextMenu = () => setContextMenu(prev => ({ ...prev, visible: false }));
+            
+            document.addEventListener('file-tree-context-menu', handleCustomMenu);
+            document.addEventListener('click', closeContextMenu);
+            
+            return () => {
+                document.removeEventListener('file-tree-context-menu', handleCustomMenu);
+                document.removeEventListener('click', closeContextMenu);
+            };
+        }, []);
+    });
+
     const tree = buildTree(files);
 
     if (files.length === 0) {
@@ -108,10 +150,33 @@ export function FileTreeViewer({ files, onSelectFile }: FileTreeViewerProps) {
     }
 
     return (
-        <div className="py-2 -ml-4 custom-scrollbar overflow-x-auto">
+        <div className="py-2 -ml-4 custom-scrollbar overflow-x-auto relative">
             {tree.map(node => (
-                <TreeNodeView key={node.path} node={node} onSelectFile={onSelectFile} />
+                <TreeNodeView key={node.path} node={node} onSelectFile={onSelectFile} onViewFileHistory={onViewFileHistory} />
             ))}
+            
+            {/* File History Context Menu */}
+            {contextMenu.visible && contextMenu.path && onViewFileHistory && (
+              <div 
+                className="fixed z-50 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg min-w-[160px] text-sm overflow-hidden"
+                style={{ top: contextMenu.y, left: contextMenu.x }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 truncate max-w-[200px]" title={contextMenu.path}>
+                  {contextMenu.path.split('/').pop()}
+                </div>
+                
+                <button 
+                  className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                  onClick={() => {
+                    onViewFileHistory(contextMenu.path!);
+                    setContextMenu({ ...contextMenu, visible: false });
+                  }}
+                >
+                  View file history
+                </button>
+              </div>
+            )}
         </div>
     );
 }

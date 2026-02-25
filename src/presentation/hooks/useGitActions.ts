@@ -142,6 +142,12 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         cherryPick,
         revert,
         merge,
+        applyPatch: async (patch: string, reverse: boolean = false) => {
+            if (repoPath) {
+                await repository.applyPatch(repoPath, patch, reverse);
+                onSuccess?.();
+            }
+        },
         createTag,
         pushTags,
         deleteTag,

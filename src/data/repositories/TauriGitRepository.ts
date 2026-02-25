@@ -62,6 +62,10 @@ export class TauriGitRepository implements IGitRepository {
     await invoke("git_pull", { path });
   }
 
+  async applyPatch(path: string, patch: string, reverse: boolean = false): Promise<void> {
+    await invoke("git_apply_patch", { path, patch, reverse });
+  }
+
   async push(path: string): Promise<void> {
     await invoke("git_push", { path });
   }

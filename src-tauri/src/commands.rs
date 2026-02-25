@@ -153,8 +153,14 @@ pub async fn git_diff(
     path: &str,
     file: Option<String>,
     hash: Option<String>,
+    cached: Option<bool>,
 ) -> Result<String, String> {
-    services::git_diff(path, file, hash)
+    services::git_diff(path, file, hash, cached)
+}
+
+#[tauri::command]
+pub async fn git_apply_patch(path: &str, patch: &str, reverse: bool) -> Result<(), String> {
+    services::git_apply_patch(path, patch, reverse)
 }
 
 #[tauri::command]

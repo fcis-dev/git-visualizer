@@ -40,6 +40,7 @@ pub fn run() {
             commands::git_cherry_pick,
             commands::git_revert,
             commands::git_diff,
+            commands::git_apply_patch,
             commands::git_tag_create,
             commands::git_tag_delete,
             commands::get_tags,

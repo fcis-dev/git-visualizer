@@ -10,6 +10,7 @@ export interface IGitRepository {
 
   fetch(path: string): Promise<void>;
   pull(path: string): Promise<void>;
+  applyPatch(path: string, patch: string, reverse?: boolean): Promise<void>;
   push(path: string): Promise<void>;
   pushTags(path: string): Promise<void>;
 
