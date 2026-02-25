@@ -202,5 +202,32 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
                  onSuccess?.();
              }
         },
+
+        // Submodules
+        getSubmodules: async () => repoPath ? await repository.getSubmodules(repoPath) : [],
+        updateSubmodules: async () => {
+             if (repoPath) {
+                 await repository.updateSubmodules(repoPath);
+                 onSuccess?.();
+             }
+        },
+        syncSubmodules: async () => {
+             if (repoPath) {
+                 await repository.syncSubmodules(repoPath);
+                 onSuccess?.();
+             }
+        },
+        addSubmodule: async (url: string, name: string) => {
+             if (repoPath) {
+                 await repository.addSubmodule(repoPath, url, name);
+                 onSuccess?.();
+             }
+        },
+        removeSubmodule: async (name: string) => {
+             if (repoPath) {
+                 await repository.removeSubmodule(repoPath, name);
+                 onSuccess?.();
+             }
+        },
     };
 }

@@ -51,3 +51,11 @@ export interface StashEntry {
   message: string;
   hash: string;
 }
+
+export interface SubmoduleInfo {
+  name: string;
+  path: string;
+  url: string;
+  status: string; // "", "+", "-", "U"
+  hash: string;
+}

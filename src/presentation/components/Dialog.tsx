@@ -39,13 +39,13 @@ export const Dialog: React.FC<DialogProps> = ({
                 inputRef.current?.focus();
             }, 50);
         }
-    }, [isOpen, defaultValue]);
+    }, [isOpen, defaultValue, message]);
 
     if (!isOpen) return null;
 
     const handleConfirm = () => {
-        onConfirm(type === 'input' ? inputValue : undefined);
         onClose();
+        onConfirm(type === 'input' ? inputValue : undefined);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {

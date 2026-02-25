@@ -248,4 +248,24 @@ export class TauriGitRepository implements IGitRepository {
       return [];
     }
   }
+
+  async getSubmodules(path: string): Promise<import("../../domain/entities/GitEntities").SubmoduleInfo[]> {
+    return await invoke<import("../../domain/entities/GitEntities").SubmoduleInfo[]>("get_git_submodules", { path });
+  }
+
+  async updateSubmodules(path: string): Promise<void> {
+    await invoke("git_submodule_update", { path });
+  }
+
+  async syncSubmodules(path: string): Promise<void> {
+    await invoke("git_submodule_sync", { path });
+  }
+
+  async addSubmodule(path: string, url: string, name: string): Promise<void> {
+    await invoke("git_submodule_add", { path, url, name });
+  }
+
+  async removeSubmodule(path: string, name: string): Promise<void> {
+    await invoke("git_submodule_remove", { path, name });
+  }
 }

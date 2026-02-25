@@ -1,6 +1,6 @@
 use crate::models::{
     BranchData, CommitData, CommitDetails, FileChange, FileStatus, ReflogEntry, RepoData,
-    StashEntry, TagData,
+    StashEntry, SubmoduleInfo, TagData,
 };
 use git2::Repository;
 use std::fs;
@@ -1060,4 +1060,81 @@ pub fn get_tags(path: &str) -> Result<Vec<TagData>, String> {
     }
 
     Ok(tags)
+}
+
+pub fn get_git_submodules(path: &str) -> Result<Vec<SubmoduleInfo>, String> {
+    // `git submodule status` usually returns lines like:
+    //  +f3c95a0bc0640f1a2380a9d9e45e7f12eb6bc303 lib/somemod (v1.0.0)
+    //  -f3c95a0bc0640f1a2380a9d9e45e7f12eb6bc303 lib/othermod
+    // The first char can be '-', '+', 'U', or ' ' (up to date).
+    let output = run_git_cmd(path, &["submodule", "status"])?;
+    let mut submodules = Vec::new();
+
+    for line in output.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        let mut chars = line.chars();
+        let status_char = chars.next().unwrap_or(' ');
+        let status = status_char.to_string();
+
+        let rest = chars.as_str().trim();
+        let parts: Vec<&str> = rest.split_whitespace().collect();
+
+        if parts.len() >= 2 {
+            let hash = parts[0].to_string();
+            let sub_path = parts[1].to_string();
+            let name = Path::new(&sub_path)
+                .file_name()
+                .and_then(|ost| ost.to_str())
+                .unwrap_or(&sub_path)
+                .to_string();
+
+            // To get the actual URL we would need `git config --get submodule.<name>.url`
+            // But let's keep it simple for now or fetch it if needed.
+            let url = String::new();
+
+            submodules.push(SubmoduleInfo {
+                name,
+                path: sub_path,
+                url,
+                status,
+                hash,
+            });
+        }
+    }
+
+    Ok(submodules)
+}
+
+pub fn git_submodule_update(path: &str) -> Result<(), String> {
+    run_git_cmd(path, &["submodule", "update", "--init", "--recursive"])?;
+    Ok(())
+}
+
+pub fn git_submodule_sync(path: &str) -> Result<(), String> {
+    run_git_cmd(path, &["submodule", "sync"])?;
+    Ok(())
+}
+
+pub fn git_submodule_add(path: &str, url: &str, name: &str) -> Result<(), String> {
+    run_git_cmd(path, &["submodule", "add", url, name])?;
+    Ok(())
+}
+
+pub fn git_submodule_remove(path: &str, name: &str) -> Result<(), String> {
+    // 1. Deinit the submodule
+    run_git_cmd(path, &["submodule", "deinit", "-f", "--", name])?;
+
+    // 2. Remove the submodule's git directory
+    let git_dir = Path::new(path).join(".git").join("modules").join(name);
+    if git_dir.exists() {
+        std::fs::remove_dir_all(git_dir).map_err(|e| e.to_string())?;
+    }
+
+    // 3. Remove the submodule from the working tree and index
+    run_git_cmd(path, &["rm", "-f", name])?;
+
+    Ok(())
 }

@@ -72,3 +72,12 @@ pub struct StashEntry {
     pub message: String,
     pub hash: String,
 }
+
+#[derive(Debug, Serialize)]
+pub struct SubmoduleInfo {
+    pub name: String,
+    pub path: String,
+    pub url: String,
+    pub status: String, // e.g., "", "+", "-", "U"
+    pub hash: String,
+}

@@ -1,7 +1,8 @@
 use crate::config;
 use crate::config::AppState;
 use crate::models::{
-    BranchData, CommitData, CommitDetails, FileStatus, ReflogEntry, RepoData, TagData,
+    BranchData, CommitData, CommitDetails, FileStatus, ReflogEntry, RepoData, SubmoduleInfo,
+    TagData,
 };
 use crate::services;
 use tauri::State; // use services module
@@ -334,4 +335,37 @@ pub async fn git_rebase_continue(path: &str) -> Result<String, String> {
 #[tauri::command]
 pub async fn git_rebase_abort(path: &str) -> Result<String, String> {
     services::git_rebase_abort(path)
+}
+
+#[tauri::command]
+pub async fn get_git_submodules(path: &str) -> Result<Vec<SubmoduleInfo>, String> {
+    services::get_git_submodules(path)
+}
+
+#[tauri::command]
+pub async fn git_submodule_update(path: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || services::git_submodule_update(&path))
+        .await
+        .map_err(|e| format!("Task panicked: {}", e))?
+}
+
+#[tauri::command]
+pub async fn git_submodule_sync(path: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || services::git_submodule_sync(&path))
+        .await
+        .map_err(|e| format!("Task panicked: {}", e))?
+}
+
+#[tauri::command]
+pub async fn git_submodule_add(path: String, url: String, name: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || services::git_submodule_add(&path, &url, &name))
+        .await
+        .map_err(|e| format!("Task panicked: {}", e))?
+}
+
+#[tauri::command]
+pub async fn git_submodule_remove(path: String, name: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || services::git_submodule_remove(&path, &name))
+        .await
+        .map_err(|e| format!("Task panicked: {}", e))?
 }

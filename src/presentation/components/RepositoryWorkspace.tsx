@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import {
   GitBranch,
   ArrowLeft,
@@ -40,11 +41,13 @@ import {
 interface RepositoryWorkspaceProps {
   repoPath: string;
   onBack: () => void;
+  onOpenSubmodule?: (absolutePath: string) => void;
 }
 
 export function RepositoryWorkspace({
   repoPath,
   onBack,
+  onOpenSubmodule,
 }: RepositoryWorkspaceProps) {
   const [commitSearchQuery, setCommitSearchQuery] = useState("");
   const [selectedCommit, setSelectedCommit] = useState<Commit | null>(null);
@@ -110,6 +113,7 @@ export function RepositoryWorkspace({
     isLoadingMore,
     hasMore,
     setError,
+    error,
   } = useGit(repoPath, graphBranches);
 
   // Keep refs in sync for use inside async loops (avoids stale closures)
@@ -135,6 +139,16 @@ export function RepositoryWorkspace({
     globalSearchResults !== null ? globalSearchResults : filteredLocalCommits;
 
   const { showConfirm, showInput, showAlert } = useDialog();
+
+  // If we are inside a submodule and the user deletes it, the path will cease to exist.
+  // The backend will throw a "No such file or directory" or "not a git repository" error trying to auto-fetch.
+  // We intercept this specific error to gracefully fall back to the parent repository instead of crashing or showing a blank screen.
+  useEffect(() => {
+    if (error && (error.includes("No such file or directory") || error.includes("not a git repository"))) {
+        console.warn("- Repository context lost (likely deleted submodule). Navigating back.", error);
+        onBack();
+    }
+  }, [error, onBack]);
 
   // Refresh after actions (same as before)
   const onActionSuccess = () => {
@@ -772,6 +786,7 @@ export function RepositoryWorkspace({
                 setDiffTarget({ path: file, cached });
               }}
               onViewFileHistory={handleViewFileHistory}
+              onOpenSubmodule={onOpenSubmodule}
               onCommit={loadCommits}
               isAutoFetching={isAutoFetching || isFetchingManual}
               onFetch={handleFetch}
@@ -791,7 +806,24 @@ export function RepositoryWorkspace({
           )}
 
           {activeSidebarTab === "rescue" && (
-            <RescueSidebar repoPath={repoPath} onRestore={loadCommits} />
+            <RescueSidebar 
+              repoPath={repoPath} 
+              onRestore={loadCommits} 
+              onSelect={async (hash) => {
+                  try {
+                      setDetailsLoading(true);
+                      const commit = await invoke<Commit>("get_commit_details", { path: repoPath, hash });
+                      setSelectedCommit(commit);
+                      // load details too
+                      const detailsInfo = await invoke<CommitDetailsType>("get_commit_details_info", { path: repoPath, hash });
+                      setCommitDetails(detailsInfo);
+                  } catch(e) {
+                      console.error("Failed to fetch reflog commit details", e);
+                  } finally {
+                      setDetailsLoading(false);
+                  }
+              }}
+            />
           )}
         </div>
 
@@ -1002,14 +1034,14 @@ export function RepositoryWorkspace({
                 </div>
               </header>
               <div className="flex-1 overflow-hidden">
-                <DiffView
-                  repoPath={repoPath}
-                  filePath={diffTarget.path}
-                  commitHash={diffTarget.commitHash}
-                  cached={diffTarget.cached}
-                  onClose={() => setDiffTarget(null)}
-                  onRefresh={onActionSuccess}
-                />
+                  <DiffView
+                      repoPath={repoPath}
+                      filePath={diffTarget.path}
+                      commitHash={diffTarget.commitHash}
+                      cached={diffTarget.cached}
+                      onClose={() => setDiffTarget(null)}
+                      onRefresh={onActionSuccess}
+                  />
               </div>
             </div>
           )}

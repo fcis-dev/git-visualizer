@@ -60,4 +60,10 @@ export interface IGitRepository {
   getReflog(path: string): Promise<ReflogEntry[]>;
   
   getTags(path: string): Promise<TagData[]>;
+
+  getSubmodules(path: string): Promise<import("../entities/GitEntities").SubmoduleInfo[]>;
+  updateSubmodules(path: string): Promise<void>;
+  syncSubmodules(path: string): Promise<void>;
+  addSubmodule(path: string, url: string, name: string): Promise<void>;
+  removeSubmodule(path: string, name: string): Promise<void>;
 }

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { Play, Check, X, Archive, Trash2, RotateCcw } from 'lucide-react';
+import { Play, Check, X, Archive, Trash2, RotateCcw, Box, RefreshCw, Plus, ExternalLink, Loader2 } from 'lucide-react';
 import { useDialog } from '../../context/DialogContext';
-import { Commit } from '../../../domain/entities/GitEntities';
+import { Commit, SubmoduleInfo } from '../../../domain/entities/GitEntities';
+import { useGitActions } from '../../hooks/useGitActions';
 import { StashesModal } from '../StashesModal';
 
 interface FileStatus {
@@ -18,6 +19,7 @@ interface SourceControlProps {
   isAutoFetching?: boolean;
   onFetch?: (withPrune?: boolean) => Promise<void>;
   onViewFileHistory?: (path: string) => void;
+  onOpenSubmodule?: (absolutePath: string) => void;
 }
 
 export function SourceControl({
@@ -26,6 +28,7 @@ export function SourceControl({
   onSelectFile,
   onCommit,
   onViewFileHistory,
+  onOpenSubmodule,
 }: SourceControlProps) {
   const [stagedFiles, setStagedFiles] = useState<FileStatus[]>([]);
   const [changes, setChanges] = useState<FileStatus[]>([]);
@@ -34,6 +37,9 @@ export function SourceControl({
   const [stashLoading, setStashLoading] = useState(false);
   const [rebaseLoading, setRebaseLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submodules, setSubmodules] = useState<SubmoduleInfo[]>([]);
+  const [submodulesLoading, setSubmodulesLoading] = useState(false);
+  const [isAddingSubmodule, setIsAddingSubmodule] = useState(false);
   
   const [isAmend, setIsAmend] = useState(false);
   const [previousMessage, setPreviousMessage] = useState("");
@@ -50,7 +56,8 @@ export function SourceControl({
   }>({ visible: false, x: 0, y: 0, path: null });
 
 
-  const { showInput, showConfirm } = useDialog();
+  const { showInput, showConfirm, showAlert } = useDialog();
+  const gitActions = useGitActions(repoPath || "");
 
   useEffect(() => {
     const closeContextMenu = () => setContextMenu(prev => ({ ...prev, visible: false }));
@@ -61,10 +68,10 @@ export function SourceControl({
   useEffect(() => {
     if (repoPath) {
       loadStatus();
-    } else {
         setStagedFiles([]);
         setChanges([]);
         setConflictedFiles([]);
+        setSubmodules([]);
     }
   }, [repoPath]);
 
@@ -90,9 +97,13 @@ export function SourceControl({
       setStagedFiles(staged);
       setChanges(changed);
       setConflictedFiles(conflicted);
-      
       const rebasing = await invoke<boolean>("git_get_rebase_state", { path: repoPath });
       setIsRebasing(rebasing);
+      
+      try {
+          const subs = await gitActions.getSubmodules();
+          setSubmodules(subs);
+      } catch(e) { console.error("Could not fetch submodules", e); }
       
       setError(null);
     } catch (err: any) {
@@ -525,6 +536,138 @@ export function SourceControl({
         </div>
 
 
+      {/* Submodules */}
+      <div className="space-y-1 mt-4 border-t border-slate-200 dark:border-slate-800 pt-4">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase px-1">
+                  <span>Submodules</span>
+                  <div className="flex items-center space-x-2">
+                      <span className="bg-slate-200 dark:bg-slate-800 px-1.5 rounded-full text-slate-700 dark:text-slate-300">
+                          {submodules.length}
+                      </span>
+                      <div className="flex border-l border-slate-300 dark:border-slate-700 pl-1 ml-1 space-x-1">
+                        <button
+                          onClick={() => {
+                              showInput("Add Submodule", "Enter the Submodule URL:", async (url) => {
+                                  if (!url) return;
+                                  showInput("Add Submodule", "Enter the target path (e.g. 'vendors/lib'):", async (pathName) => {
+                                      if (!pathName) return;
+                                      try {
+                                          setSubmodulesLoading(true);
+                                          setIsAddingSubmodule(true);
+                                          await gitActions.addSubmodule(url, pathName);
+                                          loadStatus();
+                                      } catch (e: any) {
+                                          setError(e.toString());
+                                          showAlert("Error Adding Submodule", e.toString());
+                                      } finally {
+                                          setSubmodulesLoading(false);
+                                          setIsAddingSubmodule(false);
+                                      }
+                                  });
+                              });
+                          }}
+                          disabled={submodulesLoading}
+                          className="p-1 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50"
+                          title="Add Submodule"
+                        >
+                            {isAddingSubmodule ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+                            ) : (
+                                <Plus className="w-3.5 h-3.5" />
+                            )}
+                        </button>
+                        <button
+                          onClick={async () => {
+                              try {
+                                  setSubmodulesLoading(true);
+                                  await gitActions.syncSubmodules();
+                                  loadStatus();
+                              } finally { setSubmodulesLoading(false); }
+                          }}
+                          disabled={submodulesLoading}
+                          className="p-1 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-50"
+                          title="Sync Submodules"
+                        >
+                            <RefreshCw className={`w-3.5 h-3.5 ${submodulesLoading ? 'animate-spin' : ''}`} />
+                        </button>
+                        <button
+                          onClick={async () => {
+                              try {
+                                  setSubmodulesLoading(true);
+                                  await gitActions.updateSubmodules();
+                                  loadStatus();
+                              } finally { setSubmodulesLoading(false); }
+                          }}
+                          disabled={submodulesLoading}
+                          className="p-1 text-slate-500 hover:text-green-600 dark:hover:text-green-400 disabled:opacity-50 flex items-center"
+                          title="Update & Init Submodules"
+                        >
+                            <Play className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                  </div>
+              </div>
+              {submodules.map((sub, idx) => (
+                  <div 
+                      key={idx}
+                      className="group flex flex-col p-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded mb-1 cursor-default"
+                  >
+                     <div className="flex items-center justify-between">
+                         <div className="flex items-center space-x-2">
+                             <Box className={`w-4 h-4 shrink-0 ${
+                                 sub.status === '+' ? 'text-amber-500' :
+                                 sub.status === '-' ? 'text-slate-400' :
+                                 sub.status === 'U' ? 'text-red-500' : 'text-green-500'
+                             }`} />
+                             <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate max-w-[120px]" title={sub.path}>
+                                 {sub.name}
+                             </span>
+                         </div>
+                         <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                             <button
+                               onClick={() => {
+                                   if (onOpenSubmodule) {
+                                       // Normalize path separators just in case
+                                       const fullPath = `${repoPath}/${sub.path}`.replace(/\\/g, '/');
+                                       onOpenSubmodule(fullPath);
+                                   }
+                               }}
+                               className="p-1 mr-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
+                               title="Open Submodule Workspace"
+                             >
+                                 <ExternalLink className="w-3.5 h-3.5" />
+                             </button>
+                             <button
+                               onClick={() => {
+                                   showConfirm(
+                                       "Remove Submodule",
+                                       `Are you sure you want to completely remove the submodule '${sub.name}'? This deletes it from the working tree and .git/modules.`,
+                                       async () => {
+                                           try {
+                                               setSubmodulesLoading(true);
+                                               await gitActions.removeSubmodule(sub.path);
+                                               loadStatus();
+                                           } catch (e: any) {
+                                               console.error(e);
+                                               setError(e.toString());
+                                               showAlert("Error Removing Submodule", e.toString());
+                                           } finally { setSubmodulesLoading(false); }
+                                       }
+                                   );
+                               }}
+                               className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                               title="Remove Submodule"
+                             >
+                                 <Trash2 className="w-3.5 h-3.5" />
+                             </button>
+                         </div>
+                     </div>
+                     <span className="text-xs text-slate-500 ml-6 truncate font-mono mt-0.5">
+                         {sub.status === '-' ? '(Uninitialized)' : sub.hash.substring(0, 7)}
+                     </span>
+                  </div>
+              ))}
+          </div>
       </div>
 
       {isStashesModalOpen && repoPath && (

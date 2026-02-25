@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RefreshCcw, AlertTriangle } from 'lucide-react';
+import { RefreshCcw, AlertTriangle, GitBranch } from 'lucide-react';
 import { ReflogEntry } from '../../../domain/entities/GitEntities';
 import { useGitActions } from '../../hooks/useGitActions';
 import { useDialog } from '../../context/DialogContext';
@@ -7,15 +7,16 @@ import { useDialog } from '../../context/DialogContext';
 interface RescueSidebarProps {
   repoPath: string | null;
   onRestore: () => void;
+  onSelect?: (hash: string) => void;
 }
 
-export function RescueSidebar({ repoPath, onRestore }: RescueSidebarProps) {
+export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarProps) {
   const [entries, setEntries] = useState<ReflogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const gitActions = useGitActions(repoPath || "");
-  const { showConfirm, showAlert } = useDialog();
+  const { showConfirm, showAlert, showInput } = useDialog();
 
   useEffect(() => {
     if (repoPath) {
@@ -51,6 +52,30 @@ export function RescueSidebar({ repoPath, onRestore }: RescueSidebarProps) {
           loadReflog();
         } catch (e: any) {
           setError(e.toString());
+        }
+      }
+    );
+  };
+
+  const handleRescueBranch = (entry: ReflogEntry, e: React.MouseEvent) => {
+    e.stopPropagation();
+    showInput(
+      "Rescue to Branch",
+      `Enter a name for the new branch to save the state at ${entry.hash}:`,
+      async (branchName) => {
+        if (!branchName) return;
+        try {
+          await gitActions.createBranch(branchName, entry.hash);
+          showConfirm(
+            "Branch Created",
+            `Successfully created branch '${branchName}' at ${entry.hash}.\n\nWould you like to checkout this branch now?`,
+            async () => {
+                await gitActions.checkoutBranch(branchName);
+                onRestore(); // trigger graph refresh
+            }
+          );
+        } catch (err: any) {
+          setError(err.toString());
         }
       }
     );
@@ -95,7 +120,8 @@ export function RescueSidebar({ repoPath, onRestore }: RescueSidebarProps) {
               {entries.map((entry, idx) => (
                 <div 
                     key={`${entry.hash}-${idx}`} 
-                    className="group flex flex-col p-2 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700/50"
+                    className="group flex flex-col p-2 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700/50 cursor-pointer"
+                    onClick={() => onSelect?.(entry.hash)}
                 >
                   <div className="flex items-center justify-between space-x-2 text-sm mb-1">
                      <span className="font-mono text-[10px] font-semibold px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400">
@@ -104,14 +130,23 @@ export function RescueSidebar({ repoPath, onRestore }: RescueSidebarProps) {
                      <span className="font-mono text-xs text-slate-500 flex-1">
                        {entry.hash.substring(0, 7)}
                      </span>
-                     <button
-                       onClick={() => handleRestore(entry)}
-                       className="opacity-0 group-hover:opacity-100 shrink-0 text-[10px] px-2 py-1 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 font-medium rounded transition-all flex items-center space-x-1 border border-red-200 dark:border-red-500/20"
-                       title="Hard Reset to this state"
-                     >
-                       <RefreshCcw className="w-3 h-3" />
-                       <span>Restore</span>
-                     </button>
+                     <div className="opacity-0 group-hover:opacity-100 flex items-center space-x-1 transition-all">
+                       <button
+                         onClick={(e) => handleRescueBranch(entry, e)}
+                         className="shrink-0 text-[10px] px-2 py-1 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-500/20 font-medium rounded flex items-center space-x-1 border border-green-200 dark:border-green-500/20"
+                         title="Create a new branch from this state securely"
+                       >
+                         <GitBranch className="w-3 h-3" />
+                         <span>Rescue</span>
+                       </button>
+                       <button
+                         onClick={(e) => { e.stopPropagation(); handleRestore(entry); }}
+                         className="shrink-0 text-[10px] px-2 py-1 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 font-medium rounded flex items-center space-x-1 border border-red-200 dark:border-red-500/20"
+                         title="Hard Reset to this state"
+                       >
+                         <RefreshCcw className="w-3 h-3" />
+                       </button>
+                     </div>
                   </div>
                   <span className="text-xs font-medium text-slate-600 dark:text-slate-300 line-clamp-2">
                      <span className="text-slate-400 border-r border-slate-300 dark:border-slate-700 pr-1 mr-1">{entry.action}</span>
