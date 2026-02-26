@@ -66,7 +66,7 @@ function TreeNodeView({ node, onSelectFile, onViewFileHistory }: { node: TreeNod
     if (!node.isDirectory) {
         return (
             <div 
-                className="flex items-center space-x-2 py-1 px-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer text-sm text-slate-700 dark:text-slate-300 ml-4 group"
+                className="flex items-center space-x-2 py-1 px-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer text-xs text-slate-700 dark:text-slate-300 ml-4 group"
                 onClick={() => onSelectFile(node.path)}
                 onContextMenu={(e) => {
                     if (onViewFileHistory) {
@@ -95,7 +95,7 @@ function TreeNodeView({ node, onSelectFile, onViewFileHistory }: { node: TreeNod
     return (
         <div className="ml-4">
             <div 
-                className="flex items-center space-x-2 py-1 px-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer text-sm text-slate-800 dark:text-slate-200 font-medium select-none group"
+                className="flex items-center space-x-2 py-1 px-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer text-xs text-slate-800 dark:text-slate-200 font-medium select-none group"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <div className="w-4 h-4 shrink-0 flex items-center justify-center text-slate-400">

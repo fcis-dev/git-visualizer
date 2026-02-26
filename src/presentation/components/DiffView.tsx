@@ -265,7 +265,7 @@ export function DiffView({
               )}
             </div>
           ) : viewMode === "diff" && parsedHunks.length > 0 ? (
-            <div className="w-full font-mono text-xs flex flex-col pb-10">
+            <div className="w-full font-mono text-[13px] flex flex-col pb-10">
               {parsedHunks.map((hunk, hIdx) => (
                 <div key={hIdx} className="w-full flex flex-col mb-4 border border-slate-200 dark:border-slate-800 rounded-md overflow-hidden shadow-sm">
                   {/* Hunk Header */}
@@ -312,8 +312,22 @@ export function DiffView({
                             <td className="w-10 px-2 text-right text-slate-400 dark:text-slate-500 select-none border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                               {line.newLine || ""}
                             </td>
-                            <td className={`px-4 whitespace-pre ${colorClass} w-full relative`}>
-                               {line.content}
+                            <td className={`px-4 whitespace-pre pt-0.5 pb-0.5 ${colorClass} w-full relative`}>
+                               <SyntaxHighlighter
+                                 language={getLanguage(filePath)}
+                                 style={isDarkMode ? vscDarkPlus : vs}
+                                 customStyle={{
+                                   margin: 0,
+                                   padding: 0,
+                                   background: 'transparent',
+                                   fontSize: 'inherit',
+                                   lineHeight: 'inherit',
+                                   fontFamily: 'inherit'
+                                 }}
+                                 PreTag="div"
+                               >
+                                 {line.content || ' '}
+                               </SyntaxHighlighter>
                                
                                {/* Line-level staging button (only show on add/delete lines) */}
                                {!commitHash && (line.type === 'add' || line.type === 'delete') && (

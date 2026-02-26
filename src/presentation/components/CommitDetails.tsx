@@ -156,10 +156,10 @@ export function CommitDetails({
                                 }
                                 
                                 return (
-                                    <span key={ref} className={`px-1.5 py-0.5 rounded border flex items-center shadow-sm font-mono whitespace-nowrap ${baseStyles}`}>
-                                        {isTag && <Tag className="w-2.5 h-2.5 mr-1" />}
-                                        {!isTag && <GitBranch className="w-2.5 h-2.5 mr-1" />}
-                                        {displayName}
+                                    <span key={ref} className={`px-1.5 py-0.5 rounded border flex items-center shadow-sm font-mono whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px] ${baseStyles}`}>
+                                        {isTag && <Tag className="w-2.5 h-2.5 shrink-0 mr-1" />}
+                                        {!isTag && <GitBranch className="w-2.5 h-2.5 shrink-0 mr-1" />}
+                                        <span className="truncate">{displayName}</span>
                                     </span>
                                 );
                             })}
@@ -358,7 +358,7 @@ export function CommitDetails({
                                         `}>
                                             {file.status}
                                         </span>
-                                        <span className="text-sm text-slate-700 dark:text-slate-300 truncate" title={file.path}>
+                                        <span className="text-xs text-slate-700 dark:text-slate-300 truncate" title={file.path}>
                                             {file.path}
                                         </span>
                                     </div>

@@ -3,6 +3,7 @@ import { Archive, Trash2, X, Download, Play } from 'lucide-react';
 import { StashEntry } from '../../domain/entities/GitEntities';
 import { useGitActions } from '../hooks/useGitActions';
 import { useDialog } from '../context/DialogContext';
+import { createPortal } from 'react-dom';
 
 interface StashesModalProps {
   repoPath: string;
@@ -84,7 +85,7 @@ export function StashesModal({ repoPath, onClose, onRefreshGraph }: StashesModal
     );
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-3xl max-h-[85vh] flex flex-col">
         
@@ -172,6 +173,7 @@ export function StashesModal({ repoPath, onClose, onRefreshGraph }: StashesModal
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

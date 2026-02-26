@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { GitMerge, Play, X, CheckCircle2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useGitActions } from '../hooks/useGitActions';
 import { Commit } from '../../domain/entities/GitEntities';
+import { createPortal } from 'react-dom';
 
 interface RebaseModalProps {
   repoPath: string;
@@ -155,7 +156,7 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
       'reword': 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400',
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         
@@ -299,6 +300,7 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
