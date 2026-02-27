@@ -378,3 +378,21 @@ pub async fn git_get_repository_stats(
         .await
         .map_err(|e| format!("Task panicked: {}", e))?
 }
+
+#[tauri::command]
+pub async fn git_read_file(path: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        std::fs::read_to_string(&path).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| format!("Task panicked: {}", e))?
+}
+
+#[tauri::command]
+pub async fn git_write_file(path: String, content: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        std::fs::write(&path, content).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| format!("Task panicked: {}", e))?
+}

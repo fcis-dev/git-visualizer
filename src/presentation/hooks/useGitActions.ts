@@ -5,14 +5,20 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
 
     const checkoutCommit = async (hash: string) => {
         if (!repoPath) return;
-        await repository.checkoutCommit(repoPath, hash);
-        onSuccess?.();
+        try {
+            await repository.checkoutCommit(repoPath, hash);
+        } finally {
+            onSuccess?.();
+        }
     };
 
     const checkoutBranch = async (branch: string) => {
         if (!repoPath) return;
-        await repository.checkoutBranch(repoPath, branch);
-        onSuccess?.();
+        try {
+            await repository.checkoutBranch(repoPath, branch);
+        } finally {
+            onSuccess?.();
+        }
     };
 
     const fetch = async () => {
@@ -23,32 +29,47 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
 
     const reset = async (hash: string, mode: 'soft' | 'mixed' | 'hard') => {
         if (!repoPath) return;
-        await repository.reset(repoPath, hash, mode);
-        onSuccess?.();
+        try {
+            await repository.reset(repoPath, hash, mode);
+        } finally {
+            onSuccess?.();
+        }
     };
 
     const rebase = async (branch: string) => {
         if (!repoPath) return;
-        await repository.rebase(repoPath, branch);
-        onSuccess?.();
+        try {
+            await repository.rebase(repoPath, branch);
+        } finally {
+            onSuccess?.();
+        }
     };
 
     const cherryPick = async (hash: string) => {
         if (!repoPath) return;
-        await repository.cherryPick(repoPath, hash);
-        onSuccess?.();
+        try {
+            await repository.cherryPick(repoPath, hash);
+        } finally {
+            onSuccess?.();
+        }
     };
 
     const revert = async (hash: string) => {
         if (!repoPath) return;
-        await repository.revert(repoPath, hash);
-        onSuccess?.();
+        try {
+            await repository.revert(repoPath, hash);
+        } finally {
+            onSuccess?.();
+        }
     };
 
     const merge = async (branch: string) => {
         if (!repoPath) return;
-        await repository.merge(repoPath, branch);
-        onSuccess?.();
+        try {
+            await repository.merge(repoPath, branch);
+        } finally {
+            onSuccess?.();
+        }
     };
 
     const createTag = async (name: string, hash?: string) => {

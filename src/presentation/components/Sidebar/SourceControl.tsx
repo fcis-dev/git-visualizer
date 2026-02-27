@@ -12,6 +12,9 @@ import {
   Plus,
   ExternalLink,
   Loader2,
+  AlertTriangle,
+  ArrowLeftToLine,
+  ArrowRightToLine,
 } from "lucide-react";
 import { useDialog } from "../../context/DialogContext";
 import { Commit, SubmoduleInfo } from "../../../domain/entities/GitEntities";
@@ -32,6 +35,8 @@ interface SourceControlProps {
   onFetch?: (withPrune?: boolean) => Promise<void>;
   onViewFileHistory?: (path: string) => void;
   onOpenSubmodule?: (absolutePath: string) => void;
+  onResolveConflict?: (path: string) => void;
+  refreshTrigger?: any;
 }
 
 export function SourceControl({
@@ -41,11 +46,13 @@ export function SourceControl({
   onCommit,
   onViewFileHistory,
   onOpenSubmodule,
+  onResolveConflict,
+  refreshTrigger,
 }: SourceControlProps) {
   const [stagedFiles, setStagedFiles] = useState<FileStatus[]>([]);
   const [changes, setChanges] = useState<FileStatus[]>([]);
-  const [conflictedFiles, setConflictedFiles] = useState<FileStatus[]>([]);
   const [commitMessage, setCommitMessage] = useState("");
+  const [lastMergeMsg, setLastMergeMsg] = useState("");
   const [stashLoading, setStashLoading] = useState(false);
   const [rebaseLoading, setRebaseLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,10 +89,16 @@ export function SourceControl({
       loadStatus();
       setStagedFiles([]);
       setChanges([]);
-      setConflictedFiles([]);
       setSubmodules([]);
+
+      // Automatically poll for new changes on disk (e.g., from VS Code or terminal)
+      const intervalId = setInterval(() => {
+        loadStatus();
+      }, 3000);
+
+      return () => clearInterval(intervalId);
     }
-  }, [repoPath]);
+  }, [repoPath, refreshTrigger]);
 
   const loadStatus = async () => {
     if (!repoPath) return;
@@ -96,13 +109,12 @@ export function SourceControl({
 
       const staged: FileStatus[] = [];
       const changed: FileStatus[] = [];
-      const conflicted: FileStatus[] = [];
 
       statuses.forEach((s) => {
         if (s.status === "staged") {
           staged.push(s);
         } else if (s.status === "conflicted") {
-          conflicted.push(s);
+          changed.unshift(s); // Push to the top of changes list too
         } else {
           changed.push(s);
         }
@@ -110,11 +122,25 @@ export function SourceControl({
 
       setStagedFiles(staged);
       setChanges(changed);
-      setConflictedFiles(conflicted);
       const rebasing = await invoke<boolean>("git_get_rebase_state", {
         path: repoPath,
       });
       setIsRebasing(rebasing);
+
+      // Check for an active merge message and pre-fill if the input is empty
+      try {
+        const mergeMsgPath = `${repoPath}/.git/MERGE_MSG`.replace(/\\/g, '/');
+        const mergeMsg = await invoke<string>("git_read_file", { path: mergeMsgPath });
+        if (mergeMsg && mergeMsg !== lastMergeMsg) {
+            setLastMergeMsg(mergeMsg);
+            if (commitMessage.trim() === "") {
+                setCommitMessage(mergeMsg.trim());
+            }
+        }
+      } catch (e) {
+        // MERGE_MSG does not exist, not in a merge state. Reset last merge msg tracking.
+        if (lastMergeMsg !== "") setLastMergeMsg("");
+      }
 
       try {
         const subs = await gitActions.getSubmodules();
@@ -123,7 +149,6 @@ export function SourceControl({
         console.error("Could not fetch submodules", e);
       }
 
-      setError(null);
     } catch (err: any) {
       console.error("Failed to load status", err);
       setError(err.toString());
@@ -235,7 +260,11 @@ export function SourceControl({
       if (onCommit) onCommit();
     } catch (err: any) {
       console.error("Failed to commit", err);
-      setError(err.toString());
+      let errMsg = err.toString();
+      if (errMsg.includes("not fully merged index") || errMsg.includes("Unmerged (-10)")) {
+        errMsg = "Cannot commit: You must stage all files and resolve conflicts first.";
+      }
+      setError(errMsg);
     }
   };
 
@@ -344,11 +373,6 @@ export function SourceControl({
             </div>
           </div>
         )}
-        {error && (
-          <div className="p-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-200 text-xs rounded break-all">
-            {error}
-          </div>
-        )}
 
         {/* Stash Actions */}
         <div className="flex space-x-2">
@@ -371,53 +395,7 @@ export function SourceControl({
           </button>
         </div>
 
-        {/* Conflicted Files */}
-        {conflictedFiles.length > 0 && (
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs font-bold text-red-500 uppercase px-1">
-              <span>Conflicted</span>
-              <span className="bg-red-100 dark:bg-red-900/30 px-1.5 rounded-full text-red-600 dark:text-red-300">
-                {conflictedFiles.length}
-              </span>
-            </div>
-            {conflictedFiles.map((file) => (
-              <div
-                key={file.path}
-                className="group flex flex-col p-1.5 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 rounded hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors"
-              >
-                <div
-                  className="flex items-center justify-between cursor-pointer mb-1"
-                  onClick={() => onSelectFile(file.path)}
-                >
-                  <span
-                    className="text-sm text-red-600 dark:text-red-300 truncate font-medium"
-                    title={file.path}
-                  >
-                    {file.path}
-                  </span>
-                </div>
-                <div className="flex space-x-1">
-                  <button
-                    onClick={(e) => handleResolveConflict(file.path, "ours", e)}
-                    className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs py-1 px-2 rounded hover:bg-green-50 dark:hover:bg-green-900/20 text-slate-600 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 transition-colors"
-                    title="Accept Current (Ours)"
-                  >
-                    Accept Current
-                  </button>
-                  <button
-                    onClick={(e) =>
-                      handleResolveConflict(file.path, "theirs", e)
-                    }
-                    className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs py-1 px-2 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                    title="Accept Incoming (Theirs)"
-                  >
-                    Accept Incoming
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Removed Conflicted Files section, moved to Changes */}
 
         {/* Commit Input */}
         <div className="space-y-2">
@@ -450,7 +428,7 @@ export function SourceControl({
             value={commitMessage}
             onChange={(e) => setCommitMessage(e.target.value)}
             placeholder="Message (Ctrl+Enter to commit)"
-            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded p-2 text-sm text-slate-900 dark:text-slate-200 focus:outline-none focus:border-indigo-500/50 min-h-[80px]"
+            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded p-2 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-indigo-500/50 min-h-[80px]"
             onKeyDown={(e) => {
               if (e.ctrlKey && e.key === "Enter") {
                 handleCommit();
@@ -459,7 +437,7 @@ export function SourceControl({
           />
           <button
             onClick={handleCommit}
-            disabled={!commitMessage || (!isAmend && stagedFiles.length === 0)}
+            disabled={!commitMessage || (!isAmend && stagedFiles.length === 0 && !lastMergeMsg)}
             className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-1.5 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
           >
             <Check className="w-4 h-4" />
@@ -552,36 +530,70 @@ export function SourceControl({
             <div
               key={file.path}
               className="group flex items-center justify-between p-1 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded cursor-pointer"
-              onClick={() => onSelectFile(file.path)}
+              onClick={() => {
+                if (file.status === "conflicted" && onResolveConflict) {
+                  onResolveConflict(file.path);
+                } else {
+                  onSelectFile(file.path);
+                }
+              }}
               onContextMenu={(e) => handleContextMenu(file.path, e)}
             >
-              <span
-                className={`text-xs truncate flex-1 ${
-                  file.status === "deleted"
-                    ? "text-red-500 dark:text-red-400 line-through"
-                    : file.status === "new"
-                      ? "text-green-600 dark:text-green-400"
-                      : "text-amber-600 dark:text-amber-400"
-                }`}
-                title={file.path}
-              >
-                {file.path}
-              </span>
-              <div className="flex opacity-0 group-hover:opacity-100 space-x-1">
-                <button
-                  onClick={(e) => handleDiscard(file.path, e)}
-                  className="p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                  title="Discard changes"
+              <div className="flex items-center space-x-1.5 min-w-0 flex-1">
+                {file.status === "conflicted" && (
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                )}
+                <span
+                  className={`text-xs truncate ${
+                    file.status === "deleted"
+                      ? "text-red-500 dark:text-red-400 line-through"
+                      : file.status === "new"
+                        ? "text-green-600 dark:text-green-400"
+                        : file.status === "conflicted"
+                          ? "text-amber-600 dark:text-amber-400 font-medium"
+                          : "text-amber-600 dark:text-amber-400"
+                  }`}
+                  title={file.path}
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={(e) => handleStage(file.path, e)}
-                  className="p-1 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
-                  title="Stage changes"
-                >
-                  <Play className="w-3.5 h-3.5" />
-                </button>
+                  {file.path}
+                </span>
+              </div>
+              <div className="flex opacity-0 group-hover:opacity-100 space-x-1 shrink-0">
+                {file.status === "conflicted" ? (
+                  <>
+                    <button
+                      onClick={(e) => handleResolveConflict(file.path, "ours", e)}
+                      className="p-1 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
+                      title="Accept Current (Ours)"
+                    >
+                      <ArrowLeftToLine className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => handleResolveConflict(file.path, "theirs", e)}
+                      className="p-1 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                      title="Accept Incoming (Theirs)"
+                    >
+                      <ArrowRightToLine className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={(e) => handleDiscard(file.path, e)}
+                      className="p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                      title="Discard changes"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => handleStage(file.path, e)}
+                      className="p-1 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
+                      title="Stage changes"
+                    >
+                      <Play className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}

@@ -26,6 +26,7 @@ import { CommitDetails } from "./CommitDetails";
 import { HistoricalFileContentView } from "./HistoricalFileContentView";
 import { CreateBranchModal } from "./CreateBranchModal";
 import { RepositoryStatsModal } from "./RepositoryStatsModal";
+import { MergeConflictEditor } from "./MergeConflictEditor";
 import { useGit } from "../hooks/useGit";
 import { useGitActions } from "../hooks/useGitActions";
 import { useAutoFetch } from "../hooks/useAutoFetch";
@@ -69,6 +70,8 @@ export function RepositoryWorkspace({
     commitHash: string;
   } | null>(null);
 
+  const [conflictTarget, setConflictTarget] = useState<string | null>(null);
+
   type SidebarTab = "changes" | "branches" | "tags" | "rescue";
   const [activeSidebarTab, setActiveSidebarTab] =
     useState<SidebarTab>("changes");
@@ -78,6 +81,7 @@ export function RepositoryWorkspace({
   );
 
   // Global search state
+  const [refreshDate, setRefreshDate] = useState<Date>(new Date());
   const [searchType, setSearchType] = useState<
     "all" | "message" | "author" | "file"
   >("all");
@@ -130,6 +134,14 @@ export function RepositoryWorkspace({
     isLoadingMoreRef.current = isLoadingMore;
   }, [isLoadingMore]);
 
+  // Listen for window focus to refresh the source control status
+  // This is helpful if the user edits a file in an external editor or runs git cmds in an external terminal
+  useEffect(() => {
+    const onFocus = () => setRefreshDate(new Date());
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
   // Filter commits based on search query
   const filteredLocalCommits = commits.filter(
     (commit) =>
@@ -156,6 +168,7 @@ export function RepositoryWorkspace({
   // Refresh after actions (same as before)
   const onActionSuccess = () => {
     loadCommits();
+    setRefreshDate(new Date());
   };
 
   const gitActions = useGitActions(repoPath, onActionSuccess);
@@ -804,6 +817,8 @@ export function RepositoryWorkspace({
               onCommit={loadCommits}
               isAutoFetching={isAutoFetching || isFetchingManual}
               onFetch={handleFetch}
+              onResolveConflict={(path) => setConflictTarget(path)}
+              refreshTrigger={refreshDate}
             />
           )}
 
@@ -1068,6 +1083,20 @@ export function RepositoryWorkspace({
               commitHash={contentTarget.commitHash}
               onClose={() => setContentTarget(null)}
             />
+          )}
+
+          {/* Merge Conflict Editor Overlay */}
+          {conflictTarget && (
+             <MergeConflictEditor
+               repoPath={repoPath}
+               filePath={conflictTarget}
+               onResolved={() => {
+                 setConflictTarget(null);
+                 setRefreshDate(new Date());
+                 loadCommits();
+               }}
+               onCancel={() => setConflictTarget(null)}
+             />
           )}
         </div>
 

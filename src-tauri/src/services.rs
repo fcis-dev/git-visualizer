@@ -281,14 +281,34 @@ pub fn git_commit(path: &str, message: String) -> Result<String, String> {
     let signature = repo
         .signature()
         .map_err(|_| "Failed to get signature".to_string())?;
-    let parent_commit = match repo.head() {
-        Ok(head) => Some(head.peel_to_commit().map_err(|e| e.to_string())?),
-        Err(_) => None,
-    };
-    let parents = match &parent_commit {
-        Some(c) => vec![c],
-        None => vec![],
-    };
+
+    let mut parents_commits = Vec::new();
+
+    // Always include HEAD as the first parent
+    if let Ok(head) = repo.head() {
+        if let Ok(head_commit) = head.peel_to_commit() {
+            parents_commits.push(head_commit);
+        }
+    }
+
+    // Check if we are in the middle of a merge
+    let merge_head_path = std::path::Path::new(path).join(".git/MERGE_HEAD");
+    if merge_head_path.exists() {
+        if let Ok(merge_head_content) = std::fs::read_to_string(merge_head_path) {
+            let merge_oid_str = merge_head_content.trim();
+            if let Ok(merge_oid) = git2::Oid::from_str(merge_oid_str) {
+                if let Ok(merge_commit) = repo.find_commit(merge_oid) {
+                    parents_commits.push(merge_commit);
+                }
+            }
+        }
+    }
+
+    let mut parents: Vec<&git2::Commit> = Vec::new();
+    for commit in &parents_commits {
+        parents.push(commit);
+    }
+
     let oid = repo
         .commit(
             Some("HEAD"),
@@ -299,6 +319,12 @@ pub fn git_commit(path: &str, message: String) -> Result<String, String> {
             &parents,
         )
         .map_err(|e| e.to_string())?;
+
+    // Clean up merge state files
+    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_HEAD"));
+    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_MODE"));
+    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_MSG"));
+
     Ok(oid.to_string())
 }
 
