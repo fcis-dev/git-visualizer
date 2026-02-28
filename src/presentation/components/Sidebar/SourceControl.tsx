@@ -59,6 +59,7 @@ export function SourceControl({
   const [submodules, setSubmodules] = useState<SubmoduleInfo[]>([]);
   const [submodulesLoading, setSubmodulesLoading] = useState(false);
   const [isAddingSubmodule, setIsAddingSubmodule] = useState(false);
+  const [stashesCount, setStashesCount] = useState(0);
 
   const [isAmend, setIsAmend] = useState(false);
   const [previousMessage, setPreviousMessage] = useState("");
@@ -129,13 +130,15 @@ export function SourceControl({
 
       // Check for an active merge message and pre-fill if the input is empty
       try {
-        const mergeMsgPath = `${repoPath}/.git/MERGE_MSG`.replace(/\\/g, '/');
-        const mergeMsg = await invoke<string>("git_read_file", { path: mergeMsgPath });
+        const mergeMsgPath = `${repoPath}/.git/MERGE_MSG`.replace(/\\/g, "/");
+        const mergeMsg = await invoke<string>("git_read_file", {
+          path: mergeMsgPath,
+        });
         if (mergeMsg && mergeMsg !== lastMergeMsg) {
-            setLastMergeMsg(mergeMsg);
-            if (commitMessage.trim() === "") {
-                setCommitMessage(mergeMsg.trim());
-            }
+          setLastMergeMsg(mergeMsg);
+          if (commitMessage.trim() === "") {
+            setCommitMessage(mergeMsg.trim());
+          }
         }
       } catch (e) {
         // MERGE_MSG does not exist, not in a merge state. Reset last merge msg tracking.
@@ -149,6 +152,12 @@ export function SourceControl({
         console.error("Could not fetch submodules", e);
       }
 
+      try {
+        const stashes = await gitActions.getStashes();
+        setStashesCount(stashes.length);
+      } catch (e) {
+        console.error("Could not fetch stashes", e);
+      }
     } catch (err: any) {
       console.error("Failed to load status", err);
       setError(err.toString());
@@ -261,8 +270,12 @@ export function SourceControl({
     } catch (err: any) {
       console.error("Failed to commit", err);
       let errMsg = err.toString();
-      if (errMsg.includes("not fully merged index") || errMsg.includes("Unmerged (-10)")) {
-        errMsg = "Cannot commit: You must stage all files and resolve conflicts first.";
+      if (
+        errMsg.includes("not fully merged index") ||
+        errMsg.includes("Unmerged (-10)")
+      ) {
+        errMsg =
+          "Cannot commit: You must stage all files and resolve conflicts first.";
       }
       setError(errMsg);
     }
@@ -392,6 +405,11 @@ export function SourceControl({
             title="Manage Stashes"
           >
             <span>Stashes</span>
+            {stashesCount > 0 && (
+              <span className="bg-emerald-200 dark:bg-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded-full text-[10px] leading-none font-bold ml-1">
+                {stashesCount}
+              </span>
+            )}
           </button>
         </div>
 
@@ -437,7 +455,10 @@ export function SourceControl({
           />
           <button
             onClick={handleCommit}
-            disabled={!commitMessage || (!isAmend && stagedFiles.length === 0 && !lastMergeMsg)}
+            disabled={
+              !commitMessage ||
+              (!isAmend && stagedFiles.length === 0 && !lastMergeMsg)
+            }
             className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-1.5 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
           >
             <Check className="w-4 h-4" />
@@ -562,14 +583,18 @@ export function SourceControl({
                 {file.status === "conflicted" ? (
                   <>
                     <button
-                      onClick={(e) => handleResolveConflict(file.path, "ours", e)}
+                      onClick={(e) =>
+                        handleResolveConflict(file.path, "ours", e)
+                      }
                       className="p-1 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
                       title="Accept Current (Ours)"
                     >
                       <ArrowLeftToLine className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={(e) => handleResolveConflict(file.path, "theirs", e)}
+                      onClick={(e) =>
+                        handleResolveConflict(file.path, "theirs", e)
+                      }
                       className="p-1 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
                       title="Accept Incoming (Theirs)"
                     >
