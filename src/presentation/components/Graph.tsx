@@ -17,6 +17,7 @@ interface GraphProps {
   isLoadingMore?: boolean;
   hasMore?: boolean;
   isSearchResult?: boolean;
+  onBranchContextMenu?: (refName: string, x: number, y: number) => void;
 }
 
 export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph({
@@ -27,6 +28,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph({
   isLoadingMore = false,
   hasMore = false,
   isSearchResult = false,
+  onBranchContextMenu,
 }, ref) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -274,7 +276,8 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph({
               .replace(/"/g, "&quot;")
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;");
-            return `<div style="background-color: ${bgFill}; color: ${textFill}; border: 1px solid ${border}; border-radius: 4px; padding: 1px 6px; font-size: 10px; line-height: 14px; white-space: nowrap; pointer-events: auto; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: inline-block;">${safeDisplayName}</div>`;
+            // data-ref stores the raw ref string so we can read it from the DOM event
+            return `<div data-ref="${safeDisplayName}" style="background-color: ${bgFill}; color: ${textFill}; border: 1px solid ${border}; border-radius: 4px; padding: 1px 6px; font-size: 10px; line-height: 14px; white-space: nowrap; pointer-events: auto; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: inline-block; cursor: context-menu;">${safeDisplayName}</div>`;
           })
           .join("");
 
@@ -354,11 +357,26 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph({
               <span style="font-size: 10px; opacity: 0.7;">${timePart}</span>
             </div>
           `);
+
+      // Attach contextmenu listeners to ref badge divs after HTML is injected
+      if (onBranchContextMenu) {
+        const foNode = fo.node() as Element | null;
+        if (foNode) {
+          foNode.querySelectorAll<HTMLElement>("[data-ref]").forEach((el) => {
+            el.addEventListener("contextmenu", (evt) => {
+              evt.preventDefault();
+              evt.stopPropagation();
+              const refName = el.getAttribute("data-ref") || "";
+              onBranchContextMenu(refName, (evt as MouseEvent).clientX, (evt as MouseEvent).clientY);
+            });
+          });
+        }
+      }
     });
 
     // Expand the SVG canvas width if the content overflowed the container
     svg.attr("width", maxContentWidth);
-  }, [commits, onSelectCommit, selectedCommit, theme, containerWidth]);
+  }, [commits, onSelectCommit, selectedCommit, theme, containerWidth, onBranchContextMenu]);
 
   return (
     <div ref={containerRef} className="overflow-auto flex-1 custom-scrollbar">

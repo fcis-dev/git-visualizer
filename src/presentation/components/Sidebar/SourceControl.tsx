@@ -352,6 +352,7 @@ export function SourceControl({
                   try {
                     setRebaseLoading(true);
                     await invoke("git_rebase_abort", { path: repoPath });
+                    setCommitMessage("");
                     loadStatus();
                     if (onCommit) onCommit();
                   } catch (e: any) {

@@ -82,6 +82,14 @@ export function RepositoryWorkspace({
     null,
   );
 
+  // Context menu state for branch badges clicked in the commit graph
+  const [graphBranchContextMenu, setGraphBranchContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    refName: string;
+  }>({ visible: false, x: 0, y: 0, refName: "" });
+
   // Global search state
   const [refreshDate, setRefreshDate] = useState<Date>(new Date());
   const [searchType, setSearchType] = useState<
@@ -511,6 +519,157 @@ export function RepositoryWorkspace({
   };
 
   const repoName = repoPath.split(/[\/\\]/).pop() || "Repository";
+
+  // ── Branch actions invoked from the graph ref-badge context menu ──────────
+  const handleGraphBranchCheckout = (refName: string) => {
+    const isRemote = refName.includes("/");
+    if (isRemote) {
+      const parts = refName.split("/");
+      const localName = parts.slice(1).join("/");
+      showConfirm(
+        "Checkout Remote Branch",
+        `Create and checkout local tracking branch '${localName}'?`,
+        async () => {
+          try {
+            await gitActions.createBranch(localName, refName);
+            await gitActions.checkoutBranch(localName);
+            showAlert("Success", `Created and checked out '${localName}'.`);
+            loadCommits();
+          } catch (e: any) { showAlert("Error", e.toString()); }
+        },
+      );
+    } else {
+      showConfirm(
+        "Checkout Branch",
+        `Checkout branch '${refName}'?`,
+        async () => {
+          try {
+            await gitActions.checkoutBranch(refName);
+            showAlert("Success", `Checked out '${refName}'.`);
+            loadCommits();
+          } catch (e: any) { showAlert("Error", e.toString()); }
+        },
+      );
+    }
+  };
+
+  const handleGraphBranchMerge = (refName: string) => {
+    showConfirm(
+      "Merge Branch",
+      `Merge '${refName}' into current branch '${branchName}'?`,
+      async () => {
+        try {
+          await gitActions.merge(refName);
+          showAlert("Success", `Merged '${refName}' successfully.`);
+          loadCommits();
+        } catch (e: any) { showAlert("Error", e.toString()); }
+      },
+    );
+  };
+
+  const handleGraphBranchCreateFrom = (refName: string) => {
+    showInput(
+      "Create Branch",
+      `New branch name (from ${refName}):`,
+      async (newName) => {
+        if (!newName) return;
+        try {
+          await gitActions.createBranch(newName, refName);
+          showAlert("Success", `Created branch '${newName}' from '${refName}'.`);
+          loadCommits();
+        } catch (e: any) { showAlert("Error", e.toString()); }
+      },
+    );
+  };
+
+  const handleGraphBranchCreateTag = (refName: string) => {
+    showInput(
+      "Create Tag",
+      `New tag name (at ${refName}):`,
+      async (tagName) => {
+        if (!tagName) return;
+        try {
+          await gitActions.createTag(tagName, refName);
+          showAlert("Success", `Created tag '${tagName}' at '${refName}'.`);
+          loadCommits();
+        } catch (e: any) { showAlert("Error", e.toString()); }
+      },
+    );
+  };
+
+  const handleGraphBranchRebase = (refName: string) => {
+    showConfirm(
+      "Rebase",
+      `Rebase current branch '${branchName}' onto '${refName}'?`,
+      async () => {
+        try {
+          await gitActions.rebase(refName);
+          showAlert("Success", `Rebased onto '${refName}'.`);
+          loadCommits();
+        } catch (e: any) { showAlert("Error", e.toString()); }
+      },
+    );
+  };
+
+  const handleGraphBranchCherryPick = (refName: string) => {
+    showConfirm(
+      "Cherry-pick tip",
+      `Cherry-pick the tip commit of '${refName}' into current branch?`,
+      async () => {
+        try {
+          await gitActions.cherryPick(refName);
+          showAlert("Success", `Cherry-picked '${refName}'.`);
+          loadCommits();
+        } catch (e: any) { showAlert("Error", e.toString()); }
+      },
+    );
+  };
+
+  const handleGraphBranchReset = (refName: string, mode: "soft" | "mixed" | "hard") => {
+    const isHard = mode === "hard";
+    showConfirm(
+      `Reset to ${refName}`,
+      isHard
+        ? `HARD reset current branch to '${refName}'? ALL uncommitted changes will be lost.`
+        : `Reset current branch to '${refName}' using ${mode} mode?`,
+      async () => {
+        try {
+          await gitActions.reset(refName, mode);
+          showAlert("Success", `Reset to '${refName}' (${mode}).`);
+          loadCommits();
+        } catch (e: any) { showAlert("Error", e.toString()); }
+      },
+    );
+  };
+
+  const handleGraphBranchDelete = (refName: string) => {
+    showConfirm(
+      "Delete Branch",
+      `Delete branch '${refName}'? This cannot be undone.`,
+      async () => {
+        try {
+          await gitActions.deleteBranch(refName, false);
+          loadCommits();
+        } catch (e: any) {
+          const msg = e.toString();
+          if (msg.includes("not fully merged")) {
+            showConfirm(
+              "Force Delete",
+              `Branch '${refName}' is not fully merged. Force-delete anyway?`,
+              async () => {
+                try {
+                  await gitActions.deleteBranch(refName, true);
+                  loadCommits();
+                } catch (fe: any) { showAlert("Error", fe.toString()); }
+              },
+            );
+          } else {
+            showAlert("Error", msg);
+          }
+        }
+      },
+    );
+  };
 
   return (
     <div className="flex-1 w-full flex flex-col h-full min-w-0 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 overflow-hidden">
@@ -1075,7 +1234,122 @@ export function RepositoryWorkspace({
                 commitSearchQuery.trim().length > 0 ? hasMoreSearch : hasMore
               }
               isSearchResult={commitSearchQuery.trim().length > 0}
+              onBranchContextMenu={(refName, x, y) => {
+                setGraphBranchContextMenu({ visible: true, x, y, refName });
+              }}
             />
+
+            {/* Branch badge context menu (triggered from the graph) */}
+            {graphBranchContextMenu.visible && (() => {
+              const ref = graphBranchContextMenu.refName;
+              const isCurrentBranch = ref === branchName;
+              const isHeadRef = ref.toUpperCase().startsWith("HEAD");
+              const isTag = false; // tags from graph start with "tag: " but we strip that in Graph
+              const canDelete = !isCurrentBranch && !isHeadRef && !isTag;
+              const canMergeRebaseEtc = !isCurrentBranch && !isHeadRef;
+              return (
+                <>
+                  {/* backdrop to close on outside click */}
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setGraphBranchContextMenu(prev => ({ ...prev, visible: false }))}
+                  />
+                  <div
+                    className="fixed z-50 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg min-w-[180px] text-sm overflow-hidden"
+                    style={{ top: graphBranchContextMenu.y, left: graphBranchContextMenu.x }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 truncate max-w-[220px]" title={ref}>
+                      {ref}
+                    </div>
+
+                    {!isHeadRef && (
+                      <button
+                        className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                        onClick={() => { handleGraphBranchCheckout(ref); setGraphBranchContextMenu(p => ({ ...p, visible: false })); }}
+                      >
+                        Checkout
+                      </button>
+                    )}
+
+                    <button
+                      className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                      onClick={() => { handleGraphBranchCreateFrom(ref); setGraphBranchContextMenu(p => ({ ...p, visible: false })); }}
+                    >
+                      Create branch from here…
+                    </button>
+
+                    <button
+                      className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                      onClick={() => { handleGraphBranchCreateTag(ref); setGraphBranchContextMenu(p => ({ ...p, visible: false })); }}
+                    >
+                      Create tag here…
+                    </button>
+
+                    {canMergeRebaseEtc && (
+                      <>
+                        <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+
+                        <button
+                          className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                          onClick={() => { handleGraphBranchMerge(ref); setGraphBranchContextMenu(p => ({ ...p, visible: false })); }}
+                        >
+                          Merge into current
+                        </button>
+
+                        <button
+                          className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                          onClick={() => { handleGraphBranchRebase(ref); setGraphBranchContextMenu(p => ({ ...p, visible: false })); }}
+                        >
+                          Rebase current onto this
+                        </button>
+
+                        <button
+                          className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                          onClick={() => { handleGraphBranchCherryPick(ref); setGraphBranchContextMenu(p => ({ ...p, visible: false })); }}
+                        >
+                          Cherry-pick tip
+                        </button>
+
+                        <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+                        <div className="px-4 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reset Current To Here</div>
+
+                        <button
+                          className="w-full text-left px-4 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                          onClick={() => { handleGraphBranchReset(ref, "soft"); setGraphBranchContextMenu(p => ({ ...p, visible: false })); }}
+                        >
+                          Soft (keep changes)
+                        </button>
+                        <button
+                          className="w-full text-left px-4 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                          onClick={() => { handleGraphBranchReset(ref, "mixed"); setGraphBranchContextMenu(p => ({ ...p, visible: false })); }}
+                        >
+                          Mixed
+                        </button>
+                        <button
+                          className="w-full text-left px-4 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-red-600 dark:text-red-400 font-medium"
+                          onClick={() => { handleGraphBranchReset(ref, "hard"); setGraphBranchContextMenu(p => ({ ...p, visible: false })); }}
+                        >
+                          Hard (discard changes)
+                        </button>
+                      </>
+                    )}
+
+                    {canDelete && (
+                      <>
+                        <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+                        <button
+                          className="w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-red-600 dark:text-red-400"
+                          onClick={() => { handleGraphBranchDelete(ref); setGraphBranchContextMenu(p => ({ ...p, visible: false })); }}
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* Diff View Overlay (over the middle column) */}

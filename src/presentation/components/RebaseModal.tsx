@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { GitMerge, Play, X, CheckCircle2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useGitActions } from '../hooks/useGitActions';
 import { Commit } from '../../domain/entities/GitEntities';
@@ -17,17 +17,27 @@ type RebaseAction = 'pick' | 'drop' | 'edit' | 'reword' | 'fixup';
 interface RebaseRow {
   commit: Commit;
   action: RebaseAction;
-  newMessage?: string; // Used for exactly 'reword'
+  newMessage?: string;
 }
+
+const ACTION_META: Record<RebaseAction, { label: string; dot: string; text: string; border: string; bg: string }> = {
+  pick:   { label: 'Pick',   dot: 'bg-slate-400 dark:bg-slate-500',   text: 'text-slate-700 dark:text-slate-200',   border: 'border-slate-200 dark:border-slate-700',   bg: 'bg-white dark:bg-slate-800' },
+  reword: { label: 'Reword', dot: 'bg-blue-400 dark:bg-blue-500',    text: 'text-blue-700 dark:text-blue-300',    border: 'border-blue-200 dark:border-blue-500/40',  bg: 'bg-blue-50 dark:bg-blue-900/20' },
+  edit:   { label: 'Edit',   dot: 'bg-amber-400 dark:bg-amber-500',  text: 'text-amber-700 dark:text-amber-300',  border: 'border-amber-200 dark:border-amber-500/40',bg: 'bg-amber-50 dark:bg-amber-900/20' },
+  fixup:  { label: 'Fixup',  dot: 'bg-purple-400 dark:bg-purple-500',text: 'text-purple-700 dark:text-purple-300',border: 'border-purple-200 dark:border-purple-500/40',bg: 'bg-purple-50 dark:bg-purple-900/20' },
+  drop:   { label: 'Drop',   dot: 'bg-red-400 dark:bg-red-500',      text: 'text-red-700 dark:text-red-400',      border: 'border-red-200 dark:border-red-500/40',    bg: 'bg-red-50 dark:bg-red-900/20' },
+};
+
+const ACTION_ORDER: RebaseAction[] = ['pick', 'reword', 'edit', 'fixup', 'drop'];
 
 export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: RebaseModalProps) {
   const gitActions = useGitActions(repoPath);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // The list of commits to rebase, from oldest to newest
   const [rows, setRows] = useState<RebaseRow[]>([]);
+  const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
+  const dropdownRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // 1. Fetch commits between baseCommit..HEAD
   useEffect(() => {
@@ -148,13 +158,6 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
     }
   };
 
-  const actionColors: Record<RebaseAction, string> = {
-      'pick': 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200',
-      'drop': 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400',
-      'edit': 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400',
-      'fixup': 'bg-purple-100 text-purple-800 dark:bg-purple-500/20 dark:text-purple-400',
-      'reword': 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400',
-  };
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -230,19 +233,58 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
                                 </button>
                             </div>
 
-                            {/* Action Selector */}
-                            <div className="p-3 flex items-center shrink-0 w-32 border-r border-slate-100 dark:border-slate-700/50">
-                                <select 
-                                    value={row.action}
-                                    onChange={(e) => updateAction(index, e.target.value as RebaseAction)}
-                                    className={`w-full py-1.5 px-2 text-sm font-medium rounded outline-none border-none appearance-none cursor-pointer ${actionColors[row.action]}`}
+                            {/* Action Selector – custom dropdown */}
+                            <div
+                              className="p-2 flex items-center shrink-0 w-36 border-r border-slate-100 dark:border-slate-700/50"
+                              ref={el => { dropdownRefs.current[index] = el; }}
+                            >
+                              <div className="relative w-full">
+                                {/* Trigger */}
+                                <div
+                                  className={`flex items-center border rounded cursor-pointer select-none transition-colors ${ACTION_META[row.action].border} bg-white dark:bg-slate-800 hover:brightness-95`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenDropdownIndex(openDropdownIndex === index ? null : index);
+                                  }}
                                 >
-                                    <option value="pick">Pick</option>
-                                    <option value="reword">Reword</option>
-                                    <option value="edit">Edit</option>
-                                    <option value="fixup">Fixup (Squash)</option>
-                                    <option value="drop">Drop</option>
-                                </select>
+                                  {/* colored left pill */}
+                                  <span className={`w-1 self-stretch rounded-l shrink-0 ${ACTION_META[row.action].dot.replace('bg-', 'bg-').replace('dark:bg-', 'dark:bg-')}`} />
+                                  <span className={`flex-1 pl-2 pr-1 py-1.5 text-xs font-semibold ${ACTION_META[row.action].text}`}>
+                                    {ACTION_META[row.action].label}
+                                  </span>
+                                  <ChevronDown className={`w-3 h-3 mr-1.5 text-slate-400 transition-transform ${openDropdownIndex === index ? 'rotate-180' : ''}`} />
+                                </div>
+
+                                {/* Dropdown panel */}
+                                {openDropdownIndex === index && (
+                                  <>
+                                    {/* backdrop */}
+                                    <div
+                                      className="fixed inset-0 z-40"
+                                      onClick={() => setOpenDropdownIndex(null)}
+                                    />
+                                    <div className="absolute left-0 top-full mt-1 w-36 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-50 overflow-hidden py-1">
+                                      {ACTION_ORDER.map(action => (
+                                        <button
+                                          key={action}
+                                          onClick={() => {
+                                            updateAction(index, action);
+                                            setOpenDropdownIndex(null);
+                                          }}
+                                          className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors ${
+                                            row.action === action
+                                              ? `${ACTION_META[action].bg} ${ACTION_META[action].text} font-semibold`
+                                              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                          }`}
+                                        >
+                                          <span className={`w-2 h-2 rounded-full shrink-0 ${ACTION_META[action].dot}`} />
+                                          {ACTION_META[action].label}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
                             </div>
 
                             {/* Commit Info */}
