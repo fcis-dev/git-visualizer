@@ -2,7 +2,7 @@ use crate::config;
 use crate::config::AppState;
 use crate::models::{
     BranchData, CommitData, CommitDetails, FileStatus, ReflogEntry, RepoData, SubmoduleInfo,
-    TagData,
+    TagData, WorktreeData,
 };
 use crate::services;
 use tauri::State; // use services module
@@ -57,6 +57,11 @@ pub async fn git_resolve_conflict(
     strategy: String,
 ) -> Result<String, String> {
     services::git_resolve_conflict(&path, &file, &strategy)
+}
+
+#[tauri::command]
+pub async fn is_worktree(path: &str) -> Result<bool, String> {
+    services::is_worktree(path)
 }
 
 #[tauri::command]
@@ -395,4 +400,24 @@ pub async fn git_write_file(path: String, content: String) -> Result<(), String>
     })
     .await
     .map_err(|e| format!("Task panicked: {}", e))?
+}
+
+#[tauri::command]
+pub async fn git_worktree_list(path: &str) -> Result<Vec<WorktreeData>, String> {
+    services::git_worktree_list(path)
+}
+
+#[tauri::command]
+pub async fn git_worktree_add(path: &str, new_path: &str, branch: &str) -> Result<String, String> {
+    services::git_worktree_add(path, new_path, branch)
+}
+
+#[tauri::command]
+pub async fn git_worktree_remove(path: &str, worktree_path: &str) -> Result<String, String> {
+    services::git_worktree_remove(path, worktree_path)
+}
+
+#[tauri::command]
+pub async fn git_worktree_prune(path: &str) -> Result<String, String> {
+    services::git_worktree_prune(path)
 }

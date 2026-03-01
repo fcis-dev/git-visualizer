@@ -253,5 +253,26 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         
         // Insights
         getRepositoryStats: async () => repoPath ? await repository.getRepositoryStats(repoPath) : null,
+
+        // Worktrees
+        getWorktrees: async () => repoPath ? await repository.getWorktrees(repoPath) : [],
+        addWorktree: async (newPath: string, branch: string) => {
+             if (repoPath) {
+                 await repository.addWorktree(repoPath, newPath, branch);
+                 onSuccess?.();
+             }
+        },
+        removeWorktree: async (worktreePath: string) => {
+             if (repoPath) {
+                 await repository.removeWorktree(repoPath, worktreePath);
+                 onSuccess?.();
+             }
+        },
+        pruneWorktrees: async () => {
+             if (repoPath) {
+                 await repository.pruneWorktrees(repoPath);
+                 onSuccess?.();
+             }
+        },
     };
 }

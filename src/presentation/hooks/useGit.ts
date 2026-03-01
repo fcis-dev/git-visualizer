@@ -13,6 +13,8 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [headHash, setHeadHash] = useState<string>("");
+  const [isWorktree, setIsWorktree] = useState(false);
+  const [worktreeCount, setWorktreeCount] = useState(0);
 
   const commitCountRef = useRef(0);
   const repository = new TauriGitRepository();
@@ -23,17 +25,22 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
     setError(null);
     setHasMore(true);
     try {
-      const [commitsData, branch, branchesList, headHashStr] = await Promise.all([
+      const [commitsData, branch, branchesList, headHashStr, worktreeStatus, worktrees] = await Promise.all([
         repository.getCommits(repoPath, 0, PAGE_SIZE, filterBranches.length > 0 ? filterBranches : undefined),
         repository.getCurrentBranch(repoPath),
         repository.getBranches(repoPath),
         repository.getHeadHash(repoPath).catch(() => ""),
+        repository.isWorktree(repoPath).catch(() => false),
+        repository.getWorktrees(repoPath).catch(() => [])
       ]);
       setCommits(commitsData);
       commitCountRef.current = commitsData.length;
       setBranchName(branch);
       setAvailableBranches(branchesList);
       setHeadHash(headHashStr);
+      setIsWorktree(worktreeStatus);
+      // count extra worktrees not including the main one
+      setWorktreeCount(Math.max(0, worktrees.length - 1));
       if (commitsData.length < PAGE_SIZE) setHasMore(false);
     } catch (err: any) {
       console.error(err);
@@ -43,6 +50,8 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
       setBranchName("");
       setAvailableBranches([]);
       setHeadHash("");
+      setIsWorktree(false);
+      setWorktreeCount(0);
     } finally {
       setIsLoading(false);
     }
@@ -113,6 +122,8 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
     loadMoreCommits,
     checkoutBranch,
     fetch,
-    setError
+    setError,
+    isWorktree,
+    worktreeCount
   };
 }

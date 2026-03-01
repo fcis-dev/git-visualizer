@@ -1,6 +1,7 @@
 use crate::models::{
     ActivityTimeline, BranchData, CommitData, CommitDetails, ContributorStat, FileChange,
     FileStatus, ReflogEntry, RepoData, RepositoryStats, StashEntry, SubmoduleInfo, TagData,
+    WorktreeData,
 };
 use git2::Repository;
 use std::fs;
@@ -171,7 +172,7 @@ pub fn get_repos_in_folder(path: &str) -> Result<Vec<RepoData>, String> {
         .into_iter()
         .filter_map(|e| e.ok())
     {
-        if entry.file_type().is_dir() && entry.file_name() == ".git" {
+        if entry.file_name() == ".git" {
             if let Some(parent) = entry.path().parent() {
                 let repo_path = parent.to_string_lossy().replace("\\", "/");
                 let name = parent
@@ -180,7 +181,9 @@ pub fn get_repos_in_folder(path: &str) -> Result<Vec<RepoData>, String> {
                     .to_string_lossy()
                     .to_string();
                 let mut branch = "HEAD".to_string();
+                let mut is_worktree = false;
                 if let Ok(repo) = Repository::open(&repo_path) {
+                    is_worktree = repo.is_worktree();
                     if let Ok(head) = repo.head() {
                         if let Some(branch_name) = head.shorthand() {
                             branch = branch_name.to_string();
@@ -191,11 +194,20 @@ pub fn get_repos_in_folder(path: &str) -> Result<Vec<RepoData>, String> {
                     path: repo_path,
                     name,
                     branch,
+                    is_worktree,
                 });
             }
         }
     }
     Ok(repos)
+}
+
+pub fn is_worktree(path: &str) -> Result<bool, String> {
+    if let Ok(repo) = Repository::open(path) {
+        Ok(repo.is_worktree())
+    } else {
+        Err("Failed to open repository to check worktree status".to_string())
+    }
 }
 
 pub fn get_git_status(path: &str) -> Result<Vec<FileStatus>, String> {
@@ -1233,4 +1245,65 @@ pub fn git_get_repository_stats(path: &str) -> Result<RepositoryStats, String> {
         timeline,
         top_contributors,
     })
+}
+
+pub fn git_worktree_list(path: &str) -> Result<Vec<WorktreeData>, String> {
+    let output = run_git_cmd(path, &["worktree", "list", "--porcelain"])?;
+    let mut worktrees = Vec::new();
+
+    let mut current_path = String::new();
+    let mut current_commit = String::new();
+    let mut current_branch = String::new();
+
+    for line in output.lines() {
+        if line.trim().is_empty() {
+            if !current_path.is_empty() {
+                worktrees.push(WorktreeData {
+                    path: current_path.clone(),
+                    commit: current_commit.clone(),
+                    branch: current_branch.clone(),
+                });
+                current_path.clear();
+                current_commit.clear();
+                current_branch.clear();
+            }
+            continue;
+        }
+
+        if let Some(p) = line.strip_prefix("worktree ") {
+            current_path = p.replace("\\", "/");
+        } else if let Some(h) = line.strip_prefix("HEAD ") {
+            current_commit = h.to_string();
+        } else if let Some(b) = line.strip_prefix("branch refs/heads/") {
+            current_branch = b.to_string();
+        } else if line == "detached" {
+            current_branch = "detached".to_string();
+        }
+    }
+
+    if !current_path.is_empty() {
+        worktrees.push(WorktreeData {
+            path: current_path,
+            commit: current_commit,
+            branch: current_branch,
+        });
+    }
+
+    Ok(worktrees)
+}
+
+pub fn git_worktree_add(path: &str, new_path: &str, branch: &str) -> Result<String, String> {
+    if branch.is_empty() {
+        run_git_cmd(path, &["worktree", "add", "-d", new_path])
+    } else {
+        run_git_cmd(path, &["worktree", "add", new_path, branch])
+    }
+}
+
+pub fn git_worktree_remove(path: &str, worktree_path: &str) -> Result<String, String> {
+    run_git_cmd(path, &["worktree", "remove", "--force", worktree_path])
+}
+
+pub fn git_worktree_prune(path: &str) -> Result<String, String> {
+    run_git_cmd(path, &["worktree", "prune"])
 }

@@ -38,6 +38,10 @@ export class TauriGitRepository implements IGitRepository {
     return await invoke<string[]>("get_branches", { path });
   }
 
+  async isWorktree(path: string): Promise<boolean> {
+    return await invoke<boolean>("is_worktree", { path });
+  }
+
   async getBranchesInfo(
     path: string,
   ): Promise<import("../../domain/entities/GitEntities").BranchData[]> {
@@ -271,5 +275,21 @@ export class TauriGitRepository implements IGitRepository {
 
   async getRepositoryStats(path: string): Promise<import("../../domain/entities/GitEntities").RepositoryStats> {
     return await invoke<import("../../domain/entities/GitEntities").RepositoryStats>("git_get_repository_stats", { path });
+  }
+
+  async getWorktrees(path: string): Promise<import("../../domain/entities/GitEntities").WorktreeData[]> {
+    return await invoke<import("../../domain/entities/GitEntities").WorktreeData[]>("git_worktree_list", { path });
+  }
+
+  async addWorktree(path: string, newPath: string, branch: string): Promise<string> {
+    return await invoke<string>("git_worktree_add", { path, newPath, branch });
+  }
+
+  async removeWorktree(path: string, worktreePath: string): Promise<string> {
+    return await invoke<string>("git_worktree_remove", { path, worktreePath });
+  }
+
+  async pruneWorktrees(path: string): Promise<string> {
+    return await invoke<string>("git_worktree_prune", { path });
   }
 }

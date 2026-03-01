@@ -11,6 +11,7 @@ export interface Repository {
   path: string;
   name: string;
   branch?: string;
+  is_worktree?: boolean;
 }
 
 export interface FileChange {
@@ -75,4 +76,10 @@ export interface RepositoryStats {
     total_commits: number;
     timeline: ActivityTimeline[];
     top_contributors: ContributorStat[];
+}
+
+export interface WorktreeData {
+  path: string;
+  branch: string;
+  commit: string;
 }

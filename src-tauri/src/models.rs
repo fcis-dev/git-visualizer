@@ -15,6 +15,7 @@ pub struct RepoData {
     pub path: String,
     pub name: String,
     pub branch: String,
+    pub is_worktree: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -100,4 +101,11 @@ pub struct RepositoryStats {
     pub total_commits: usize,
     pub timeline: Vec<ActivityTimeline>,
     pub top_contributors: Vec<ContributorStat>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct WorktreeData {
+    pub path: String,
+    pub branch: String,
+    pub commit: String,
 }

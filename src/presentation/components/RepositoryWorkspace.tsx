@@ -9,6 +9,7 @@ import {
   Tag,
   Check,
   FolderGit2,
+  FolderTree,
   RefreshCw,
   ArrowDown,
   ArrowUp,
@@ -27,6 +28,7 @@ import { HistoricalFileContentView } from "./HistoricalFileContentView";
 import { CreateBranchModal } from "./CreateBranchModal";
 import { RepositoryStatsModal } from "./RepositoryStatsModal";
 import { MergeConflictEditor } from "./MergeConflictEditor";
+import { WorktreesSidebar } from "./Sidebar/WorktreesSidebar";
 import { useGit } from "../hooks/useGit";
 import { useGitActions } from "../hooks/useGitActions";
 import { useAutoFetch } from "../hooks/useAutoFetch";
@@ -72,7 +74,7 @@ export function RepositoryWorkspace({
 
   const [conflictTarget, setConflictTarget] = useState<string | null>(null);
 
-  type SidebarTab = "changes" | "branches" | "tags" | "rescue";
+  type SidebarTab = "changes" | "branches" | "tags" | "rescue" | "worktrees";
   const [activeSidebarTab, setActiveSidebarTab] =
     useState<SidebarTab>("changes");
 
@@ -121,6 +123,8 @@ export function RepositoryWorkspace({
     hasMore,
     setError,
     error,
+    isWorktree,
+    worktreeCount,
   } = useGit(repoPath, graphBranches);
 
   // Keep refs in sync for use inside async loops (avoids stale closures)
@@ -785,7 +789,30 @@ export function RepositoryWorkspace({
           </div>
 
           {/* Bottom Actions of Activity Bar */}
-          <div className="w-full flex flex-col items-center pb-2">
+          <div className="w-full flex flex-col items-center pb-2 space-y-4">
+            {/* Worktrees Action (Conditionally hidden internally inside condition but for layout space we wrap it, actually entire button is hidden) */}
+            {!isWorktree && (
+              <button
+                 onClick={() => setActiveSidebarTab("worktrees")}
+                 className={`p-3 rounded-xl transition-all relative ${
+                   activeSidebarTab === "worktrees"
+                     ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 shadow-sm"
+                     : "text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                 }`}
+                 title={worktreeCount > 0 ? `Manage Worktrees (${worktreeCount})` : "Manage Worktrees"}
+              >
+                  <FolderTree className="w-6 h-6 stroke-[1.5]" />
+                  {activeSidebarTab === "worktrees" && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-r-full -ml-[9px]"></div>
+                  )}
+                  {worktreeCount > 0 && (
+                    <span className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[1.2rem] text-[9px] font-bold rounded-full bg-indigo-500 text-white leading-none shadow-sm text-center">
+                      {worktreeCount}
+                    </span>
+                  )}
+              </button>
+            )}
+
             <button
               onClick={() => setActiveSidebarTab("rescue")}
               className={`p-3 rounded-xl transition-all relative ${
@@ -843,7 +870,6 @@ export function RepositoryWorkspace({
                       setDetailsLoading(true);
                       const commit = await invoke<Commit>("get_commit_details", { path: repoPath, hash });
                       setSelectedCommit(commit);
-                      // load details too
                       const detailsInfo = await invoke<CommitDetailsType>("get_commit_details_info", { path: repoPath, hash });
                       setCommitDetails(detailsInfo);
                   } catch(e) {
@@ -852,6 +878,14 @@ export function RepositoryWorkspace({
                       setDetailsLoading(false);
                   }
               }}
+            />
+          )}
+
+          {activeSidebarTab === "worktrees" && !isWorktree && (
+            <WorktreesSidebar
+               repoPath={repoPath}
+               onRefreshGraph={loadCommits}
+               onOpenWorktree={onOpenSubmodule}
             />
           )}
         </div>
@@ -1160,9 +1194,9 @@ export function RepositoryWorkspace({
       )}
 
       {isStatsModalOpen && (
-        <RepositoryStatsModal 
-          repoPath={repoPath} 
-          onClose={() => setIsStatsModalOpen(false)} 
+        <RepositoryStatsModal
+          repoPath={repoPath}
+          onClose={() => setIsStatsModalOpen(false)}
         />
       )}
     </div>

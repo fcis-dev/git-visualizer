@@ -4,6 +4,7 @@ export interface IGitRepository {
   getCommits(path: string, skip?: number, limit?: number): Promise<Commit[]>;
   getCurrentBranch(path: string): Promise<string>;
   getBranches(path: string): Promise<string[]>;
+  isWorktree(path: string): Promise<boolean>;
 
   checkoutBranch(path: string, branch: string): Promise<void>;
   checkoutCommit(path: string, hash: string): Promise<void>;
@@ -68,4 +69,9 @@ export interface IGitRepository {
   removeSubmodule(path: string, name: string): Promise<void>;
   
   getRepositoryStats(path: string): Promise<import("../entities/GitEntities").RepositoryStats>;
+
+  getWorktrees(path: string): Promise<import("../entities/GitEntities").WorktreeData[]>;
+  addWorktree(path: string, newPath: string, branch: string): Promise<string>;
+  removeWorktree(path: string, worktreePath: string): Promise<string>;
+  pruneWorktrees(path: string): Promise<string>;
 }
