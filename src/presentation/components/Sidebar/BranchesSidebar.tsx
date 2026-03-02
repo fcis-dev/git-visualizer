@@ -2,9 +2,13 @@
 import { invoke } from '@tauri-apps/api/core';
 import { GitBranch, Trash2, Check, ChevronDown, ChevronRight, Search, Globe, Plus } from 'lucide-react';
 import { BranchData } from '../../../domain/entities/GitEntities';
+import { TauriGitRepository } from '../../../data/repositories/TauriGitRepository';
 import { useGitActions } from '../../hooks/useGitActions';
 import { useDialog } from '../../context/DialogContext';
 import { buildBranchTree, sortTreeNodes, BranchTreeNode } from '../../utils/branchTreeUtils';
+
+// Module-level singleton — avoids recreating on every render
+const repository = new TauriGitRepository();
 
 interface BranchesSidebarProps {
   repoPath: string | null;
@@ -33,6 +37,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
   const gitActions = useGitActions(repoPath || "");
   const { showAlert, showConfirm, showInput } = useDialog();
 
+
   useEffect(() => {
     const closeContextMenu = () => setContextMenu(prev => ({ ...prev, visible: false }));
     document.addEventListener("click", closeContextMenu);
@@ -41,21 +46,22 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
 
   useEffect(() => {
     if (repoPath) {
-      loadBranches();
-      loadRemotes();
+      loadBranchesAndRemotes();
     } else {
         setBranches([]);
         setRemotes([]);
     }
   }, [repoPath]);
 
-  const loadBranches = async () => {
+  // Single aggregated call: branches (local + remote) + remotes list
+  const loadBranchesAndRemotes = async () => {
     setLoadingBranches(true);
     setError(null);
     try {
-      const dbBranches = await gitActions.getBranchesInfo();
-      dbBranches.sort((a, b) => b.date - a.date);
-      setBranches(dbBranches);
+      const data = await repository.getBranchesAndRemotes(repoPath!);
+      data.branches.sort((a, b) => b.date - a.date);
+      setBranches(data.branches);
+      setRemotes(data.remotes);
     } catch (e: any) {
       setError(e.toString());
     } finally {
@@ -110,7 +116,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
       }
       
       onRefreshGraph();
-      loadBranches();
+      loadBranchesAndRemotes();
     } catch (e: any) {
       setError(e.toString());
     }
@@ -124,7 +130,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
       async () => {
         try {
           await gitActions.deleteBranch(branch.name, false);
-          await loadBranches();
+          await loadBranchesAndRemotes();
           onRefreshGraph();
         } catch (e: any) {
           const msg = e.toString();
@@ -135,7 +141,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
               async () => {
                 try {
                   await gitActions.deleteBranch(branch.name, true);
-                  await loadBranches();
+                  await loadBranchesAndRemotes();
                   onRefreshGraph();
                 } catch (fe: any) {
                   setError(fe.toString());
@@ -159,7 +165,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
           await gitActions.merge(branch.name);
           showAlert("Success", `Successfully merged ${branch.name}.`);
           onRefreshGraph();
-          loadBranches();
+          loadBranchesAndRemotes();
         } catch (e: any) {
           setError(e.toString());
         }
@@ -177,7 +183,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
           await gitActions.renameBranch(branch.name, newName);
           showAlert("Success", `Renamed branch to ${newName}.`);
           onRefreshGraph();
-          loadBranches();
+          loadBranchesAndRemotes();
         } catch (e: any) {
           setError(e.toString());
         }
@@ -196,7 +202,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
           await gitActions.createBranch(newName, branch.hash);
           showAlert("Success", `Created branch ${newName} from ${branch.name}.`);
           onRefreshGraph();
-          loadBranches();
+          loadBranchesAndRemotes();
         } catch (e: any) {
           setError(e.toString());
         }
@@ -284,16 +290,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
     });
   };
 
-  const loadRemotes = async () => {
-      if (!repoPath) return;
-      try {
-          const remoteList = await invoke<string[]>('git_remote_list', { path: repoPath });
-          setRemotes(remoteList);
-      } catch (e) {
-          console.error("Failed to load remotes", e);
-      }
-  };
-
+  // Replace the old separate loadRemotes function — now integrated into loadBranchesAndRemotes
   const handleAddRemote = () => {
       if (!repoPath) return;
       showInput(
@@ -308,7 +305,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                       if (!url) return;
                       try {
                         await invoke('git_remote_add', { path: repoPath, name, url });
-                        loadRemotes();
+                        loadBranchesAndRemotes();
                         showAlert("Success", "Remote added successfully.");
                       } catch (e: any) {
                         setError("Add remote failed: " + e.toString());
@@ -328,7 +325,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
           async () => {
               try {
                   await invoke('git_remote_remove', { path: repoPath, name });
-                  loadRemotes();
+                  loadBranchesAndRemotes();
               } catch (e: any) {
                   setError(e.toString());
               }

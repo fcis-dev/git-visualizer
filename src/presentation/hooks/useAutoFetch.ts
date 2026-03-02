@@ -66,9 +66,11 @@ export function useAutoFetch(
   useEffect(() => {
     if (!repoPath) return;
 
-    // Initial check (just behind count, no full fetch to avoid being slow at open)
+    // Delay the initial behind/ahead/pruned check by 5 s so the UI is
+    // responsive (commit graph visible) before we launch extra git processes.
     let cancelled = false;
-    (async () => {
+    const initialTimer = window.setTimeout(async () => {
+      if (cancelled) return;
       try {
         const behind = await repository.checkBehind(repoPath);
         const ahead = await repository.checkAhead(repoPath);
@@ -81,7 +83,7 @@ export function useAutoFetch(
       } catch {
         // No upstream configured — ignore
       }
-    })();
+    }, 5000);
 
     const interval = setInterval(() => {
       runFetch();
@@ -89,6 +91,7 @@ export function useAutoFetch(
 
     return () => {
       cancelled = true;
+      clearTimeout(initialTimer);
       clearInterval(interval);
     };
   }, [repoPath, branchName, runFetch]);

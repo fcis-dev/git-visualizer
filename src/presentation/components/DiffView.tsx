@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useState, useMemo, memo, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { X, Play, RotateCcw } from "lucide-react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -30,6 +30,100 @@ interface Hunk {
     newCount: number;
 }
 
+/** Memoized diff row — prevents SyntaxHighlighter from re-tokenizing on unrelated re-renders. */
+interface DiffLineProps {
+  line: HunkLine;
+  filePath: string;
+  language: string;
+  isDarkMode: boolean;
+  commitHash?: string;
+  cached: boolean;
+  hunk: Hunk;
+  onStageHunk: (hunk: Hunk) => void;
+}
+
+const DiffLine = memo(function DiffLine({
+  line,
+  language,
+  isDarkMode,
+  commitHash,
+  cached,
+  hunk,
+  onStageHunk,
+}: DiffLineProps) {
+  let colorClass = "text-slate-600 dark:text-slate-400";
+  let bgClass = "";
+
+  if (line.type === "add") {
+    colorClass = "text-green-700 dark:text-green-400";
+    bgClass = "bg-green-50 dark:bg-green-900/10";
+  } else if (line.type === "delete") {
+    colorClass = "text-red-700 dark:text-red-400";
+    bgClass = "bg-red-50 dark:bg-red-900/10";
+  }
+
+  const handleStageLine = () => {
+    const singleLineHunk: Hunk = {
+      header: hunk.header,
+      oldStart: hunk.oldStart,
+      oldCount: hunk.oldCount,
+      newStart: hunk.newStart,
+      newCount: hunk.newCount,
+      lines: hunk.lines.map((hLine) => {
+        if (hLine === line) return hLine;
+        if (hLine.type === "add")
+          return { content: hLine.content.substring(1), type: "context" as const };
+        if (hLine.type === "delete")
+          return { content: " " + hLine.content.substring(1), type: "context" as const };
+        return hLine;
+      }),
+    };
+    onStageHunk(singleLineHunk);
+  };
+
+  return (
+    <tr className={`group ${bgClass} hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors relative`}>
+      <td className="w-10 px-2 text-right text-slate-600 dark:text-slate-400 select-none border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+        {line.oldLine || ""}
+      </td>
+      <td className="w-10 px-2 text-right text-slate-600 dark:text-slate-400 select-none border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+        {line.newLine || ""}
+      </td>
+      <td className={`px-4 whitespace-pre pt-0.5 pb-0.5 ${colorClass} w-full relative`}>
+        <SyntaxHighlighter
+          language={language}
+          style={isDarkMode ? vscDarkPlus : vs}
+          customStyle={{
+            margin: 0,
+            padding: 0,
+            background: "transparent",
+            fontSize: "inherit",
+            lineHeight: "inherit",
+            fontFamily: "inherit",
+          }}
+          PreTag="div"
+        >
+          {line.content || " "}
+        </SyntaxHighlighter>
+
+        {/* Line-level staging button */}
+        {!commitHash && (line.type === "add" || line.type === "delete") && (
+          <button
+            onClick={handleStageLine}
+            className={`absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-0.5 text-[10px] rounded border bg-white dark:bg-slate-800 z-10 font-bold ${
+              cached
+                ? "hover:bg-red-50 text-red-600 border-red-200 dark:border-red-900/50 dark:hover:bg-red-900/30"
+                : "hover:bg-green-50 text-green-700 border-green-200 dark:border-green-900/50 dark:hover:bg-green-900/30"
+            }`}
+          >
+            {cached ? "Unstage Line" : "Stage Line"}
+          </button>
+        )}
+      </td>
+    </tr>
+  );
+});
+
 export function DiffView({
   repoPath,
   filePath,
@@ -46,14 +140,6 @@ export function DiffView({
   const [parsedHunks, setParsedHunks] = useState<Hunk[]>([]);
   const [diffHeaders, setDiffHeaders] = useState<string[]>([]);
   const gitActions = useGitActions(repoPath, onRefresh);
-
-  useEffect(() => {
-      const checkDarkMode = () => setIsDarkMode(document.documentElement.classList.contains('dark'));
-      checkDarkMode();
-      const observer = new MutationObserver(checkDarkMode);
-      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-      return () => observer.disconnect();
-  }, []);
 
   const getLanguage = (path: string) => {
       const ext = path.split('.').pop()?.toLowerCase();
@@ -82,6 +168,18 @@ export function DiffView({
           default: return 'text';
       }
   };
+
+  // Memoize the language to avoid recomputing it on every line render
+  const language = useMemo(() => getLanguage(filePath), [filePath]);
+
+  useEffect(() => {
+      const checkDarkMode = () => setIsDarkMode(document.documentElement.classList.contains('dark'));
+      checkDarkMode();
+      const observer = new MutationObserver(checkDarkMode);
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      return () => observer.disconnect();
+  }, []);
+
 
   const parseDiff = (diffString: string) => {
       const lines = diffString.split('\n');
@@ -177,27 +275,26 @@ export function DiffView({
      // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repoPath, filePath, viewMode, commitHash, cached]);
 
-  const generatePatchForHunk = (hunk: Hunk) => {
+  const generatePatchForHunk = useCallback((hunk: Hunk) => {
       let patch = diffHeaders.join('\n') + '\n';
       patch += hunk.header + '\n';
       hunk.lines.forEach(l => {
           patch += l.content + '\n';
       });
       return patch;
-  };
+  }, [diffHeaders]);
 
-  const handleStageHunk = async (hunk: Hunk) => {
+  const handleStageHunk = useCallback(async (hunk: Hunk) => {
       try {
           const patch = generatePatchForHunk(hunk);
-          // If we are viewing unstaged changes, applying the patch STAGES it.
-          // If we are viewing staged changes, applying it in reverse UNSTAGES it.
           await gitActions.applyPatch(patch, cached);
           loadDiff();
           onRefresh?.();
       } catch (err: any) {
           setError("Failed to apply patch: " + err.toString());
       }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generatePatchForHunk, cached]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -286,83 +383,22 @@ export function DiffView({
                       </button>
                     )}
                   </div>
-                  {/* Hunk Lines */}
+                  {/* Hunk Lines — each row is memoized to avoid re-rendering unchanged lines */}
                   <table className="w-full border-collapse">
                     <tbody>
-                      {hunk.lines.map((line, lIdx) => {
-                        let colorClass = "text-slate-600 dark:text-slate-400";
-                        let bgClass = "";
-                        
-                        if (line.type === 'add') {
-                           colorClass = "text-green-700 dark:text-green-400";
-                           bgClass = "bg-green-50 dark:bg-green-900/10";
-                        } else if (line.type === 'delete') {
-                           colorClass = "text-red-700 dark:text-red-400";
-                           bgClass = "bg-red-50 dark:bg-red-900/10";
-                        }
-
-                        return (
-                          <tr
-                            key={lIdx}
-                            className={`group ${bgClass} hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors relative`}
-                          >
-                            <td className="w-10 px-2 text-right text-slate-600 dark:text-slate-400 select-none border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                              {line.oldLine || ""}
-                            </td>
-                            <td className="w-10 px-2 text-right text-slate-600 dark:text-slate-400 select-none border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                              {line.newLine || ""}
-                            </td>
-                            <td className={`px-4 whitespace-pre pt-0.5 pb-0.5 ${colorClass} w-full relative`}>
-                               <SyntaxHighlighter
-                                 language={getLanguage(filePath)}
-                                 style={isDarkMode ? vscDarkPlus : vs}
-                                 customStyle={{
-                                   margin: 0,
-                                   padding: 0,
-                                   background: 'transparent',
-                                   fontSize: 'inherit',
-                                   lineHeight: 'inherit',
-                                   fontFamily: 'inherit'
-                                 }}
-                                 PreTag="div"
-                               >
-                                 {line.content || ' '}
-                               </SyntaxHighlighter>
-                               
-                               {/* Line-level staging button (only show on add/delete lines) */}
-                               {!commitHash && (line.type === 'add' || line.type === 'delete') && (
-                                  <button
-                                     onClick={() => {
-                                        // Line staging logic
-                                        const singleLineHunk: Hunk = {
-                                            header: hunk.header,
-                                            oldStart: hunk.oldStart,
-                                            oldCount: hunk.oldCount,
-                                            newStart: hunk.newStart,
-                                            newCount: hunk.newCount,
-                                            lines: hunk.lines.map(hLine => {
-                                                if (hLine === line) return hLine;
-                                                // Convert other add/delete lines to context to ONLY stage/unstage this line
-                                                if (hLine.type === 'add') return { content: hLine.content.substring(1), type: 'context' };
-                                                if (hLine.type === 'delete') return { content: ' ' + hLine.content.substring(1), type: 'context' };
-                                                return hLine;
-                                            })
-                                        };
-                                        handleStageHunk(singleLineHunk);
-                                     }}
-                                     className={`absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-0.5 text-[10px] rounded border bg-white dark:bg-slate-800 z-10 font-bold ${
-                                        cached 
-                                         ? "hover:bg-red-50 text-red-600 border-red-200 dark:border-red-900/50 dark:hover:bg-red-900/30" 
-                                         : "hover:bg-green-50 text-green-700 border-green-200 dark:border-green-900/50 dark:hover:bg-green-900/30"
-                                     }`}
-                                  >
-                                     {cached ? "Unstage Line" : "Stage Line"}
-                                  </button>
-                               )}
-                            </td>
-                          </tr>
-                        );
-                      })}
+                      {hunk.lines.map((line, lIdx) => (
+                        <DiffLine
+                          key={lIdx}
+                          line={line}
+                          filePath={filePath}
+                          language={language}
+                          isDarkMode={isDarkMode}
+                          commitHash={commitHash}
+                          cached={cached}
+                          hunk={hunk}
+                          onStageHunk={handleStageHunk}
+                        />
+                      ))}
                     </tbody>
                   </table>
                 </div>

@@ -1,7 +1,9 @@
 import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
 
+// Module-level singleton — shared across all callers to avoid re-instantiation on every render
+const repository = new TauriGitRepository();
+
 export function useGitActions(repoPath: string, onSuccess?: () => void) {
-    const repository = new TauriGitRepository();
 
     const checkoutCommit = async (hash: string) => {
         if (!repoPath) return;

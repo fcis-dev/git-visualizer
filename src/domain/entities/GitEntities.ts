@@ -83,3 +83,36 @@ export interface WorktreeData {
   branch: string;
   commit: string;
 }
+
+/** Aggregated response from get_initial_repo_data — one IPC call instead of six. */
+export interface InitialRepoData {
+  commits: Commit[];
+  current_branch: string;
+  branches: string[];
+  head_hash: string;
+  is_worktree: boolean;
+  worktree_count: number;
+}
+
+/** Aggregated response from get_branches_and_remotes — one IPC call instead of two. */
+export interface BranchesAndRemotes {
+  branches: BranchData[];
+  remotes: string[];
+}
+
+/**
+ * Aggregated response from get_source_control_status — one IPC call instead of 4–5.
+ * Replaces: get_git_status + git_get_rebase_state + git_read_file(MERGE_MSG) + get_git_submodules + git_stash_list
+ */
+export interface SourceControlStatus {
+  files: FileStatus[];
+  is_rebasing: boolean;
+  merge_msg: string | null;
+  submodules: SubmoduleInfo[];
+  stash_count: number;
+}
+
+interface FileStatus {
+  path: string;
+  status: string;
+}

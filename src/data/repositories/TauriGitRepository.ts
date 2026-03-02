@@ -3,6 +3,9 @@ import {
   Commit,
   ReflogEntry,
   TagData,
+  InitialRepoData,
+  BranchesAndRemotes,
+  SourceControlStatus,
 } from "../../domain/entities/GitEntities";
 import { IGitRepository } from "../../domain/repositories/IGitRepository";
 
@@ -291,5 +294,41 @@ export class TauriGitRepository implements IGitRepository {
 
   async pruneWorktrees(path: string): Promise<string> {
     return await invoke<string>("git_worktree_prune", { path });
+  }
+
+  /**
+   * Aggregated startup call — returns commits, current branch, branch names,
+   * HEAD hash, worktree status, and worktree count all in a single IPC round-trip.
+   * Use this instead of making 6 separate calls on repository open.
+   */
+  async getInitialRepoData(
+    path: string,
+    skip: number = 0,
+    limit: number = 150,
+    branches?: string[],
+  ): Promise<InitialRepoData> {
+    const branchArg = branches && branches.length > 0 ? branches : null;
+    return await invoke<InitialRepoData>("get_initial_repo_data", {
+      path,
+      skip,
+      limit,
+      branch: branchArg,
+    });
+  }
+
+  /**
+   * Aggregated branches + remotes call — replaces the two separate calls
+   * `get_branches_info` and `git_remote_list` when opening the Branches sidebar.
+   */
+  async getBranchesAndRemotes(path: string): Promise<BranchesAndRemotes> {
+    return await invoke<BranchesAndRemotes>("get_branches_and_remotes", { path });
+  }
+
+  /**
+   * Aggregated SourceControl status poll — replaces 4+ sequential IPC calls.
+   * Returns file statuses, rebase state, merge message, submodules, and stash count.
+   */
+  async getSourceControlStatus(path: string): Promise<SourceControlStatus> {
+    return await invoke<SourceControlStatus>("get_source_control_status", { path });
   }
 }

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   GitBranch,
@@ -154,16 +154,22 @@ export function RepositoryWorkspace({
     return () => window.removeEventListener("focus", onFocus);
   }, []);
 
-  // Filter commits based on search query
-  const filteredLocalCommits = commits.filter(
-    (commit) =>
-      commit.message.toLowerCase().includes(commitSearchQuery.toLowerCase()) ||
-      commit.hash.toLowerCase().includes(commitSearchQuery.toLowerCase()) ||
-      commit.author.toLowerCase().includes(commitSearchQuery.toLowerCase()),
+  // Filter commits based on search query — memoized to avoid re-filtering on every render
+  const filteredLocalCommits = useMemo(
+    () =>
+      commits.filter(
+        (commit) =>
+          commit.message.toLowerCase().includes(commitSearchQuery.toLowerCase()) ||
+          commit.hash.toLowerCase().includes(commitSearchQuery.toLowerCase()) ||
+          commit.author.toLowerCase().includes(commitSearchQuery.toLowerCase()),
+      ),
+    [commits, commitSearchQuery],
   );
 
-  const displayCommits =
-    globalSearchResults !== null ? globalSearchResults : filteredLocalCommits;
+  const displayCommits = useMemo(
+    () => (globalSearchResults !== null ? globalSearchResults : filteredLocalCommits),
+    [globalSearchResults, filteredLocalCommits],
+  );
 
   const { showConfirm, showInput, showAlert } = useDialog();
 

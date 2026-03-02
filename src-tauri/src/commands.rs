@@ -278,6 +278,38 @@ pub async fn get_branches_info(path: &str) -> Result<Vec<BranchData>, String> {
 }
 
 #[tauri::command]
+pub async fn get_initial_repo_data(
+    path: String,
+    skip: usize,
+    limit: usize,
+    branch: Option<Vec<String>>,
+) -> Result<crate::models::InitialRepoData, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        services::get_initial_repo_data(&path, skip, limit, branch)
+    })
+    .await
+    .map_err(|e| format!("Task panicked: {}", e))?
+}
+
+#[tauri::command]
+pub async fn get_branches_and_remotes(
+    path: String,
+) -> Result<crate::models::BranchesAndRemotes, String> {
+    tauri::async_runtime::spawn_blocking(move || services::get_branches_and_remotes(&path))
+        .await
+        .map_err(|e| format!("Task panicked: {}", e))?
+}
+
+#[tauri::command]
+pub async fn get_source_control_status(
+    path: String,
+) -> Result<crate::models::SourceControlStatus, String> {
+    tauri::async_runtime::spawn_blocking(move || services::get_source_control_status(&path))
+        .await
+        .map_err(|e| format!("Task panicked: {}", e))?
+}
+
+#[tauri::command]
 pub async fn get_git_config_user(path: &str) -> Result<(String, String), String> {
     services::get_git_config_user(path)
 }

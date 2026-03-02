@@ -4,6 +4,9 @@ import { Commit } from "../../domain/entities/GitEntities";
 
 const PAGE_SIZE = 150;
 
+// Single shared instance — avoids re-instantiation on every render
+const repository = new TauriGitRepository();
+
 export function useGit(repoPath: string, filterBranches: string[] = []) {
   const [commits, setCommits] = useState<Commit[]>([]);
   const [branchName, setBranchName] = useState<string>("");
@@ -17,7 +20,6 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
   const [worktreeCount, setWorktreeCount] = useState(0);
 
   const commitCountRef = useRef(0);
-  const repository = new TauriGitRepository();
 
   const loadCommits = useCallback(async () => {
     if (!repoPath) return;
@@ -25,23 +27,22 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
     setError(null);
     setHasMore(true);
     try {
-      const [commitsData, branch, branchesList, headHashStr, worktreeStatus, worktrees] = await Promise.all([
-        repository.getCommits(repoPath, 0, PAGE_SIZE, filterBranches.length > 0 ? filterBranches : undefined),
-        repository.getCurrentBranch(repoPath),
-        repository.getBranches(repoPath),
-        repository.getHeadHash(repoPath).catch(() => ""),
-        repository.isWorktree(repoPath).catch(() => false),
-        repository.getWorktrees(repoPath).catch(() => [])
-      ]);
-      setCommits(commitsData);
-      commitCountRef.current = commitsData.length;
-      setBranchName(branch);
-      setAvailableBranches(branchesList);
-      setHeadHash(headHashStr);
-      setIsWorktree(worktreeStatus);
-      // count extra worktrees not including the main one
-      setWorktreeCount(Math.max(0, worktrees.length - 1));
-      if (commitsData.length < PAGE_SIZE) setHasMore(false);
+      // Single aggregated IPC call instead of 6 separate ones
+      const data = await repository.getInitialRepoData(
+        repoPath,
+        0,
+        PAGE_SIZE,
+        filterBranches.length > 0 ? filterBranches : undefined,
+      );
+
+      setCommits(data.commits);
+      commitCountRef.current = data.commits.length;
+      setBranchName(data.current_branch);
+      setAvailableBranches(data.branches);
+      setHeadHash(data.head_hash);
+      setIsWorktree(data.is_worktree);
+      setWorktreeCount(data.worktree_count);
+      if (data.commits.length < PAGE_SIZE) setHasMore(false);
     } catch (err: any) {
       console.error(err);
       setError(err.toString());

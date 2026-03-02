@@ -19,7 +19,11 @@ import {
 import { useDialog } from "../../context/DialogContext";
 import { Commit, SubmoduleInfo } from "../../../domain/entities/GitEntities";
 import { useGitActions } from "../../hooks/useGitActions";
+import { TauriGitRepository } from "../../../data/repositories/TauriGitRepository";
 import { StashesModal } from "../StashesModal";
+
+// Module-level singleton to avoid re-instantiation on every render
+const repository = new TauriGitRepository();
 
 interface FileStatus {
   path: string;
@@ -92,10 +96,10 @@ export function SourceControl({
       setChanges([]);
       setSubmodules([]);
 
-      // Automatically poll for new changes on disk (e.g., from VS Code or terminal)
+      // Poll for changes every 5 s (was 3 s — reduced to lower background CPU cost)
       const intervalId = setInterval(() => {
         loadStatus();
-      }, 3000);
+      }, 5000);
 
       return () => clearInterval(intervalId);
     }
@@ -104,18 +108,17 @@ export function SourceControl({
   const loadStatus = async () => {
     if (!repoPath) return;
     try {
-      const statuses = await invoke<FileStatus[]>("get_git_status", {
-        path: repoPath,
-      });
+      // Single aggregated IPC call instead of 4+ sequential ones
+      const status = await repository.getSourceControlStatus(repoPath);
 
-      const staged: FileStatus[] = [];
-      const changed: FileStatus[] = [];
+      const staged: { path: string; status: string }[] = [];
+      const changed: { path: string; status: string }[] = [];
 
-      statuses.forEach((s) => {
+      status.files.forEach((s) => {
         if (s.status === "staged") {
           staged.push(s);
         } else if (s.status === "conflicted") {
-          changed.unshift(s); // Push to the top of changes list too
+          changed.unshift(s);
         } else {
           changed.push(s);
         }
@@ -123,40 +126,18 @@ export function SourceControl({
 
       setStagedFiles(staged);
       setChanges(changed);
-      const rebasing = await invoke<boolean>("git_get_rebase_state", {
-        path: repoPath,
-      });
-      setIsRebasing(rebasing);
+      setIsRebasing(status.is_rebasing);
+      setSubmodules(status.submodules);
+      setStashesCount(status.stash_count);
 
-      // Check for an active merge message and pre-fill if the input is empty
-      try {
-        const mergeMsgPath = `${repoPath}/.git/MERGE_MSG`.replace(/\\/g, "/");
-        const mergeMsg = await invoke<string>("git_read_file", {
-          path: mergeMsgPath,
-        });
-        if (mergeMsg && mergeMsg !== lastMergeMsg) {
-          setLastMergeMsg(mergeMsg);
-          if (commitMessage.trim() === "") {
-            setCommitMessage(mergeMsg.trim());
-          }
+      // Handle merge message pre-fill
+      if (status.merge_msg && status.merge_msg !== lastMergeMsg) {
+        setLastMergeMsg(status.merge_msg);
+        if (commitMessage.trim() === "") {
+          setCommitMessage(status.merge_msg);
         }
-      } catch (e) {
-        // MERGE_MSG does not exist, not in a merge state. Reset last merge msg tracking.
-        if (lastMergeMsg !== "") setLastMergeMsg("");
-      }
-
-      try {
-        const subs = await gitActions.getSubmodules();
-        setSubmodules(subs);
-      } catch (e) {
-        console.error("Could not fetch submodules", e);
-      }
-
-      try {
-        const stashes = await gitActions.getStashes();
-        setStashesCount(stashes.length);
-      } catch (e) {
-        console.error("Could not fetch stashes", e);
+      } else if (!status.merge_msg && lastMergeMsg !== "") {
+        setLastMergeMsg("");
       }
     } catch (err: any) {
       console.error("Failed to load status", err);

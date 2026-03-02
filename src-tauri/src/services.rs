@@ -754,6 +754,264 @@ pub fn get_branches_info(path: &str) -> Result<Vec<BranchData>, String> {
     Ok(branches)
 }
 
+/// Aggregated startup call: returns commits, current branch, branch list, HEAD hash,
+/// worktree status and worktree count all in one round-trip to avoid spawning 6 separate
+/// git subprocesses when the user opens a repository.
+pub fn get_initial_repo_data(
+    path: &str,
+    skip: usize,
+    limit: usize,
+    filter_branches: Option<Vec<String>>,
+) -> Result<crate::models::InitialRepoData, String> {
+    use std::sync::{Arc, Mutex};
+
+    let path_arc = Arc::new(path.to_string());
+    let filter_clone = filter_branches.clone();
+
+    // Run all queries in parallel threads
+    let commits_result: Arc<Mutex<Result<Vec<crate::models::CommitData>, String>>> =
+        Arc::new(Mutex::new(Err("not started".into())));
+    let branch_result: Arc<Mutex<Result<String, String>>> =
+        Arc::new(Mutex::new(Err("not started".into())));
+    let branches_result: Arc<Mutex<Result<Vec<String>, String>>> =
+        Arc::new(Mutex::new(Err("not started".into())));
+    let head_result: Arc<Mutex<Result<String, String>>> =
+        Arc::new(Mutex::new(Err("not started".into())));
+    let worktree_flag: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
+    let worktree_count: Arc<Mutex<usize>> = Arc::new(Mutex::new(0));
+
+    std::thread::scope(|s| {
+        {
+            let p = Arc::clone(&path_arc);
+            let r = Arc::clone(&commits_result);
+            let f = filter_clone;
+            s.spawn(move || {
+                *r.lock().unwrap() = get_git_graph(&p, skip, limit, f);
+            });
+        }
+        {
+            let p = Arc::clone(&path_arc);
+            let r = Arc::clone(&branch_result);
+            s.spawn(move || {
+                *r.lock().unwrap() = get_current_branch(&p);
+            });
+        }
+        {
+            let p = Arc::clone(&path_arc);
+            let r = Arc::clone(&branches_result);
+            s.spawn(move || {
+                *r.lock().unwrap() = get_branches(&p);
+            });
+        }
+        {
+            let p = Arc::clone(&path_arc);
+            let r = Arc::clone(&head_result);
+            s.spawn(move || {
+                *r.lock().unwrap() = get_head_hash(&p);
+            });
+        }
+        {
+            let p = Arc::clone(&path_arc);
+            let flag = Arc::clone(&worktree_flag);
+            let count = Arc::clone(&worktree_count);
+            s.spawn(move || {
+                let is_wt = is_worktree(&p).unwrap_or(false);
+                *flag.lock().unwrap() = is_wt;
+                let wt_count = git_worktree_list(&p)
+                    .map(|v| v.len().saturating_sub(1))
+                    .unwrap_or(0);
+                *count.lock().unwrap() = wt_count;
+            });
+        }
+    });
+
+    let commits = Arc::try_unwrap(commits_result)
+        .map_err(|_| "Arc unwrap failed".to_string())?
+        .into_inner()
+        .map_err(|_| "Mutex poisoned".to_string())?
+        .unwrap_or_default();
+
+    let current_branch = Arc::try_unwrap(branch_result)
+        .map_err(|_| "Arc unwrap failed".to_string())?
+        .into_inner()
+        .map_err(|_| "Mutex poisoned".to_string())?
+        .unwrap_or_default();
+
+    let branches = Arc::try_unwrap(branches_result)
+        .map_err(|_| "Arc unwrap failed".to_string())?
+        .into_inner()
+        .map_err(|_| "Mutex poisoned".to_string())?
+        .unwrap_or_default();
+
+    let head_hash = Arc::try_unwrap(head_result)
+        .map_err(|_| "Arc unwrap failed".to_string())?
+        .into_inner()
+        .map_err(|_| "Mutex poisoned".to_string())?
+        .unwrap_or_default();
+
+    let is_wt = Arc::try_unwrap(worktree_flag)
+        .map_err(|_| "Arc unwrap failed".to_string())?
+        .into_inner()
+        .map_err(|_| "Mutex poisoned".to_string())?;
+
+    let wt_count = Arc::try_unwrap(worktree_count)
+        .map_err(|_| "Arc unwrap failed".to_string())?
+        .into_inner()
+        .map_err(|_| "Mutex poisoned".to_string())?;
+
+    let has_more = commits.len() < limit;
+    let _ = has_more; // used by caller
+
+    Ok(crate::models::InitialRepoData {
+        commits,
+        current_branch,
+        branches,
+        head_hash,
+        is_worktree: is_wt,
+        worktree_count: wt_count,
+    })
+}
+
+/// Returns branch info (local + remote) and remotes list in a single IPC call,
+/// replacing the two separate calls `get_branches_info` + `git_remote_list`.
+pub fn get_branches_and_remotes(path: &str) -> Result<crate::models::BranchesAndRemotes, String> {
+    use std::sync::{Arc, Mutex};
+
+    let path_arc = Arc::new(path.to_string());
+    let branches_r: Arc<Mutex<Result<Vec<crate::models::BranchData>, String>>> =
+        Arc::new(Mutex::new(Err("not started".into())));
+    let remotes_r: Arc<Mutex<Result<Vec<String>, String>>> =
+        Arc::new(Mutex::new(Err("not started".into())));
+
+    std::thread::scope(|s| {
+        {
+            let p = Arc::clone(&path_arc);
+            let r = Arc::clone(&branches_r);
+            s.spawn(move || {
+                *r.lock().unwrap() = get_branches_info(&p);
+            });
+        }
+        {
+            let p = Arc::clone(&path_arc);
+            let r = Arc::clone(&remotes_r);
+            s.spawn(move || {
+                *r.lock().unwrap() = git_remote_list(&p);
+            });
+        }
+    });
+
+    let branches = Arc::try_unwrap(branches_r)
+        .map_err(|_| "Arc unwrap failed".to_string())?
+        .into_inner()
+        .map_err(|_| "Mutex poisoned".to_string())?
+        .unwrap_or_default();
+
+    let remotes = Arc::try_unwrap(remotes_r)
+        .map_err(|_| "Arc unwrap failed".to_string())?
+        .into_inner()
+        .map_err(|_| "Mutex poisoned".to_string())?
+        .unwrap_or_default();
+
+    Ok(crate::models::BranchesAndRemotes { branches, remotes })
+}
+
+/// Aggregated SourceControl status — replaces 4+ sequential IPC calls that poll every few seconds.
+/// Runs git_status, rebase check, MERGE_MSG read, submodule list, and stash count in parallel.
+pub fn get_source_control_status(path: &str) -> Result<crate::models::SourceControlStatus, String> {
+    use std::sync::{Arc, Mutex};
+
+    let path_arc = Arc::new(path.to_string());
+
+    let files_r: Arc<Mutex<Vec<crate::models::FileStatus>>> = Arc::new(Mutex::new(Vec::new()));
+    let rebasing_r: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
+    let merge_msg_r: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+    let submodules_r: Arc<Mutex<Vec<crate::models::SubmoduleInfo>>> =
+        Arc::new(Mutex::new(Vec::new()));
+    let stash_count_r: Arc<Mutex<usize>> = Arc::new(Mutex::new(0));
+
+    std::thread::scope(|s| {
+        // git status
+        {
+            let p = Arc::clone(&path_arc);
+            let r = Arc::clone(&files_r);
+            s.spawn(move || {
+                if let Ok(files) = get_git_status(&p) {
+                    *r.lock().unwrap() = files;
+                }
+            });
+        }
+        // rebase state (filesystem check — very fast)
+        {
+            let p = Arc::clone(&path_arc);
+            let r = Arc::clone(&rebasing_r);
+            s.spawn(move || {
+                *r.lock().unwrap() = git_get_rebase_state(&p).unwrap_or(false);
+            });
+        }
+        // MERGE_MSG
+        {
+            let p = Arc::clone(&path_arc);
+            let r = Arc::clone(&merge_msg_r);
+            s.spawn(move || {
+                let merge_msg_path = Path::new(p.as_str()).join(".git/MERGE_MSG");
+                if let Ok(msg) = std::fs::read_to_string(merge_msg_path) {
+                    if !msg.trim().is_empty() {
+                        *r.lock().unwrap() = Some(msg.trim().to_string());
+                    }
+                }
+            });
+        }
+        // submodules
+        {
+            let p = Arc::clone(&path_arc);
+            let r = Arc::clone(&submodules_r);
+            s.spawn(move || {
+                if let Ok(subs) = get_git_submodules(&p) {
+                    *r.lock().unwrap() = subs;
+                }
+            });
+        }
+        // stash count
+        {
+            let p = Arc::clone(&path_arc);
+            let r = Arc::clone(&stash_count_r);
+            s.spawn(move || {
+                let count = git_stash_list(&p).map(|v| v.len()).unwrap_or(0);
+                *r.lock().unwrap() = count;
+            });
+        }
+    });
+
+    let files = Arc::try_unwrap(files_r)
+        .map_err(|_| "Arc error".to_string())?
+        .into_inner()
+        .map_err(|_| "Mutex error".to_string())?;
+    let is_rebasing = Arc::try_unwrap(rebasing_r)
+        .map_err(|_| "Arc error".to_string())?
+        .into_inner()
+        .map_err(|_| "Mutex error".to_string())?;
+    let merge_msg = Arc::try_unwrap(merge_msg_r)
+        .map_err(|_| "Arc error".to_string())?
+        .into_inner()
+        .map_err(|_| "Mutex error".to_string())?;
+    let submodules = Arc::try_unwrap(submodules_r)
+        .map_err(|_| "Arc error".to_string())?
+        .into_inner()
+        .map_err(|_| "Mutex error".to_string())?;
+    let stash_count = Arc::try_unwrap(stash_count_r)
+        .map_err(|_| "Arc error".to_string())?
+        .into_inner()
+        .map_err(|_| "Mutex error".to_string())?;
+
+    Ok(crate::models::SourceControlStatus {
+        files,
+        is_rebasing,
+        merge_msg,
+        submodules,
+        stash_count,
+    })
+}
+
 pub fn get_git_config_user(_path: &str) -> Result<(String, String), String> {
     // Open default config (global/system) directly
     let config = git2::Config::open_default().map_err(|e| e.to_string())?;

@@ -109,3 +109,33 @@ pub struct WorktreeData {
     pub branch: String,
     pub commit: String,
 }
+
+/// Aggregated data returned in a single IPC call when opening a repository.
+/// Replaces 6 individual calls: get_git_graph, get_current_branch, get_branches,
+/// get_head_hash, is_worktree, git_worktree_list.
+#[derive(Debug, Serialize)]
+pub struct InitialRepoData {
+    pub commits: Vec<CommitData>,
+    pub current_branch: String,
+    pub branches: Vec<String>,
+    pub head_hash: String,
+    pub is_worktree: bool,
+    pub worktree_count: usize,
+}
+
+/// Aggregated data for the Branches sidebar — branches + remotes in one call.
+#[derive(Debug, Serialize)]
+pub struct BranchesAndRemotes {
+    pub branches: Vec<BranchData>,
+    pub remotes: Vec<String>,
+}
+
+/// Aggregated response for SourceControl panel status poll — replaces 4+ sequential IPC calls.
+#[derive(Debug, Serialize)]
+pub struct SourceControlStatus {
+    pub files: Vec<FileStatus>,
+    pub is_rebasing: bool,
+    pub merge_msg: Option<String>,
+    pub submodules: Vec<SubmoduleInfo>,
+    pub stash_count: usize,
+}

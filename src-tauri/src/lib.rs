@@ -85,7 +85,10 @@ pub fn run() {
             commands::git_worktree_add,
             commands::git_worktree_remove,
             commands::git_worktree_prune,
-            commands::is_worktree
+            commands::is_worktree,
+            commands::get_initial_repo_data,
+            commands::get_branches_and_remotes,
+            commands::get_source_control_status
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
