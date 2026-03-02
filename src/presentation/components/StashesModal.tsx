@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Archive, Trash2, X, Download, Play } from 'lucide-react';
 import { StashEntry } from '../../domain/entities/GitEntities';
 import { useGitActions } from '../hooks/useGitActions';
@@ -99,7 +99,7 @@ export function StashesModal({ repoPath, onClose, onRefreshGraph }: StashesModal
           </div>
           <button 
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors bg-transparent p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="text-slate-500 hover:text-slate-600 dark:hover:text-slate-200 transition-colors bg-transparent p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <X className="w-5 h-5" />
           </button>
@@ -119,7 +119,7 @@ export function StashesModal({ repoPath, onClose, onRefreshGraph }: StashesModal
               <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
             </div>
           ) : stashes.length === 0 ? (
-            <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+            <div className="text-center py-12 text-slate-600 dark:text-slate-300">
               <Archive className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
               <p>No stashes found in this repository.</p>
             </div>
@@ -135,7 +135,7 @@ export function StashesModal({ repoPath, onClose, onRefreshGraph }: StashesModal
                       <span className="text-xs font-mono px-2 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded">
                         {stash.index}
                       </span>
-                      <span className="text-xs font-mono text-slate-400">
+                      <span className="text-xs font-mono text-slate-500">
                         {stash.hash.substring(0, 7)}
                       </span>
                     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { X, Play, RotateCcw } from "lucide-react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -243,7 +243,7 @@ export function DiffView({
                   <div className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Not Committed Yet
                   </div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
+                  <p className="text-sm text-slate-600 dark:text-slate-300 max-w-sm">
                     Blame information is not available because this file has not
                     been committed to the repository yet.
                   </p>
@@ -253,7 +253,7 @@ export function DiffView({
                   <div className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">
                     File Not Found
                   </div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
+                  <p className="text-sm text-slate-600 dark:text-slate-300 max-w-sm">
                     Blame information is not available because this file was
                     deleted, moved, or did not exist in this commit.
                   </p>
@@ -270,7 +270,7 @@ export function DiffView({
                 <div key={hIdx} className="w-full flex flex-col mb-4 border border-slate-200 dark:border-slate-800 rounded-md overflow-hidden shadow-sm">
                   {/* Hunk Header */}
                   <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800/80 px-4 py-2 border-b border-slate-200 dark:border-slate-800">
-                    <span className="text-slate-500 dark:text-slate-400 font-semibold">{hunk.header}</span>
+                    <span className="text-slate-600 dark:text-slate-300 font-semibold">{hunk.header}</span>
                     {!commitHash && (
                       <button
                         onClick={() => handleStageHunk(hunk)}
@@ -306,10 +306,10 @@ export function DiffView({
                             key={lIdx}
                             className={`group ${bgClass} hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors relative`}
                           >
-                            <td className="w-10 px-2 text-right text-slate-400 dark:text-slate-500 select-none border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                            <td className="w-10 px-2 text-right text-slate-600 dark:text-slate-400 select-none border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                               {line.oldLine || ""}
                             </td>
-                            <td className="w-10 px-2 text-right text-slate-400 dark:text-slate-500 select-none border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                            <td className="w-10 px-2 text-right text-slate-600 dark:text-slate-400 select-none border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                               {line.newLine || ""}
                             </td>
                             <td className={`px-4 whitespace-pre pt-0.5 pb-0.5 ${colorClass} w-full relative`}>
@@ -371,7 +371,7 @@ export function DiffView({
           ) : viewMode === "blame" && blame ? (
             <table className="w-full border-collapse text-xs font-mono">
               <thead className="bg-slate-50 dark:bg-slate-900 sticky top-0 z-10 text-left">
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400">
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
                   <th className="py-2 px-4 font-medium w-24">Commit</th>
                   <th className="py-2 px-4 font-medium w-32">Author</th>
                   <th className="py-2 px-4 font-medium w-24">Date</th>
@@ -439,10 +439,10 @@ export function DiffView({
                               </span>
                             )}
                           </td>
-                          <td className="py-0.5 px-4 text-slate-400 dark:text-slate-500 whitespace-nowrap text-[10px]">
+                          <td className="py-0.5 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[10px]">
                             {!isSameCommit && date}
                           </td>
-                          <td className="py-0.5 px-4 text-slate-400 dark:text-slate-500 text-right font-mono text-xs select-none">
+                          <td className="py-0.5 px-4 text-slate-600 dark:text-slate-400 text-right font-mono text-xs select-none">
                             {lineNum}
                           </td>
                           <td className="py-0.5 px-0 text-slate-700 dark:text-slate-300 whitespace-pre w-full font-mono text-xs leading-tight border-l border-slate-100 dark:border-slate-800">
@@ -477,7 +477,7 @@ export function DiffView({
               </tbody>
             </table>
           ) : (
-            <div className="text-center text-slate-500 dark:text-slate-400 mt-20">
+            <div className="text-center text-slate-600 dark:text-slate-300 mt-20">
               No data available.
             </div>
           )}

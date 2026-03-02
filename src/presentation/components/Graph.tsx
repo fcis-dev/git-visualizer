@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useImperativeHandle } from "react";
+﻿import React, { useRef, useEffect, useImperativeHandle } from "react";
 import * as d3 from "d3";
 import { Commit } from "../../domain/entities/GitEntities";
 import { calculateGraphLayout, LANE_COLORS } from "../utils/graphLayout";
@@ -384,7 +384,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph({
       {/* Sentinel for IntersectionObserver – always rendered at the bottom */}
       <div ref={sentinelRef} style={{ height: 1 }} />
       {isLoadingMore && (
-        <div className="flex items-center justify-center py-4 text-slate-400 text-sm gap-2">
+        <div className="flex items-center justify-center py-4 text-slate-500 text-sm gap-2">
           <svg
             className="animate-spin h-4 w-4"
             viewBox="0 0 24 24"

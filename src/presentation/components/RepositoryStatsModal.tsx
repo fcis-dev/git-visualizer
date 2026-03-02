@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { X, TrendingUp, Users, GitCommit, Loader2 } from 'lucide-react';
 import { useGitActions } from '../hooks/useGitActions';
 import { RepositoryStats } from '../../domain/entities/GitEntities';
@@ -62,13 +62,13 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
                             <TrendingUp className="w-5 h-5 text-indigo-500" />
                             <span>Repository Insights</span>
                         </h2>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 truncate max-w-xl">
+                        <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 truncate max-w-xl">
                             {repoPath}
                         </p>
                     </div>
                     <button 
                         onClick={onClose}
-                        className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                        className="p-2 text-slate-500 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -95,7 +95,7 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
                                         <GitCommit className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Commits</p>
+                                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Total Commits</p>
                                         <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.total_commits.toLocaleString()}</p>
                                     </div>
                                 </div>
@@ -104,7 +104,7 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
                                         <Users className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Contributors</p>
+                                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Contributors</p>
                                         <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.top_contributors.length}</p>
                                     </div>
                                 </div>
@@ -113,7 +113,7 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
                                         <TrendingUp className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Active Days</p>
+                                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Active Days</p>
                                         <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.timeline.length}</p>
                                     </div>
                                 </div>

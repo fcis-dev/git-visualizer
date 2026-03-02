@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+﻿import { useState, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Edit2, Save, AlertTriangle, RotateCcw } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -53,7 +53,7 @@ const applyConflictRenderer = (
               key={`line-${i}`}
               className={`group hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors ${bgClass}`}
             >
-              <td className="w-12 px-2 text-right text-slate-400 dark:text-slate-500 select-none border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+              <td className="w-12 px-2 text-right text-slate-600 dark:text-slate-400 select-none border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                 {displayLine}
               </td>
               <td
@@ -639,7 +639,7 @@ export function MergeConflictEditor({
                           {block.currentContent}
                         </SyntaxHighlighter>
                       ) : (
-                        <span className="italic text-slate-400">
+                        <span className="italic text-slate-500">
                           {"<empty>"}
                         </span>
                       )}
@@ -647,7 +647,7 @@ export function MergeConflictEditor({
                   </div>
 
                   <div className="h-px w-full bg-slate-200 dark:bg-slate-700 relative">
-                    <span className="absolute left-1/2 -ml-3 -top-2.5 bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[10px] px-1 rounded-full font-bold">
+                    <span className="absolute left-1/2 -ml-3 -top-2.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] px-1 rounded-full font-bold">
                       VS
                     </span>
                   </div>
@@ -680,7 +680,7 @@ export function MergeConflictEditor({
                           {block.incomingContent}
                         </SyntaxHighlighter>
                       ) : (
-                        <span className="italic text-slate-400">
+                        <span className="italic text-slate-500">
                           {"<empty>"}
                         </span>
                       )}

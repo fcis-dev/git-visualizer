@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   Play,
@@ -312,7 +312,7 @@ export function SourceControl({
 
   if (!repoPath) {
     return (
-      <div className="p-4 text-center text-slate-400 dark:text-slate-500 text-sm">
+      <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">
         No repository open.
       </div>
     );
@@ -321,7 +321,7 @@ export function SourceControl({
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-slate-200 dark:border-slate-800/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/40 shrink-0">
-        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+        <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
           SOURCE CONTROL
         </span>
       </div>
@@ -722,7 +722,7 @@ export function SourceControl({
                       sub.status === "+"
                         ? "text-amber-500"
                         : sub.status === "-"
-                          ? "text-slate-400"
+                          ? "text-slate-500"
                           : sub.status === "U"
                             ? "text-red-500"
                             : "text-green-500"
@@ -747,7 +747,7 @@ export function SourceControl({
                         onOpenSubmodule(fullPath);
                       }
                     }}
-                    className="p-1 mr-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
+                    className="p-1 mr-1 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
                     title="Open Submodule Workspace"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
@@ -772,7 +772,7 @@ export function SourceControl({
                         },
                       );
                     }}
-                    className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                    className="p-1 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                     title="Remove Submodule"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

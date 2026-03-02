@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { GitMerge, Play, X, CheckCircle2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useGitActions } from '../hooks/useGitActions';
 import { Commit } from '../../domain/entities/GitEntities';
@@ -173,12 +173,12 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
                 <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 leading-tight">
                 Interactive Rebase
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-600 dark:text-slate-300">
                     Rebasing {rows.length} commits onto <b>{baseCommit.substring(0, 7)}</b>
                 </p>
             </div>
           </div>
-          <button onClick={onClose} disabled={isSubmitting} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 disabled:opacity-50 transition-colors p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800">
+          <button onClick={onClose} disabled={isSubmitting} className="text-slate-500 hover:text-slate-600 dark:hover:text-slate-200 disabled:opacity-50 transition-colors p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -220,14 +220,14 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
                                 <button 
                                     onClick={() => moveRow(index, 'up')}
                                     disabled={index === 0}
-                                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 disabled:opacity-20 transition-colors"
+                                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 disabled:opacity-20 transition-colors"
                                 >
                                     <ChevronUp className="w-4 h-4" />
                                 </button>
                                 <button 
                                     onClick={() => moveRow(index, 'down')}
                                     disabled={index === rows.length - 1}
-                                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 disabled:opacity-20 transition-colors"
+                                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 disabled:opacity-20 transition-colors"
                                 >
                                     <ChevronDown className="w-4 h-4" />
                                 </button>
@@ -252,7 +252,7 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
                                   <span className={`flex-1 pl-2 pr-1 py-1.5 text-xs font-semibold ${ACTION_META[row.action].text}`}>
                                     {ACTION_META[row.action].label}
                                   </span>
-                                  <ChevronDown className={`w-3 h-3 mr-1.5 text-slate-400 transition-transform ${openDropdownIndex === index ? 'rotate-180' : ''}`} />
+                                  <ChevronDown className={`w-3 h-3 mr-1.5 text-slate-500 transition-transform ${openDropdownIndex === index ? 'rotate-180' : ''}`} />
                                 </div>
 
                                 {/* Dropdown panel */}
@@ -291,7 +291,7 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
                             <div className="p-3 flex-1 min-w-0 flex flex-col justify-center">
                                 <div className="flex items-center space-x-2 mb-1">
                                     <span className="font-mono text-xs font-bold text-indigo-500">{row.commit.hash.substring(0, 7)}</span>
-                                    <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${row.action === 'drop' ? 'line-through text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                                    <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${row.action === 'drop' ? 'line-through text-slate-500' : 'text-slate-600 dark:text-slate-300'}`}>
                                         {row.commit.author}
                                     </span>
                                 </div>
@@ -306,7 +306,7 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
                                         autoFocus
                                     />
                                 ) : (
-                                    <div className={`text-sm font-medium truncate ${row.action === 'drop' ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-200'}`}>
+                                    <div className={`text-sm font-medium truncate ${row.action === 'drop' ? 'line-through text-slate-600 dark:text-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>
                                         {row.commit.message.split('\n')[0]}
                                     </div>
                                 )}

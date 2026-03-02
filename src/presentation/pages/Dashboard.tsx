@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { ProjectSelectionView } from "../components/ProjectSelectionView";
 import { RepositoryWorkspace } from "../components/RepositoryWorkspace";
 import { SettingsModal } from "../components/SettingsModal";
@@ -50,7 +50,7 @@ export function Dashboard() {
                 const folderName = pathParts[pathParts.length - 1] || path;
                 return (
                     <div key={idx} className="flex items-center">
-                        <ChevronRight className="w-4 h-4 text-slate-400 mx-1" />
+                        <ChevronRight className="w-4 h-4 text-slate-500 mx-1" />
                         <button
                             onClick={() => setPathHistory(prev => prev.slice(0, idx + 1))}
                             className={`${isLast ? 'font-semibold text-slate-900 dark:text-slate-100 cursor-default' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400'}`}

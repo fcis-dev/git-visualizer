@@ -1,4 +1,4 @@
-import { GitCommit, Copy, GitPullRequest, RotateCcw, Tag, GitBranch, Check, ArrowUp, X, FileText, FolderTree, GitMerge } from 'lucide-react';
+﻿import { GitCommit, Copy, GitPullRequest, RotateCcw, Tag, GitBranch, Check, ArrowUp, X, FileText, FolderTree, GitMerge } from 'lucide-react';
 import { Commit, CommitDetails as CommitDetailsType } from '../../domain/entities/GitEntities';
 import { useState, useEffect } from 'react';
 import { useGitActions } from '../hooks/useGitActions';
@@ -123,7 +123,7 @@ export function CommitDetails({
                          </div>
                     </div>
                     
-                    <div className="flex items-center flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400 mt-2 pl-8">
+                    <div className="flex items-center flex-wrap gap-2 text-xs text-slate-600 dark:text-slate-300 mt-2 pl-8">
                         <div className="flex items-center space-x-1 font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
                              <span>{commit.hash.substring(0, 7)}</span>
                              <button onClick={() => onCopyHash(commit.hash)} title="Copy Hash" className="hover:text-indigo-500">
@@ -219,7 +219,7 @@ export function CommitDetails({
 
                     {/* Advanced / Danger Zone */}
                     <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">History Operations (Advanced)</h4>
+                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">History Operations (Advanced)</h4>
                         <div className="grid grid-cols-2 gap-2">
                              <button
                                 onClick={() => onRevert(commit.hash)}
@@ -249,7 +249,7 @@ export function CommitDetails({
                         
                         {/* Reset Dropdown/Group */}
                         <div className="mt-2 text-center">
-                            <div className="text-[10px] text-slate-400 mb-1">Reset {currentBranch} to this commit:</div>
+                            <div className="text-[10px] text-slate-500 mb-1">Reset {currentBranch} to this commit:</div>
                             <div className="flex border border-slate-200 dark:border-slate-800 rounded overflow-hidden">
                                 <button
                                     onClick={() => onReset(commit.hash, "soft")}
@@ -330,7 +330,7 @@ export function CommitDetails({
                         {detailsLoading ? (
                             <div className="flex justify-center py-4">
                                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500"></div>
-                                 <span className="ml-2 text-xs text-slate-400">Loading details...</span>
+                                 <span className="ml-2 text-xs text-slate-500">Loading details...</span>
                             </div>
                         ) : details && details.files.length > 0 ? (
                              <div className="space-y-0.5">
@@ -365,7 +365,7 @@ export function CommitDetails({
                                 ))}
                              </div>
                         ) : (
-                            <div className="text-center py-4 text-xs text-slate-400">
+                            <div className="text-center py-4 text-xs text-slate-500">
                                  No files changed or failed to load.
                             </div>
                         )}
@@ -375,7 +375,7 @@ export function CommitDetails({
                         {treeLoading ? (
                             <div className="flex justify-center py-4">
                                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500"></div>
-                                 <span className="ml-2 text-xs text-slate-400">Loading tree...</span>
+                                 <span className="ml-2 text-xs text-slate-500">Loading tree...</span>
                             </div>
                         ) : (
                             <FileTreeViewer files={treeFiles} onSelectFile={onViewHistoricalFile} onViewFileHistory={onViewFileHistory} />

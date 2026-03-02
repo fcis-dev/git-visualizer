@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { GitBranch, Trash2, Check, ChevronDown, ChevronRight, Search, Globe, Plus } from 'lucide-react';
 import { BranchData } from '../../../domain/entities/GitEntities';
@@ -337,7 +337,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
   };
 
   if (!repoPath) {
-    return <div className="p-4 text-center text-slate-400 dark:text-slate-500 text-sm">No repository open.</div>;
+    return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">No repository open.</div>;
   }
 
   const filteredBranches = branches.filter(b => b.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -348,21 +348,21 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
     <div className="flex flex-col h-full bg-white dark:bg-slate-950">
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col bg-slate-50/50 dark:bg-slate-900/40 shrink-0 space-y-3">
         <div className="flex items-center justify-between h-7">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center space-x-2">
+            <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center space-x-2">
                 <span>BRANCHES</span>
             </span>
             {loadingBranches && <div className="animate-spin rounded-full h-3.5 w-3.5 border-t-2 border-b-2 border-indigo-500"></div>}
         </div>
         <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                <Search className="w-3.5 h-3.5 text-slate-400" />
+                <Search className="w-3.5 h-3.5 text-slate-500" />
             </div>
             <input
                 type="text"
                 placeholder="Search branches..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-400"
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500"
             />
         </div>
       </div>
@@ -396,7 +396,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                             onContextMenu={handleContextMenu}
                         />
                     ) : (
-                        <div className="text-xs text-slate-400 italic px-2 py-1">No local branches found</div>
+                        <div className="text-xs text-slate-500 italic px-2 py-1">No local branches found</div>
                     )}
                 </div>
             )}
@@ -425,7 +425,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                             isRemote={true}
                         />
                     ) : (
-                        <div className="text-xs text-slate-400 italic px-2 py-1">No remote branches found</div>
+                        <div className="text-xs text-slate-500 italic px-2 py-1">No remote branches found</div>
                     )}
                 </div>
             )}
@@ -445,7 +445,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                         e.stopPropagation();
                         handleAddRemote();
                     }}
-                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
                     title="Add Remote"
                 >
                     <Plus className="w-3.5 h-3.5" />
@@ -460,7 +460,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                             className="group flex items-center justify-between p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded transition-colors"
                         >
                             <div className="flex items-center space-x-2 truncate flex-1 md:max-w-[200px]">
-                                <Globe className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                                <Globe className="w-3.5 h-3.5 shrink-0 text-slate-500" />
                                 <span className="text-sm text-slate-600 dark:text-slate-300 truncate" title={remote}>
                                     {remote}
                                 </span>
@@ -470,14 +470,14 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                                     e.stopPropagation();
                                     handleRemoveRemote(remote);
                                 }}
-                                className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transaction-colors text-slate-400"
+                                className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transaction-colors text-slate-500"
                                 title="Remove Remote"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
                             </button>
                         </div>
                     )) : (
-                        <div className="text-xs text-slate-400 italic px-2 py-1">No remotes found</div>
+                        <div className="text-xs text-slate-500 italic px-2 py-1">No remotes found</div>
                     )}
                 </div>
             )}
@@ -571,7 +571,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
               </button>
 
               <div className="border-t border-slate-100 dark:border-slate-800 my-1"></div>
-              <div className="px-4 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reset Current To Here</div>
+              <div className="px-4 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Reset Current To Here</div>
               
               <button 
                 className="w-full text-left px-4 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
@@ -672,8 +672,8 @@ function BranchNodeRenderer({
                     className="flex items-center space-x-1.5 p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer select-none transition-colors"
                     style={{ paddingLeft: `${level * 12 + 6}px` }}
                 >
-                    {expanded ? <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />}
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate" title={node.path}>{node.name}/</span>
+                    {expanded ? <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />}
+                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 truncate" title={node.path}>{node.name}/</span>
                 </div>
                 {expanded && (
                     <div className="flex flex-col space-y-0.5 pt-0.5">
@@ -707,7 +707,7 @@ function BranchNodeRenderer({
         >
             <div className="flex items-center space-x-2 truncate flex-1 md:max-w-[200px]">
                 {isActive && <div className="absolute left-0 w-0.5 h-4 bg-indigo-500 rounded-r"></div>}
-                <GitBranch className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
+                <GitBranch className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'}`} />
                 <span className={`text-sm truncate ${isActive ? 'text-indigo-700 dark:text-indigo-300 font-medium' : 'text-slate-600 dark:text-slate-300'}`} title={branch.name}>
                     {node.name}
                 </span>
@@ -718,14 +718,14 @@ function BranchNodeRenderer({
                 ) : (
                     <>
                      <button 
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors text-slate-400"
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors text-slate-500"
                         title={isRemote ? "Checkout Remote Branch" : "Checkout Branch"}
                     >
                         <Check className="w-3.5 h-3.5" />
                     </button>
                     <button 
                         onClick={(e) => onDelete(branch, e)}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors text-slate-400"
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors text-slate-500"
                         title={isRemote ? "Delete Remote Branch" : "Delete Branch"}
                     >
                         <Trash2 className="w-3.5 h-3.5" />

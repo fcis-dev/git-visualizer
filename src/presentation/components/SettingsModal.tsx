@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { X, Moon, Sun, User, Mail, Save } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
@@ -64,7 +64,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
           
           {/* Appearance Section */}
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Appearance</h3>
+            <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Appearance</h3>
             
             <div className="flex items-center justify-between p-3 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
               <div className="flex items-center space-x-3">
@@ -75,7 +75,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
                   <div className="font-medium text-slate-900 dark:text-slate-200">
                     {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                  <div className="text-xs text-slate-600 dark:text-slate-300">
                     Adjust the appearance of the application
                   </div>
                 </div>
@@ -98,7 +98,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
 
           {/* Git Config Section */}
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Git Configuration</h3>
+            <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Git Configuration</h3>
             
             <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 space-y-4">
                     <>
@@ -143,14 +143,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
 
           {/* About Section */}
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">About</h3>
+            <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">About</h3>
             
             <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 text-center space-y-2">
                 <div className="w-12 h-12 mx-auto bg-transparent flex items-center justify-center">
                      <img src="/app-icon.png" alt="GitVi" className="w-full h-full object-contain" />
                 </div>
                 <h4 className="font-bold text-slate-900 dark:text-white text-lg">GitVi</h4>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-slate-600 dark:text-slate-300">
                     A modern tool to visualize and manage your Git repositories.
                 </p>
                 <div className="pt-2">
@@ -165,7 +165,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
         
         {/* Footer */}
         <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/30 border-t border-slate-200 dark:border-slate-800 text-center">
-            <p className="text-xs text-slate-400 dark:text-slate-500">
+            <p className="text-xs text-slate-600 dark:text-slate-400">
                 Created with Tauri + React
             </p>
         </div>

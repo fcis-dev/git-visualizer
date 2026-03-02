@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Tag, Trash2, UploadCloud, ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { TagData } from '../../../domain/entities/GitEntities';
 import { useGitActions } from '../../hooks/useGitActions';
@@ -75,7 +75,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
   };
 
   if (!repoPath) {
-    return <div className="p-4 text-center text-slate-400 dark:text-slate-500 text-sm">No repository open.</div>;
+    return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">No repository open.</div>;
   }
 
   const filteredTags = tags.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -84,7 +84,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
     <div className="flex flex-col h-full bg-white dark:bg-slate-950">
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col bg-slate-50/50 dark:bg-slate-900/40 shrink-0 space-y-3">
         <div className="flex items-center justify-between h-7">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center space-x-2">
+            <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center space-x-2">
                 <span>TAGS</span>
             </span>
             <div className="flex items-center space-x-2">
@@ -92,7 +92,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
                      <button
                         onClick={handlePushTags}
                         disabled={loadingTags}
-                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-indigo-500 transition-colors"
+                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-indigo-500 transition-colors"
                         title="Push all tags to remote"
                      >
                         <UploadCloud className="w-3.5 h-3.5" />
@@ -105,14 +105,14 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
         </div>
         <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                <Search className="w-3.5 h-3.5 text-slate-400" />
+                <Search className="w-3.5 h-3.5 text-slate-500" />
             </div>
             <input
                 type="text"
                 placeholder="Search tags..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-400"
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500"
             />
         </div>
       </div>
@@ -143,14 +143,14 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
                             className="group flex items-center justify-between p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded transition-colors"
                         >
                             <div className="flex items-center space-x-2 truncate flex-1 md:max-w-[200px]">
-                                <Tag className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+                                <Tag className="w-3.5 h-3.5 shrink-0 text-slate-500" />
                                 <span className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate" title={tag.name}>
                                     {tag.name}
                                 </span>
                             </div>
                             <button 
                                 onClick={(e) => handleDeleteTag(tag, e)}
-                                className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors text-slate-400"
+                                className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors text-slate-500"
                                 title="Delete Tag"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -159,7 +159,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
                     ))}
 
                     {filteredTags.length === 0 && (
-                        <div className="text-xs text-slate-400 italic px-2 py-1">No tags found</div>
+                        <div className="text-xs text-slate-500 italic px-2 py-1">No tags found</div>
                     )}
                 </div>
             )}

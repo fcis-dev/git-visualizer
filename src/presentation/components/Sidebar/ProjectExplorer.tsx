@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Folder, FolderPlus, Trash2 } from 'lucide-react';
@@ -109,10 +109,10 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-slate-200 dark:border-slate-800/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/40">
-        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">PROJECTS</span>
+        <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">PROJECTS</span>
         <button 
             onClick={handleAddFolder}
-            className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition-colors"
+            className="p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition-colors"
             title="Add Project Folder"
         >
             <FolderPlus className="w-4 h-4" />
@@ -137,7 +137,7 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
                 onClick={() => onSelectRepo(repo.path)}
                 title={repo.path}
             >
-                <Folder className={`w-4 h-4 ${activeRepoPath === repo.path ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                <Folder className={`w-4 h-4 ${activeRepoPath === repo.path ? 'text-indigo-500 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400'}`} />
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                         <span className="text-sm font-medium truncate">{repo.name}</span>
@@ -156,7 +156,7 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
                 
                 <button 
                     onClick={(e) => handleRemoveRepo(repo.path, e)}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 dark:hover:text-red-400 text-slate-400 dark:text-slate-500 rounded transition-all"
+                    className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 dark:hover:text-red-400 text-slate-600 dark:text-slate-400 rounded transition-all"
                     title="Remove Project"
                 >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -169,7 +169,7 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
             return (
                 <div 
                     key={folder}
-                    className="flex items-center space-x-2 p-2 rounded transition-colors group text-slate-400 dark:text-slate-500"
+                    className="flex items-center space-x-2 p-2 rounded transition-colors group text-slate-600 dark:text-slate-400"
                     title={`${folder} (No repos found)`}
                 >
                     <Folder className="w-4 h-4 opacity-50" />
@@ -185,7 +185,7 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
                             e.stopPropagation();
                             handleRemoveFolderDirect(folder);
                         }}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 dark:hover:text-red-400 text-slate-400 dark:text-slate-500 rounded transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 dark:hover:text-red-400 text-slate-600 dark:text-slate-400 rounded transition-all"
                         title="Remove Folder"
                     >
                         <Trash2 className="w-3.5 h-3.5" />

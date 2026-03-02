@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import {
   FolderTree,
   Trash2,
@@ -102,7 +102,7 @@ export function WorktreesSidebar({
 
   if (!repoPath) {
     return (
-      <div className="p-4 text-center text-slate-400 dark:text-slate-500 text-sm">
+      <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">
         No repository open.
       </div>
     );
@@ -112,7 +112,7 @@ export function WorktreesSidebar({
     <div className="flex flex-col h-full bg-white dark:bg-slate-950">
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col bg-slate-50/50 dark:bg-slate-900/40 shrink-0 space-y-3">
         <div className="flex items-center justify-between h-7">
-          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center space-x-2">
+          <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center space-x-2">
             <span>WORKTREES</span>
           </span>
           <div className="flex items-center space-x-2">
@@ -121,7 +121,7 @@ export function WorktreesSidebar({
             )}
             <button
               onClick={handlePrune}
-              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
               title="Prune Worktrees"
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -150,7 +150,7 @@ export function WorktreesSidebar({
               placeholder="Path (e.g., ../feature)"
               value={newPath}
               onChange={(e) => setNewPath(e.target.value)}
-              className="w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-400"
+              className="w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500"
               required
             />
             <input
@@ -158,7 +158,7 @@ export function WorktreesSidebar({
               placeholder="Branch (optional, leaves detached)"
               value={newBranch}
               onChange={(e) => setNewBranch(e.target.value)}
-              className="w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-400"
+              className="w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500"
             />
             <button
               type="submit"
@@ -177,7 +177,7 @@ export function WorktreesSidebar({
 
         <div className="px-2 space-y-0.5 pb-4">
           {worktrees.length === 0 && !loading ? (
-            <div className="text-xs text-slate-400 italic py-2 text-center">
+            <div className="text-xs text-slate-500 italic py-2 text-center">
               No worktrees found
             </div>
           ) : (
@@ -190,7 +190,7 @@ export function WorktreesSidebar({
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-2 truncate flex-1 md:max-w-[200px]">
-                      <FolderTree className="w-3.5 h-3.5 shrink-0 text-slate-400 group-hover:text-indigo-500" />
+                      <FolderTree className="w-3.5 h-3.5 shrink-0 text-slate-500 group-hover:text-indigo-500" />
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center space-x-2">
                           <span
@@ -206,7 +206,7 @@ export function WorktreesSidebar({
                           )}
                         </div>
                         <span
-                          className="text-[10px] text-slate-400 dark:text-slate-500 truncate"
+                          className="text-[10px] text-slate-600 dark:text-slate-400 truncate"
                           title={wt.path}
                         >
                           {wt.path}
@@ -217,7 +217,7 @@ export function WorktreesSidebar({
 
                   <div className="flex items-center justify-between mt-2 pl-5">
                     <div className="flex items-center space-x-2">
-                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                      <span className="text-[10px] font-mono text-slate-600 dark:text-slate-400">
                         {wt.commit.substring(0, 7)}
                       </span>
                       {wt.branch && wt.branch !== "detached" ? (
@@ -225,7 +225,7 @@ export function WorktreesSidebar({
                           {wt.branch}
                         </span>
                       ) : (
-                        <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1 rounded border border-slate-200 dark:border-slate-700">
+                        <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1 rounded border border-slate-200 dark:border-slate-700">
                           detached
                         </span>
                       )}
@@ -244,7 +244,7 @@ export function WorktreesSidebar({
                         )}
                         <button
                           onClick={() => handleRemove(wt.path)}
-                          className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all text-slate-400"
+                          className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all text-slate-500"
                           title="Remove Worktree"
                         >
                           <Trash2 className="w-3 h-3" />

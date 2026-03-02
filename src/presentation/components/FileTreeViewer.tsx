@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { ChevronRight, ChevronDown, File, Folder } from 'lucide-react';
 
 interface FileTreeViewerProps {
@@ -86,7 +86,7 @@ function TreeNodeView({ node, onSelectFile, onViewFileHistory }: { node: TreeNod
                 title={node.path}
             >
                 <div className="w-4 h-4 shrink-0 flex items-center justify-center opacity-0"></div>
-                <File className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-500 shrink-0" />
+                <File className="w-3.5 h-3.5 text-slate-500 group-hover:text-indigo-500 shrink-0" />
                 <span className="truncate">{node.name}</span>
             </div>
         );
@@ -98,7 +98,7 @@ function TreeNodeView({ node, onSelectFile, onViewFileHistory }: { node: TreeNod
                 className="flex items-center space-x-2 py-1 px-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer text-xs text-slate-800 dark:text-slate-200 font-medium select-none group"
                 onClick={() => setIsOpen(!isOpen)}
             >
-                <div className="w-4 h-4 shrink-0 flex items-center justify-center text-slate-400">
+                <div className="w-4 h-4 shrink-0 flex items-center justify-center text-slate-500">
                     {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                 </div>
                 <Folder className={`w-3.5 h-3.5 shrink-0 ${isOpen ? 'text-indigo-500' : 'text-indigo-400 dark:text-indigo-500/70'}`} fill={isOpen ? "currentColor" : "none"} />

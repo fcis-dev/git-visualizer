@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { RefreshCcw, AlertTriangle, GitBranch } from 'lucide-react';
 import { ReflogEntry } from '../../../domain/entities/GitEntities';
 import { useGitActions } from '../../hooks/useGitActions';
@@ -82,13 +82,13 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
   };
 
   if (!repoPath) {
-    return <div className="p-4 text-center text-slate-400 dark:text-slate-500 text-sm">No repository open.</div>;
+    return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">No repository open.</div>;
   }
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-950">
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/40 shrink-0">
-        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest flex items-center space-x-2">
+        <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center space-x-2">
             <span>RESCUE CENTER</span>
         </span>
       </div>
@@ -149,7 +149,7 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
                      </div>
                   </div>
                   <span className="text-xs font-medium text-slate-600 dark:text-slate-300 line-clamp-2">
-                     <span className="text-slate-400 border-r border-slate-300 dark:border-slate-700 pr-1 mr-1">{entry.action}</span>
+                     <span className="text-slate-500 border-r border-slate-300 dark:border-slate-700 pr-1 mr-1">{entry.action}</span>
                      {entry.message}
                   </span>
                 </div>

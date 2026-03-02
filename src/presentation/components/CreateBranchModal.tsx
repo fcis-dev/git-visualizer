@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+﻿import { useState, useRef, useEffect } from "react";
 import { GitBranch, X, Check } from "lucide-react";
 
 interface CreateBranchModalProps {
@@ -16,13 +16,13 @@ export function CreateBranchModal({
   const [checkout, setCheckout] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Auto-focus input on mount
     if (inputRef.current) {
-        inputRef.current.focus();
+      inputRef.current.focus();
     }
   }, []);
 
@@ -45,7 +45,7 @@ export function CreateBranchModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div 
+      <div
         className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
@@ -55,13 +55,17 @@ export function CreateBranchModal({
               <GitBranch className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100">Create Branch</h3>
-              <p className="text-[10px] text-slate-500 font-mono mt-0.5">From: {baseCommit.substring(0, 7)}</p>
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                Create Branch
+              </h3>
+              <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                From: {baseCommit.substring(0, 7)}
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+            className="p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -70,13 +74,16 @@ export function CreateBranchModal({
         <form onSubmit={handleSubmit} className="p-5">
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-sm flex items-start">
-                <span className="block">{error}</span>
+              <span className="block">{error}</span>
             </div>
           )}
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="branchName" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 ml-0.5">
+              <label
+                htmlFor="branchName"
+                className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 ml-0.5"
+              >
                 Branch Name
               </label>
               <input
@@ -86,7 +93,7 @@ export function CreateBranchModal({
                 value={branchName}
                 onChange={(e) => setBranchName(e.target.value)}
                 placeholder="e.g. feature/new-ui"
-                className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400 transition-all placeholder:text-slate-400"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400 transition-all placeholder:text-slate-500"
                 autoComplete="off"
                 disabled={isSubmitting}
               />
@@ -101,11 +108,18 @@ export function CreateBranchModal({
                   className="peer appearance-none w-5 h-5 border-2 border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-slate-950 checked:bg-indigo-500 checked:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all cursor-pointer"
                   disabled={isSubmitting}
                 />
-                <Check className="absolute w-3.5 h-3.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity" strokeWidth={3} />
+                <Check
+                  className="absolute w-3.5 h-3.5 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity"
+                  strokeWidth={3}
+                />
               </div>
               <div>
-                <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">Checkout branch immediately</span>
-                <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">Switch your working directory to the new branch</span>
+                <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Checkout branch immediately
+                </span>
+                <span className="block text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+                  Switch your working directory to the new branch
+                </span>
               </div>
             </label>
           </div>

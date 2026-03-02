@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
@@ -174,14 +174,14 @@ export function ProjectSelectionView({
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
               Projects
             </h1>
-            <p className="text-slate-500 dark:text-slate-400">
+            <p className="text-slate-600 dark:text-slate-300">
               Select a repository to start working
             </p>
           </div>
           <div className="flex items-center space-x-3">
             <button
               onClick={onOpenSettings}
-              className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              className="p-2 text-slate-500 hover:text-slate-600 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
               title="Settings"
             >
               <Settings className="w-5 h-5" />
@@ -198,7 +198,7 @@ export function ProjectSelectionView({
 
         {/* Search */}
         <div className="mb-8 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
           <input
             type="text"
             placeholder="Search projects..."
@@ -228,7 +228,7 @@ export function ProjectSelectionView({
                   <div className="flex space-x-2">
                     <button
                       onClick={(e) => handleRemoveRepo(repo.path, e)}
-                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                      className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                       title="Remove Project"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -246,7 +246,7 @@ export function ProjectSelectionView({
                   {repo.name}
                 </h3>
                 <p
-                  className="text-sm text-slate-500 dark:text-slate-500 truncate mb-4"
+                  className="text-sm text-slate-500 dark:text-slate-400 truncate mb-4"
                   title={repo.path}
                 >
                   {repo.path}
@@ -261,7 +261,7 @@ export function ProjectSelectionView({
                   </div>
                   {/* Behind-count badge */}
                   {isFetchingAll ? (
-                    <div className="flex items-center space-x-1 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-400 dark:text-slate-500">
+                    <div className="flex items-center space-x-1 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-600 dark:text-slate-400">
                       <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <circle cx="12" cy="12" r="10" strokeWidth="3" strokeDasharray="31.4 31.4" />
                       </svg>
@@ -284,7 +284,7 @@ export function ProjectSelectionView({
                   className="group relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 border-dashed rounded-xl p-5 transition-all"
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <div className="p-2 bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg">
+                    <div className="p-2 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg">
                       <Folder className="w-6 h-6 opacity-50" />
                     </div>
                     <div className="flex space-x-2">
@@ -293,7 +293,7 @@ export function ProjectSelectionView({
                           e.stopPropagation();
                           handleRemoveFolderDirect(folder);
                         }}
-                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                         title="Remove Folder"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -308,14 +308,14 @@ export function ProjectSelectionView({
                     {folderName}
                   </h3>
                   <p
-                    className="text-sm text-slate-400 dark:text-slate-500 truncate mb-4"
+                    className="text-sm text-slate-600 dark:text-slate-400 truncate mb-4"
                     title={folder}
                   >
                     {folder}
                   </p>
 
                   <div className="flex items-center space-x-2">
-                    <div className="flex items-center space-x-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs font-medium text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center space-x-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs font-medium text-slate-600 dark:text-slate-300">
                       <span>No Git Repositories Found</span>
                     </div>
                   </div>
@@ -324,7 +324,7 @@ export function ProjectSelectionView({
             })}
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-600">
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-500 dark:text-slate-600">
             <div className="w-16 h-16 mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
               <FolderPlus className="w-8 h-8 opacity-50" />
             </div>
