@@ -1,0 +1,365 @@
+import { useState, useCallback, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
+import { SubmoduleInfo } from "../../domain/entities/GitEntities";
+import { useDialog } from "../context/DialogContext";
+import { useGitActions } from "../hooks/useGitActions";
+
+const repository = new TauriGitRepository();
+
+export interface FileStatus {
+  path: string;
+  status: string;
+}
+
+export function useSourceControlController(
+  repoPath: string | null,
+  onCommit?: () => void,
+  refreshTrigger?: any
+) {
+  const [stagedFiles, setStagedFiles] = useState<FileStatus[]>([]);
+  const [changes, setChanges] = useState<FileStatus[]>([]);
+  const [commitMessage, setCommitMessage] = useState("");
+  const [lastMergeMsg, setLastMergeMsg] = useState("");
+  const [stashLoading, setStashLoading] = useState(false);
+  const [rebaseLoading, setRebaseLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submodules, setSubmodules] = useState<SubmoduleInfo[]>([]);
+  const [submodulesLoading, setSubmodulesLoading] = useState(false);
+  const [isAddingSubmodule, setIsAddingSubmodule] = useState(false);
+  const [stashesCount, setStashesCount] = useState(0);
+  const [isAmend, setIsAmend] = useState(false);
+  const [previousMessage, setPreviousMessage] = useState("");
+  const [isRebasing, setIsRebasing] = useState(false);
+
+  const { showConfirm, showInput, showAlert } = useDialog();
+  const gitActions = useGitActions(repoPath || "");
+
+  const loadStatus = useCallback(async () => {
+    if (!repoPath) return;
+    try {
+      const status = await repository.getSourceControlStatus(repoPath);
+
+      const staged: { path: string; status: string }[] = [];
+      const changed: { path: string; status: string }[] = [];
+
+      status.files.forEach((s) => {
+        if (s.status === "staged") {
+          staged.push(s);
+        } else if (s.status === "conflicted") {
+          changed.unshift(s);
+        } else {
+          changed.push(s);
+        }
+      });
+
+      setStagedFiles(staged);
+      setChanges(changed);
+      setIsRebasing(status.is_rebasing);
+      setSubmodules(status.submodules);
+      setStashesCount(status.stash_count);
+
+      if (status.merge_msg && status.merge_msg !== lastMergeMsg) {
+        setLastMergeMsg(status.merge_msg);
+        if (commitMessage.trim() === "") {
+          setCommitMessage(status.merge_msg);
+        }
+      } else if (!status.merge_msg && lastMergeMsg !== "") {
+        setLastMergeMsg("");
+      }
+    } catch (err: any) {
+      console.error("Failed to load status", err);
+      setError(err.toString());
+    }
+  }, [repoPath, lastMergeMsg, commitMessage]);
+
+  useEffect(() => {
+    if (repoPath) {
+      loadStatus();
+      setStagedFiles([]);
+      setChanges([]);
+      setSubmodules([]);
+
+      const intervalId = setInterval(() => {
+        loadStatus();
+      }, 5000);
+
+      return () => clearInterval(intervalId);
+    }
+  }, [repoPath, refreshTrigger, loadStatus]);
+
+  const handleStage = async (file: string) => {
+    if (!repoPath) return;
+    try {
+      await invoke("git_stage", { path: repoPath, files: [file] });
+      loadStatus();
+    } catch (err) {
+      console.error("Failed to stage", err);
+    }
+  };
+
+  const handleStageAll = async () => {
+    if (!repoPath || changes.length === 0) return;
+    try {
+      const files = changes.map((c) => c.path);
+      await invoke("git_stage", { path: repoPath, files });
+      loadStatus();
+    } catch (err) {
+      console.error("Failed to stage all", err);
+    }
+  };
+
+  const handleUnstage = async (file: string) => {
+    if (!repoPath) return;
+    try {
+      await invoke("git_unstage", { path: repoPath, files: [file] });
+      loadStatus();
+    } catch (err) {
+      console.error("Failed to unstage", err);
+    }
+  };
+
+  const handleUnstageAll = async () => {
+    if (!repoPath || stagedFiles.length === 0) return;
+    try {
+      const files = stagedFiles.map((c) => c.path);
+      await invoke("git_unstage", { path: repoPath, files });
+      loadStatus();
+    } catch (err: any) {
+      setError(err.toString());
+    }
+  };
+
+  const handleResolveConflict = async (
+    file: string,
+    strategy: "ours" | "theirs"
+  ) => {
+    if (!repoPath) return;
+    try {
+      await invoke("git_resolve_conflict", { path: repoPath, file, strategy });
+      loadStatus();
+    } catch (err: any) {
+      console.error("Failed to resolve conflict", err);
+      setError("Resolve failed: " + err.toString());
+    }
+  };
+
+  const handleDiscard = async (file: string) => {
+    if (!repoPath) return;
+    showConfirm(
+      "Discard Changes",
+      `Are you sure you want to discard changes in ${file}? This cannot be undone.`,
+      async () => {
+        try {
+          await invoke("git_discard_changes", {
+            path: repoPath,
+            files: [file],
+          });
+          loadStatus();
+        } catch (err: any) {
+          console.error("Failed to discard", err);
+          setError(err.toString());
+        }
+      }
+    );
+  };
+
+  const handleDiscardAll = () => {
+    if (!repoPath || changes.length === 0) return;
+    showConfirm(
+      "Discard All Changes",
+      `Are you sure you want to discard ALL ${changes.length} changes? This cannot be undone.`,
+      async () => {
+        try {
+          const files = changes.map((c) => c.path);
+          await invoke("git_discard_changes", { path: repoPath, files });
+          loadStatus();
+        } catch (err: any) {
+          setError(err.toString());
+        }
+      }
+    );
+  };
+
+  const handleCommit = async () => {
+    if (!repoPath || !commitMessage) return;
+    try {
+      if (isAmend) {
+        await invoke("git_commit_amend", {
+          path: repoPath,
+          message: commitMessage,
+        });
+        setIsAmend(false);
+      } else {
+        await invoke("git_commit", { path: repoPath, message: commitMessage });
+      }
+      setCommitMessage("");
+      loadStatus();
+      if (onCommit) onCommit();
+    } catch (err: any) {
+      console.error("Failed to commit", err);
+      let errMsg = err.toString();
+      if (
+        errMsg.includes("not fully merged index") ||
+        errMsg.includes("Unmerged (-10)")
+      ) {
+        errMsg =
+          "Cannot commit: You must stage all files and resolve conflicts first.";
+      }
+      setError(errMsg);
+    }
+  };
+
+  const handleStashSave = () => {
+    if (!repoPath) return;
+    showInput("Stash Changes", "Stash message (optional):", async (msg) => {
+      setStashLoading(true);
+      try {
+        await invoke("git_stash_save", {
+          path: repoPath,
+          message: msg || null,
+        });
+        loadStatus();
+      } catch (err: any) {
+        console.error("Failed to stash", err);
+        setError(err.toString());
+      } finally {
+        setStashLoading(false);
+      }
+    });
+  };
+
+  const handleRebaseAbort = async () => {
+    if (!repoPath) return;
+    try {
+      setRebaseLoading(true);
+      await invoke("git_rebase_abort", { path: repoPath });
+      setCommitMessage("");
+      loadStatus();
+      if (onCommit) onCommit();
+    } catch (e: any) {
+      setError(e.toString());
+    } finally {
+      setRebaseLoading(false);
+    }
+  };
+
+  const handleRebaseContinue = async () => {
+    if (!repoPath) return;
+    try {
+      setRebaseLoading(true);
+      await invoke("git_rebase_continue", { path: repoPath });
+      loadStatus();
+      if (onCommit) onCommit();
+    } catch (e: any) {
+      setError(e.toString());
+    } finally {
+      setRebaseLoading(false);
+    }
+  };
+
+  const handleAddSubmodule = () => {
+    showInput("Add Submodule", "Enter the Submodule URL:", async (url) => {
+      if (!url) return;
+      showInput(
+        "Add Submodule",
+        "Enter the target path (e.g. 'vendors/lib'):",
+        async (pathName) => {
+          if (!pathName) return;
+          try {
+            setSubmodulesLoading(true);
+            setIsAddingSubmodule(true);
+            await gitActions.addSubmodule(url, pathName);
+            loadStatus();
+          } catch (e: any) {
+            setError(e.toString());
+            showAlert("Error Adding Submodule", e.toString());
+          } finally {
+            setSubmodulesLoading(false);
+            setIsAddingSubmodule(false);
+          }
+        }
+      );
+    });
+  };
+
+  const handleSyncSubmodules = async () => {
+    try {
+      setSubmodulesLoading(true);
+      await gitActions.syncSubmodules();
+      loadStatus();
+    } finally {
+      setSubmodulesLoading(false);
+    }
+  };
+
+  const handleUpdateSubmodules = async () => {
+    try {
+      setSubmodulesLoading(true);
+      await gitActions.updateSubmodules();
+      loadStatus();
+    } finally {
+      setSubmodulesLoading(false);
+    }
+  };
+
+  const handleRemoveSubmodule = (subPath: string, subName: string) => {
+    showConfirm(
+      "Remove Submodule",
+      `Are you sure you want to completely remove the submodule '${subName}'? This deletes it from the working tree and .git/modules.`,
+      async () => {
+        try {
+          setSubmodulesLoading(true);
+          await gitActions.removeSubmodule(subPath);
+          loadStatus();
+        } catch (e: any) {
+          console.error(e);
+          setError(e.toString());
+          showAlert("Error Removing Submodule", e.toString());
+        } finally {
+          setSubmodulesLoading(false);
+        }
+      }
+    );
+  };
+
+  return {
+    state: {
+      stagedFiles,
+      changes,
+      commitMessage,
+      lastMergeMsg,
+      stashLoading,
+      rebaseLoading,
+      error,
+      submodules,
+      submodulesLoading,
+      isAddingSubmodule,
+      stashesCount,
+      isAmend,
+      previousMessage,
+      isRebasing,
+    },
+    actions: {
+      setCommitMessage,
+      setIsAmend,
+      setPreviousMessage,
+      loadStatus,
+      handleStage,
+      handleStageAll,
+      handleUnstage,
+      handleUnstageAll,
+      handleResolveConflict,
+      handleDiscard,
+      handleDiscardAll,
+      handleCommit,
+      handleStashSave,
+      handleRebaseAbort,
+      handleRebaseContinue,
+      handleAddSubmodule,
+      handleSyncSubmodules,
+      handleUpdateSubmodules,
+      handleRemoveSubmodule,
+    }
+  };
+}

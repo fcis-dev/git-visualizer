@@ -85,7 +85,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                 await gitActions.checkoutBranch(localName);
                 showAlert("Success", `Checked out ${localName}.`);
                 onRefreshGraph();
-                loadBranches();
+                loadBranchesAndRemotes();
               } catch (err: any) {
                 setError(err.toString());
               }
@@ -103,7 +103,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
               await gitActions.checkoutBranch(localName);
               showAlert("Success", `Created and checked out local branch '${localName}'.`);
               onRefreshGraph();
-              loadBranches();
+              loadBranchesAndRemotes();
             } catch (err: any) {
               setError(err.toString());
             }

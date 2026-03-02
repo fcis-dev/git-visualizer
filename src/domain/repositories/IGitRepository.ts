@@ -1,7 +1,12 @@
-import { Commit, ReflogEntry, TagData } from "../entities/GitEntities";
+import { Commit, ReflogEntry, TagData, InitialRepoData, BranchesAndRemotes, SourceControlStatus } from "../entities/GitEntities";
 
 export interface IGitRepository {
-  getCommits(path: string, skip?: number, limit?: number): Promise<Commit[]>;
+  getCommits(
+    path: string,
+    skip?: number,
+    limit?: number,
+    branches?: string[]
+  ): Promise<Commit[]>;
   getCurrentBranch(path: string): Promise<string>;
   getBranches(path: string): Promise<string[]>;
   isWorktree(path: string): Promise<boolean>;
@@ -54,6 +59,9 @@ export interface IGitRepository {
     path: string,
     query: string,
     searchType: "all" | "message" | "author" | "file",
+    branches?: string[],
+    skip?: number,
+    limit?: number
   ): Promise<Commit[]>;
 
   commitAmend(path: string, message: string): Promise<void>;
@@ -74,4 +82,15 @@ export interface IGitRepository {
   addWorktree(path: string, newPath: string, branch: string): Promise<string>;
   removeWorktree(path: string, worktreePath: string): Promise<string>;
   pruneWorktrees(path: string): Promise<string>;
+
+  getInitialRepoData(
+    path: string,
+    skip?: number,
+    limit?: number,
+    branches?: string[],
+  ): Promise<InitialRepoData>;
+
+  getBranchesAndRemotes(path: string): Promise<BranchesAndRemotes>;
+
+  getSourceControlStatus(path: string): Promise<SourceControlStatus>;
 }

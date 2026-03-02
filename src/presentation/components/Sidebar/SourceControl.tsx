@@ -1,5 +1,4 @@
 ﻿import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import {
   Play,
   Check,
@@ -16,19 +15,9 @@ import {
   ArrowLeftToLine,
   ArrowRightToLine,
 } from "lucide-react";
-import { useDialog } from "../../context/DialogContext";
-import { Commit, SubmoduleInfo } from "../../../domain/entities/GitEntities";
-import { useGitActions } from "../../hooks/useGitActions";
-import { TauriGitRepository } from "../../../data/repositories/TauriGitRepository";
+import { Commit } from "../../../domain/entities/GitEntities";
 import { StashesModal } from "../StashesModal";
-
-// Module-level singleton to avoid re-instantiation on every render
-const repository = new TauriGitRepository();
-
-interface FileStatus {
-  path: string;
-  status: string; // "modified", "staged", "new", "deleted"
-}
+import { useSourceControlController } from "../../controllers/useSourceControlController";
 
 interface SourceControlProps {
   repoPath: string | null;
@@ -53,25 +42,9 @@ export function SourceControl({
   onResolveConflict,
   refreshTrigger,
 }: SourceControlProps) {
-  const [stagedFiles, setStagedFiles] = useState<FileStatus[]>([]);
-  const [changes, setChanges] = useState<FileStatus[]>([]);
-  const [commitMessage, setCommitMessage] = useState("");
-  const [lastMergeMsg, setLastMergeMsg] = useState("");
-  const [stashLoading, setStashLoading] = useState(false);
-  const [rebaseLoading, setRebaseLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [submodules, setSubmodules] = useState<SubmoduleInfo[]>([]);
-  const [submodulesLoading, setSubmodulesLoading] = useState(false);
-  const [isAddingSubmodule, setIsAddingSubmodule] = useState(false);
-  const [stashesCount, setStashesCount] = useState(0);
-
-  const [isAmend, setIsAmend] = useState(false);
-  const [previousMessage, setPreviousMessage] = useState("");
+  const { state, actions } = useSourceControlController(repoPath, onCommit, refreshTrigger);
 
   const [isStashesModalOpen, setIsStashesModalOpen] = useState(false);
-  const [isRebasing, setIsRebasing] = useState(false);
-
-  // Context menu for file history
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     x: number;
@@ -79,207 +52,12 @@ export function SourceControl({
     path: string | null;
   }>({ visible: false, x: 0, y: 0, path: null });
 
-  const { showInput, showConfirm, showAlert } = useDialog();
-  const gitActions = useGitActions(repoPath || "");
-
   useEffect(() => {
     const closeContextMenu = () =>
       setContextMenu((prev) => ({ ...prev, visible: false }));
     document.addEventListener("click", closeContextMenu);
     return () => document.removeEventListener("click", closeContextMenu);
   }, []);
-
-  useEffect(() => {
-    if (repoPath) {
-      loadStatus();
-      setStagedFiles([]);
-      setChanges([]);
-      setSubmodules([]);
-
-      // Poll for changes every 5 s (was 3 s — reduced to lower background CPU cost)
-      const intervalId = setInterval(() => {
-        loadStatus();
-      }, 5000);
-
-      return () => clearInterval(intervalId);
-    }
-  }, [repoPath, refreshTrigger]);
-
-  const loadStatus = async () => {
-    if (!repoPath) return;
-    try {
-      // Single aggregated IPC call instead of 4+ sequential ones
-      const status = await repository.getSourceControlStatus(repoPath);
-
-      const staged: { path: string; status: string }[] = [];
-      const changed: { path: string; status: string }[] = [];
-
-      status.files.forEach((s) => {
-        if (s.status === "staged") {
-          staged.push(s);
-        } else if (s.status === "conflicted") {
-          changed.unshift(s);
-        } else {
-          changed.push(s);
-        }
-      });
-
-      setStagedFiles(staged);
-      setChanges(changed);
-      setIsRebasing(status.is_rebasing);
-      setSubmodules(status.submodules);
-      setStashesCount(status.stash_count);
-
-      // Handle merge message pre-fill
-      if (status.merge_msg && status.merge_msg !== lastMergeMsg) {
-        setLastMergeMsg(status.merge_msg);
-        if (commitMessage.trim() === "") {
-          setCommitMessage(status.merge_msg);
-        }
-      } else if (!status.merge_msg && lastMergeMsg !== "") {
-        setLastMergeMsg("");
-      }
-    } catch (err: any) {
-      console.error("Failed to load status", err);
-      setError(err.toString());
-    }
-  };
-
-  const handleStage = async (file: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!repoPath) return;
-    try {
-      await invoke("git_stage", { path: repoPath, files: [file] });
-      loadStatus();
-    } catch (err) {
-      console.error("Failed to stage", err);
-    }
-  };
-
-  const handleUnstage = async (file: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!repoPath) return;
-    try {
-      await invoke("git_unstage", { path: repoPath, files: [file] });
-      loadStatus();
-    } catch (err) {
-      console.error("Failed to unstage", err);
-    }
-  };
-
-  const handleUnstageAll = async () => {
-    if (!repoPath || stagedFiles.length === 0) return;
-    try {
-      const files = stagedFiles.map((c) => c.path);
-      await invoke("git_unstage", { path: repoPath, files });
-      loadStatus();
-    } catch (err: any) {
-      setError(err.toString());
-    }
-  };
-
-  const handleResolveConflict = async (
-    file: string,
-    strategy: "ours" | "theirs",
-    e: React.MouseEvent,
-  ) => {
-    e.stopPropagation();
-    if (!repoPath) return;
-    try {
-      await invoke("git_resolve_conflict", { path: repoPath, file, strategy });
-      loadStatus();
-    } catch (err: any) {
-      console.error("Failed to resolve conflict", err);
-      setError("Resolve failed: " + err.toString());
-    }
-  };
-
-  const handleDiscard = async (file: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!repoPath) return;
-
-    showConfirm(
-      "Discard Changes",
-      `Are you sure you want to discard changes in ${file}? This cannot be undone.`,
-      async () => {
-        try {
-          await invoke("git_discard_changes", {
-            path: repoPath,
-            files: [file],
-          });
-          loadStatus();
-        } catch (err: any) {
-          console.error("Failed to discard", err);
-          setError(err.toString());
-        }
-      },
-    );
-  };
-
-  const handleDiscardAll = () => {
-    if (!repoPath || changes.length === 0) return;
-    showConfirm(
-      "Discard All Changes",
-      `Are you sure you want to discard ALL ${changes.length} changes? This cannot be undone.`,
-      async () => {
-        try {
-          const files = changes.map((c) => c.path);
-          await invoke("git_discard_changes", { path: repoPath, files });
-          loadStatus();
-        } catch (err: any) {
-          setError(err.toString());
-        }
-      },
-    );
-  };
-
-  const handleCommit = async () => {
-    if (!repoPath || !commitMessage) return;
-    try {
-      if (isAmend) {
-        await invoke("git_commit_amend", {
-          path: repoPath,
-          message: commitMessage,
-        });
-        setIsAmend(false);
-      } else {
-        await invoke("git_commit", { path: repoPath, message: commitMessage });
-      }
-      setCommitMessage("");
-      loadStatus();
-      if (onCommit) onCommit();
-    } catch (err: any) {
-      console.error("Failed to commit", err);
-      let errMsg = err.toString();
-      if (
-        errMsg.includes("not fully merged index") ||
-        errMsg.includes("Unmerged (-10)")
-      ) {
-        errMsg =
-          "Cannot commit: You must stage all files and resolve conflicts first.";
-      }
-      setError(errMsg);
-    }
-  };
-
-  const handleStashSave = () => {
-    if (!repoPath) return;
-    showInput("Stash Changes", "Stash message (optional):", async (msg) => {
-      setStashLoading(true);
-      try {
-        await invoke("git_stash_save", {
-          path: repoPath,
-          message: msg || null,
-        });
-        loadStatus();
-      } catch (err: any) {
-        console.error("Failed to stash", err);
-        setError(err.toString());
-      } finally {
-        setStashLoading(false);
-      }
-    });
-  };
 
   const handleContextMenu = (path: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -308,13 +86,13 @@ export function SourceControl({
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-4">
-        {error && (
+        {state.error && (
           <div className="p-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-200 text-xs rounded break-all">
-            {error}
+            {state.error}
           </div>
         )}
 
-        {isRebasing && (
+        {state.isRebasing && (
           <div className="flex flex-col p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-lg">
             <div className="flex items-center space-x-2 text-amber-800 dark:text-amber-400 font-bold mb-2 text-sm">
               <span className="relative flex h-3 w-3">
@@ -329,38 +107,15 @@ export function SourceControl({
             </p>
             <div className="flex space-x-2">
               <button
-                onClick={async () => {
-                  try {
-                    setRebaseLoading(true);
-                    await invoke("git_rebase_abort", { path: repoPath });
-                    setCommitMessage("");
-                    loadStatus();
-                    if (onCommit) onCommit();
-                  } catch (e: any) {
-                    setError(e.toString());
-                  } finally {
-                    setRebaseLoading(false);
-                  }
-                }}
-                disabled={rebaseLoading}
+                onClick={actions.handleRebaseAbort}
+                disabled={state.rebaseLoading}
                 className="flex-1 py-1.5 text-xs rounded font-bold transition-colors bg-white hover:bg-red-50 text-red-600 border border-red-200 dark:bg-amber-950/50 dark:hover:bg-red-900/50 dark:border-red-800 dark:text-red-400 disabled:opacity-50"
               >
                 Abort
               </button>
               <button
-                onClick={async () => {
-                  try {
-                    setRebaseLoading(true);
-                    await invoke("git_rebase_continue", { path: repoPath });
-                    loadStatus();
-                    if (onCommit) onCommit();
-                  } catch (e: any) {
-                    setError(e.toString());
-                  } finally {
-                    setRebaseLoading(false);
-                  }
-                }}
-                disabled={rebaseLoading}
+                onClick={actions.handleRebaseContinue}
+                disabled={state.rebaseLoading}
                 className="flex-2 py-1.5 text-xs rounded font-bold transition-colors bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white shadow-sm disabled:opacity-50"
               >
                 Continue Rebase
@@ -372,8 +127,8 @@ export function SourceControl({
         {/* Stash Actions */}
         <div className="flex space-x-2">
           <button
-            onClick={handleStashSave}
-            disabled={stashLoading}
+            onClick={actions.handleStashSave}
+            disabled={state.stashLoading}
             className="flex-1 flex items-center justify-center space-x-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 py-1.5 rounded text-xs transition-colors"
             title="Stash Changes"
           >
@@ -382,14 +137,14 @@ export function SourceControl({
           </button>
           <button
             onClick={() => setIsStashesModalOpen(true)}
-            disabled={stashLoading}
+            disabled={state.stashLoading}
             className="flex-2 flex items-center justify-center space-x-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 py-1.5 rounded text-xs transition-colors font-medium border border-emerald-200/50 dark:border-emerald-500/20"
             title="Manage Stashes"
           >
             <span>Stashes</span>
-            {stashesCount > 0 && (
+            {state.stashesCount > 0 && (
               <span className="bg-emerald-200 dark:bg-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded-full text-[10px] leading-none font-bold ml-1">
-                {stashesCount}
+                {state.stashesCount}
               </span>
             )}
           </button>
@@ -403,48 +158,48 @@ export function SourceControl({
             <div className="flex justify-end mb-1">
               <button
                 onClick={() => {
-                  const checked = !isAmend;
-                  setIsAmend(checked);
+                  const checked = !state.isAmend;
+                  actions.setIsAmend(checked);
                   if (checked) {
-                    setPreviousMessage(commitMessage);
-                    setCommitMessage(latestCommit.message);
+                    actions.setPreviousMessage(state.commitMessage);
+                    actions.setCommitMessage(latestCommit.message);
                   } else {
-                    setCommitMessage(previousMessage);
+                    actions.setCommitMessage(state.previousMessage);
                   }
                 }}
                 className={`flex items-center space-x-1.5 py-1 px-2.5 rounded text-xs transition-colors font-medium border ${
-                  isAmend
+                  state.isAmend
                     ? "bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-500/20"
                     : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 border-transparent hover:border-slate-300 dark:hover:border-slate-600"
                 }`}
                 title="Amend previous commit"
               >
-                {isAmend && <Check className="w-3 h-3" />}
+                {state.isAmend && <Check className="w-3 h-3" />}
                 <span>Amend</span>
               </button>
             </div>
           )}
           <textarea
-            value={commitMessage}
-            onChange={(e) => setCommitMessage(e.target.value)}
+            value={state.commitMessage}
+            onChange={(e) => actions.setCommitMessage(e.target.value)}
             placeholder="Message (Ctrl+Enter to commit)"
             className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded p-2 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-indigo-500/50 min-h-[80px]"
             onKeyDown={(e) => {
               if (e.ctrlKey && e.key === "Enter") {
-                handleCommit();
+                actions.handleCommit();
               }
             }}
           />
           <button
-            onClick={handleCommit}
+            onClick={actions.handleCommit}
             disabled={
-              !commitMessage ||
-              (!isAmend && stagedFiles.length === 0 && !lastMergeMsg)
+              !state.commitMessage ||
+              (!state.isAmend && state.stagedFiles.length === 0 && !state.lastMergeMsg)
             }
             className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-1.5 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
           >
             <Check className="w-4 h-4" />
-            {isAmend ? "Commit Amend" : "Commit"}
+            {state.isAmend ? "Commit Amend" : "Commit"}
           </button>
         </div>
 
@@ -454,11 +209,11 @@ export function SourceControl({
             <span>Staged Changes</span>
             <div className="flex items-center space-x-2">
               <span className="bg-slate-200 dark:bg-slate-800 px-1.5 rounded-full text-slate-700 dark:text-slate-300">
-                {stagedFiles.length}
+                {state.stagedFiles.length}
               </span>
-              {stagedFiles.length > 0 && (
+              {state.stagedFiles.length > 0 && (
                 <button
-                  onClick={handleUnstageAll}
+                  onClick={actions.handleUnstageAll}
                   className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white"
                   title="Unstage All"
                 >
@@ -467,7 +222,7 @@ export function SourceControl({
               )}
             </div>
           </div>
-          {stagedFiles.map((file) => (
+          {state.stagedFiles.map((file) => (
             <div
               key={file.path}
               className="group flex items-center justify-between p-1 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded cursor-pointer"
@@ -482,7 +237,7 @@ export function SourceControl({
               </span>
               <div className="flex opacity-0 group-hover:opacity-100">
                 <button
-                  onClick={(e) => handleUnstage(file.path, e)}
+                  onClick={(e) => { e.stopPropagation(); actions.handleUnstage(file.path); }}
                   className="p-1 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700/50 rounded"
                   title="Unstage changes"
                 >
@@ -499,27 +254,19 @@ export function SourceControl({
             <span>Changes</span>
             <div className="flex items-center space-x-2">
               <span className="bg-slate-200 dark:bg-slate-800 px-1.5 rounded-full text-slate-700 dark:text-slate-300">
-                {changes.length}
+                {state.changes.length}
               </span>
-              {changes.length > 0 && (
+              {state.changes.length > 0 && (
                 <div className="flex items-center space-x-1">
                   <button
-                    onClick={handleDiscardAll}
+                    onClick={actions.handleDiscardAll}
                     className="p-1 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                     title="Discard All Changes"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={async () => {
-                      if (repoPath) {
-                        try {
-                          const files = changes.map((c) => c.path);
-                          await invoke("git_stage", { path: repoPath, files });
-                          loadStatus();
-                        } catch (e) {}
-                      }
-                    }}
+                    onClick={actions.handleStageAll}
                     className="p-1 text-slate-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
                     title="Stage All"
                   >
@@ -529,7 +276,7 @@ export function SourceControl({
               )}
             </div>
           </div>
-          {changes.map((file) => (
+          {state.changes.map((file) => (
             <div
               key={file.path}
               className="group flex items-center justify-between p-1 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded cursor-pointer"
@@ -565,18 +312,14 @@ export function SourceControl({
                 {file.status === "conflicted" ? (
                   <>
                     <button
-                      onClick={(e) =>
-                        handleResolveConflict(file.path, "ours", e)
-                      }
+                      onClick={(e) => { e.stopPropagation(); actions.handleResolveConflict(file.path, "ours"); }}
                       className="p-1 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
                       title="Accept Current (Ours)"
                     >
                       <ArrowLeftToLine className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={(e) =>
-                        handleResolveConflict(file.path, "theirs", e)
-                      }
+                      onClick={(e) => { e.stopPropagation(); actions.handleResolveConflict(file.path, "theirs"); }}
                       className="p-1 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
                       title="Accept Incoming (Theirs)"
                     >
@@ -586,14 +329,14 @@ export function SourceControl({
                 ) : (
                   <>
                     <button
-                      onClick={(e) => handleDiscard(file.path, e)}
+                      onClick={(e) => { e.stopPropagation(); actions.handleDiscard(file.path); }}
                       className="p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                       title="Discard changes"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={(e) => handleStage(file.path, e)}
+                      onClick={(e) => { e.stopPropagation(); actions.handleStage(file.path); }}
                       className="p-1 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
                       title="Stage changes"
                     >
@@ -612,77 +355,34 @@ export function SourceControl({
             <span>Submodules</span>
             <div className="flex items-center space-x-2">
               <span className="bg-slate-200 dark:bg-slate-800 px-1.5 rounded-full text-slate-700 dark:text-slate-300">
-                {submodules.length}
+                {state.submodules.length}
               </span>
               <div className="flex border-l border-slate-300 dark:border-slate-700 pl-1 ml-1 space-x-1">
                 <button
-                  onClick={() => {
-                    showInput(
-                      "Add Submodule",
-                      "Enter the Submodule URL:",
-                      async (url) => {
-                        if (!url) return;
-                        showInput(
-                          "Add Submodule",
-                          "Enter the target path (e.g. 'vendors/lib'):",
-                          async (pathName) => {
-                            if (!pathName) return;
-                            try {
-                              setSubmodulesLoading(true);
-                              setIsAddingSubmodule(true);
-                              await gitActions.addSubmodule(url, pathName);
-                              loadStatus();
-                            } catch (e: any) {
-                              setError(e.toString());
-                              showAlert("Error Adding Submodule", e.toString());
-                            } finally {
-                              setSubmodulesLoading(false);
-                              setIsAddingSubmodule(false);
-                            }
-                          },
-                        );
-                      },
-                    );
-                  }}
-                  disabled={submodulesLoading}
+                  onClick={actions.handleAddSubmodule}
+                  disabled={state.submodulesLoading}
                   className="p-1 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50"
                   title="Add Submodule"
                 >
-                  {isAddingSubmodule ? (
+                  {state.isAddingSubmodule ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
                   ) : (
                     <Plus className="w-3.5 h-3.5" />
                   )}
                 </button>
                 <button
-                  onClick={async () => {
-                    try {
-                      setSubmodulesLoading(true);
-                      await gitActions.syncSubmodules();
-                      loadStatus();
-                    } finally {
-                      setSubmodulesLoading(false);
-                    }
-                  }}
-                  disabled={submodulesLoading}
+                  onClick={actions.handleSyncSubmodules}
+                  disabled={state.submodulesLoading}
                   className="p-1 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-50"
                   title="Sync Submodules"
                 >
                   <RefreshCw
-                    className={`w-3.5 h-3.5 ${submodulesLoading ? "animate-spin" : ""}`}
+                    className={`w-3.5 h-3.5 ${state.submodulesLoading ? "animate-spin" : ""}`}
                   />
                 </button>
                 <button
-                  onClick={async () => {
-                    try {
-                      setSubmodulesLoading(true);
-                      await gitActions.updateSubmodules();
-                      loadStatus();
-                    } finally {
-                      setSubmodulesLoading(false);
-                    }
-                  }}
-                  disabled={submodulesLoading}
+                  onClick={actions.handleUpdateSubmodules}
+                  disabled={state.submodulesLoading}
                   className="p-1 text-slate-500 hover:text-green-600 dark:hover:text-green-400 disabled:opacity-50 flex items-center"
                   title="Update & Init Submodules"
                 >
@@ -691,7 +391,7 @@ export function SourceControl({
               </div>
             </div>
           </div>
-          {submodules.map((sub, idx) => (
+          {state.submodules.map((sub, idx) => (
             <div
               key={idx}
               className="group flex flex-col p-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded mb-1 cursor-default"
@@ -734,25 +434,7 @@ export function SourceControl({
                     <ExternalLink className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => {
-                      showConfirm(
-                        "Remove Submodule",
-                        `Are you sure you want to completely remove the submodule '${sub.name}'? This deletes it from the working tree and .git/modules.`,
-                        async () => {
-                          try {
-                            setSubmodulesLoading(true);
-                            await gitActions.removeSubmodule(sub.path);
-                            loadStatus();
-                          } catch (e: any) {
-                            console.error(e);
-                            setError(e.toString());
-                            showAlert("Error Removing Submodule", e.toString());
-                          } finally {
-                            setSubmodulesLoading(false);
-                          }
-                        },
-                      );
-                    }}
+                    onClick={() => actions.handleRemoveSubmodule(sub.path, sub.name)}
                     className="p-1 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                     title="Remove Submodule"
                   >
@@ -775,7 +457,7 @@ export function SourceControl({
           repoPath={repoPath}
           onClose={() => setIsStashesModalOpen(false)}
           onRefreshGraph={() => {
-            loadStatus();
+            actions.loadStatus();
             if (onCommit) onCommit(); // Trigger graph reload
           }}
         />

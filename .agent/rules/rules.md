@@ -10,27 +10,29 @@ The frontend code is located in `src/` and is divided into three main layers:
 
 - **Purpose**: Contains the core business logic and definitions. It must be independent of any framework (React) or data source (Tauri, API).
 - **Contents**:
-  - **Entities**: Business objects and interfaces (e.g., `Commit`, `Repository`).
+  - **Entities (Models)**: Business objects and interfaces (e.g., `Commit`, `GitBranch`, `Repository`).
   - **Repository Interfaces**: Abstract definitions of data access (e.g., `IGitRepository`).
+  - **Use Cases**: Pure business logic that orchestrates requests via the repository interfaces. Each use case should follow the Single Responsibility Principle (e.g., `GetCommitsUseCase`, `MergeBranchUseCase`).
 - **Dependencies**: None (pure TypeScript).
 
 ### **1.2. Data Layer (`src/data/`)**
 
 - **Purpose**: Handles data retrieval and implements the repository interfaces defined in the Domain layer.
 - **Contents**:
-  - **Repositories**: Concrete implementations of interfaces (e.g., `TauriGitRepository`).
+  - **Repositories**: Concrete implementations of interfaces (e.g., `TauriGitRepository`). This maps raw data from Tauri to Domain Entities.
 - **Dependencies**: Can depend on external libraries (Tauri API) and the Domain layer.
 
 ### **1.3. Presentation Layer (`src/presentation/`)**
 
 - **Purpose**: Responsible for the User Interface and user interaction logic.
 - **Contents**:
-  - **Components**: Reusable UI components.
-  - **Pages**: Top-level views comprising multiple components.
-  - **Hooks**: Custom React hooks for state management and logic encapsulation (`useGit`, `useGitActions`).
+  - **Pages**: Top-level views comprising multiple components (e.g., `RepositoryWorkspacePage`).
+  - **Controllers**: Custom React Hooks acting as the bridge between the UI and Use Cases. They manage local view state (loading, error, data) and inject the correct Use Cases.
+  - **Components**: Reusable, presentation-only ("dumb") React components that receive data via props and emit events.
+  - **Hooks**: Custom React hooks for generic UI logic or state management that aren't page controllers (`useGit`, `useGitActions`).
   - **Context**: React Contexts for global state (Theme, Dialogs).
   - **Utils**: Helper functions specific to the UI.
-- **Dependencies**: React, Domain Layer, Data Layer (via dependency injection or hooks).
+- **Dependencies**: React, Domain Layer (Use Cases, Entities), Data Layer (only via dependency injection in top-level containers/hooks).
 
 ## 2. Backend Architecture (Rust/Tauri)
 
