@@ -2,6 +2,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Folder, FolderPlus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface RepoData {
   path: string;
@@ -16,6 +17,7 @@ interface ProjectExplorerProps {
 }
 
 export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRepo }: ProjectExplorerProps) {
+  const { t } = useTranslation();
   const [repos, setRepos] = useState<Record<string, RepoData[]>>({});
   
   // Flatten repos for display
@@ -109,11 +111,11 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-slate-200 dark:border-slate-800/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/40">
-        <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">PROJECTS</span>
+        <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">{t('projectExplorer.title')}</span>
         <button 
             onClick={handleAddFolder}
             className="p-1.5 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition-colors"
-            title="Add Project Folder"
+            title={t('projectExplorer.addFolder')}
         >
             <FolderPlus className="w-4 h-4" />
         </button>
@@ -122,7 +124,7 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
         {allRepos.length === 0 && emptyFolders.length === 0 && (
             <div className="text-center p-4 text-slate-500 text-sm">
-                No projects found.<br/>Click + to add a folder containing projects.
+                {t('projectExplorer.noProjects')}<br/>{t('projectExplorer.addFolderDesc')}
             </div>
         )}
 
@@ -157,7 +159,7 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
                 <button 
                     onClick={(e) => handleRemoveRepo(repo.path, e)}
                     className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 dark:hover:text-red-400 text-slate-600 dark:text-slate-400 rounded transition-all"
-                    title="Remove Project"
+                    title={t('projectExplorer.removeProject')}
                 >
                     <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -170,7 +172,7 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
                 <div 
                     key={folder}
                     className="flex items-center space-x-2 p-2 rounded transition-colors group text-slate-600 dark:text-slate-400"
-                    title={`${folder} (No repos found)`}
+                    title={t('projectExplorer.noReposFound', { folder })}
                 >
                     <Folder className="w-4 h-4 opacity-50" />
                     <div className="flex-1 min-w-0">
@@ -186,7 +188,7 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
                             handleRemoveFolderDirect(folder);
                         }}
                         className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10 dark:hover:text-red-400 text-slate-600 dark:text-slate-400 rounded transition-all"
-                        title="Remove Folder"
+                        title={t('projectExplorer.removeFolder')}
                     >
                         <Trash2 className="w-3.5 h-3.5" />
                     </button>

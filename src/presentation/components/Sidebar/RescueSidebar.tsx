@@ -3,6 +3,7 @@ import { RefreshCcw, AlertTriangle, GitBranch } from 'lucide-react';
 import { ReflogEntry } from '../../../domain/entities/GitEntities';
 import { useGitActions } from '../../hooks/useGitActions';
 import { useDialog } from '../../context/DialogContext';
+import { useTranslation } from 'react-i18next';
 
 interface RescueSidebarProps {
   repoPath: string | null;
@@ -14,6 +15,7 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
   const [entries, setEntries] = useState<ReflogEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const gitActions = useGitActions(repoPath || "");
   const { showConfirm, showAlert, showInput } = useDialog();
@@ -42,12 +44,12 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
 
   const handleRestore = (entry: ReflogEntry) => {
     showConfirm(
-      "Restore State (Hard Reset)",
-      `Are you sure you want to FORCE RESTORE the repository to ${entry.hash} (${entry.index})?\n\nThis will trigger a HARD RESET. Any uncommitted changes will be permanently lost!`,
+      t('rescueSidebar.restoreStateTitle'),
+      t('rescueSidebar.restoreStateConfirm', { hash: entry.hash, index: entry.index }),
       async () => {
         try {
           await gitActions.reset(entry.hash, "hard");
-          showAlert("State Restored", `The repository has been successfully reverted to ${entry.hash}.`);
+          showAlert(t('rescueSidebar.stateRestoredTitle'), t('rescueSidebar.stateRestoredMsg', { hash: entry.hash }));
           onRestore();
           loadReflog();
         } catch (e: any) {
@@ -60,15 +62,15 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
   const handleRescueBranch = (entry: ReflogEntry, e: React.MouseEvent) => {
     e.stopPropagation();
     showInput(
-      "Rescue to Branch",
-      `Enter a name for the new branch to save the state at ${entry.hash}:`,
+      t('rescueSidebar.rescueBranchTitle'),
+      t('rescueSidebar.rescueBranchPrompt', { hash: entry.hash }),
       async (branchName) => {
         if (!branchName) return;
         try {
           await gitActions.createBranch(branchName, entry.hash);
           showConfirm(
-            "Branch Created",
-            `Successfully created branch '${branchName}' at ${entry.hash}.\n\nWould you like to checkout this branch now?`,
+            t('rescueSidebar.branchCreatedTitle'),
+            t('rescueSidebar.branchCreatedConfirm', { branchName, hash: entry.hash }),
             async () => {
                 await gitActions.checkoutBranch(branchName);
                 onRestore(); // trigger graph refresh
@@ -82,14 +84,14 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
   };
 
   if (!repoPath) {
-    return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">No repository open.</div>;
+    return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">{t('rescueSidebar.noRepo')}</div>;
   }
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-950">
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/40 shrink-0">
         <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center space-x-2">
-            <span>RESCUE CENTER</span>
+            <span>{t('rescueSidebar.title')}</span>
         </span>
       </div>
 
@@ -102,9 +104,9 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
 
         <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded p-2 text-xs text-amber-800 dark:text-amber-400">
             <div className="font-bold flex items-center mb-1">
-                <AlertTriangle className="w-3.5 h-3.5 mr-1" /> Reflog
+                <AlertTriangle className="w-3.5 h-3.5 mr-1" /> {t('rescueSidebar.reflog')}
             </div>
-            Reflog records every change made to the local HEAD. You can forcefully reset to any previous state, but beware that uncommitted changes will be lost.
+            {t('rescueSidebar.reflogDesc')}
         </div>
 
         {loading ? (
@@ -113,7 +115,7 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
              </div>
         ) : entries.length === 0 && !error ? (
              <div className="p-4 text-center text-xs text-slate-500">
-               No reflog entries found.
+               {t('rescueSidebar.noEntries')}
              </div>
         ) : (
             <div className="space-y-1">
@@ -134,15 +136,15 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
                        <button
                          onClick={(e) => handleRescueBranch(entry, e)}
                          className="shrink-0 text-[10px] px-2 py-1 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-500/20 font-medium rounded flex items-center space-x-1 border border-green-200 dark:border-green-500/20"
-                         title="Create a new branch from this state securely"
+                         title={t('rescueSidebar.rescueTooltip')}
                        >
                          <GitBranch className="w-3 h-3" />
-                         <span>Rescue</span>
+                         <span>{t('rescueSidebar.rescue')}</span>
                        </button>
                        <button
                          onClick={(e) => { e.stopPropagation(); handleRestore(entry); }}
                          className="shrink-0 text-[10px] px-2 py-1 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 font-medium rounded flex items-center space-x-1 border border-red-200 dark:border-red-500/20"
-                         title="Hard Reset to this state"
+                         title={t('rescueSidebar.hardResetTooltip')}
                        >
                          <RefreshCcw className="w-3 h-3" />
                        </button>

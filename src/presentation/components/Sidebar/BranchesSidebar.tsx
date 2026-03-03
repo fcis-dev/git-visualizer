@@ -6,6 +6,7 @@ import { TauriGitRepository } from '../../../data/repositories/TauriGitRepositor
 import { useGitActions } from '../../hooks/useGitActions';
 import { useDialog } from '../../context/DialogContext';
 import { buildBranchTree, sortTreeNodes, BranchTreeNode } from '../../utils/branchTreeUtils';
+import { useTranslation } from "react-i18next";
 
 // Module-level singleton — avoids recreating on every render
 const repository = new TauriGitRepository();
@@ -17,6 +18,7 @@ interface BranchesSidebarProps {
 }
 
 export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: BranchesSidebarProps) {
+  const { t } = useTranslation();
   const [branches, setBranches] = useState<BranchData[]>([]);
   const [loadingBranches, setLoadingBranches] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +85,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
             async () => {
               try {
                 await gitActions.checkoutBranch(localName);
-                showAlert("Success", `Checked out ${localName}.`);
+                showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successCheckedOut', { name: localName }));
                 onRefreshGraph();
                 loadBranchesAndRemotes();
               } catch (err: any) {
@@ -101,7 +103,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
             try {
               await gitActions.createBranch(localName, branch.hash);
               await gitActions.checkoutBranch(localName);
-              showAlert("Success", `Created and checked out local branch '${localName}'.`);
+              showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successCreatedAndCheckedOut', { name: localName }));
               onRefreshGraph();
               loadBranchesAndRemotes();
             } catch (err: any) {
@@ -112,7 +114,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
         return;
       } else {
         await gitActions.checkoutBranch(branch.name);
-        showAlert("Success", `Checked out ${branch.name}.`);
+        showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successCheckedOut', { name: branch.name }));
       }
       
       onRefreshGraph();
@@ -163,7 +165,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
       async () => {
         try {
           await gitActions.merge(branch.name);
-          showAlert("Success", `Successfully merged ${branch.name}.`);
+          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successMerged', { name: branch.name }));
           onRefreshGraph();
           loadBranchesAndRemotes();
         } catch (e: any) {
@@ -181,7 +183,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
         if (!newName || newName === branch.name) return;
         try {
           await gitActions.renameBranch(branch.name, newName);
-          showAlert("Success", `Renamed branch to ${newName}.`);
+          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successRenamed', { name: newName }));
           onRefreshGraph();
           loadBranchesAndRemotes();
         } catch (e: any) {
@@ -200,7 +202,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
         if (!newName) return;
         try {
           await gitActions.createBranch(newName, branch.hash);
-          showAlert("Success", `Created branch ${newName} from ${branch.name}.`);
+          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successCreatedBranchFrom', { newName, name: branch.name }));
           onRefreshGraph();
           loadBranchesAndRemotes();
         } catch (e: any) {
@@ -218,7 +220,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
         if (!tagName) return;
         try {
           await gitActions.createTag(tagName, branch.hash);
-          showAlert("Success", `Created tag ${tagName} at ${branch.name}.`);
+          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successCreatedTagAt', { tagName, name: branch.name }));
           onRefreshGraph();
         } catch (e: any) {
           setError(e.toString());
@@ -234,7 +236,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
       async () => {
         try {
           await gitActions.cherryPick(branch.hash);
-          showAlert("Success", `Cherry picked ${branch.name}.`);
+          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successCherryPicked', { name: branch.name }));
           onRefreshGraph();
         } catch (e: any) {
           setError(e.toString());
@@ -250,7 +252,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
       async () => {
         try {
           await gitActions.rebase(branch.name);
-          showAlert("Success", `Rebased onto ${branch.name}.`);
+          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successRebasedOnto', { name: branch.name }));
           onRefreshGraph();
         } catch (e: any) {
           setError(e.toString());
@@ -271,7 +273,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
       async () => {
         try {
           await gitActions.reset(branch.hash, mode);
-          showAlert("Success", `Reset to ${branch.name} (${mode}).`);
+          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successReset', { name: branch.name, mode }));
           onRefreshGraph();
         } catch (e: any) {
           setError(e.toString());
@@ -306,9 +308,9 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                       try {
                         await invoke('git_remote_add', { path: repoPath, name, url });
                         loadBranchesAndRemotes();
-                        showAlert("Success", "Remote added successfully.");
+                        showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successRemoteAdded'));
                       } catch (e: any) {
-                        setError("Add remote failed: " + e.toString());
+                        setError(t('sidebar.branches.errorAddRemoteFailed', { error: e.toString() }));
                       }
                   }
               );
@@ -334,7 +336,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
   };
 
   if (!repoPath) {
-    return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">No repository open.</div>;
+    return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">{t("sidebar.branches.noRepo")}</div>;
   }
 
   const filteredBranches = branches.filter(b => b.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -346,7 +348,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col bg-slate-50/50 dark:bg-slate-900/40 shrink-0 space-y-3">
         <div className="flex items-center justify-between h-7">
             <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center space-x-2">
-                <span>BRANCHES</span>
+                <span>{t("sidebar.branches.title")}</span>
             </span>
             {loadingBranches && <div className="animate-spin rounded-full h-3.5 w-3.5 border-t-2 border-b-2 border-indigo-500"></div>}
         </div>
@@ -356,7 +358,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
             </div>
             <input
                 type="text"
-                placeholder="Search branches..."
+                placeholder={t("sidebar.branches.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500"
@@ -378,7 +380,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
             >
                 <div className="flex items-center space-x-1">
                     {isLocalExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                    <span>Local ({localBranches.length})</span>
+                    <span>{t("sidebar.branches.local")} ({localBranches.length})</span>
                 </div>
             </div>
             
@@ -393,7 +395,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                             onContextMenu={handleContextMenu}
                         />
                     ) : (
-                        <div className="text-xs text-slate-500 italic px-2 py-1">No local branches found</div>
+                        <div className="text-xs text-slate-500 italic px-2 py-1">{t("sidebar.branches.noLocalBranches")}</div>
                     )}
                 </div>
             )}
@@ -406,7 +408,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
             >
                 <div className="flex items-center space-x-1">
                     {isRemoteExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                    <span>Remote ({remoteBranches.length})</span>
+                    <span>{t("sidebar.branches.remote")} ({remoteBranches.length})</span>
                 </div>
             </div>
             
@@ -422,7 +424,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                             isRemote={true}
                         />
                     ) : (
-                        <div className="text-xs text-slate-500 italic px-2 py-1">No remote branches found</div>
+                        <div className="text-xs text-slate-500 italic px-2 py-1">{t("sidebar.branches.noRemoteBranches")}</div>
                     )}
                 </div>
             )}
@@ -435,7 +437,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
             >
                 <div className="flex items-center space-x-1">
                     {isRemotesExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                    <span>Remotes ({remotes.length})</span>
+                    <span>{t("sidebar.branches.remotes")} ({remotes.length})</span>
                 </div>
                 <button 
                     onClick={(e) => {
@@ -443,7 +445,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                         handleAddRemote();
                     }}
                     className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
-                    title="Add Remote"
+                    title={t("sidebar.branches.addRemote")}
                 >
                     <Plus className="w-3.5 h-3.5" />
                 </button>
@@ -468,13 +470,13 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                                     handleRemoveRemote(remote);
                                 }}
                                 className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transaction-colors text-slate-500"
-                                title="Remove Remote"
+                                title={t("sidebar.branches.removeRemote")}
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
                             </button>
                         </div>
                     )) : (
-                        <div className="text-xs text-slate-500 italic px-2 py-1">No remotes found</div>
+                        <div className="text-xs text-slate-500 italic px-2 py-1">{t("sidebar.branches.noRemotes")}</div>
                     )}
                 </div>
             )}
@@ -498,7 +500,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
               setContextMenu({ ...contextMenu, visible: false });
             }}
           >
-            Checkout
+            {t("sidebar.branches.checkout")}
           </button>
 
           {!contextMenu.branch.is_remote && (
@@ -509,7 +511,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                 setContextMenu({ ...contextMenu, visible: false });
               }}
             >
-              Rename
+              {t("sidebar.branches.rename")}
             </button>
           )}
 
@@ -520,7 +522,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
               setContextMenu({ ...contextMenu, visible: false });
             }}
           >
-            Create branch from here...
+            {t("sidebar.branches.createBranchFromHere")}
           </button>
 
           <button 
@@ -530,7 +532,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
               setContextMenu({ ...contextMenu, visible: false });
             }}
           >
-            Create tag here...
+            {t("sidebar.branches.createTagHere")}
           </button>
 
           {contextMenu.branch.name !== currentBranch && (
@@ -544,7 +546,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                   setContextMenu({ ...contextMenu, visible: false });
                 }}
               >
-                Merge into current
+                {t("sidebar.branches.mergeIntoCurrent")}
               </button>
 
               <button 
@@ -554,7 +556,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                   setContextMenu({ ...contextMenu, visible: false });
                 }}
               >
-                Rebase current onto this
+                {t("sidebar.branches.rebaseOntoThis")}
               </button>
 
               <button 
@@ -564,11 +566,11 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                   setContextMenu({ ...contextMenu, visible: false });
                 }}
               >
-                Cherry-pick tip
+                {t("sidebar.branches.cherryPick")}
               </button>
 
               <div className="border-t border-slate-100 dark:border-slate-800 my-1"></div>
-              <div className="px-4 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Reset Current To Here</div>
+              <div className="px-4 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{t("sidebar.branches.resetCurrentToHere")}</div>
               
               <button 
                 className="w-full text-left px-4 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
@@ -577,7 +579,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                   setContextMenu({ ...contextMenu, visible: false });
                 }}
               >
-                Soft (keep changes)
+                {t("sidebar.branches.softReset")}
               </button>
               <button 
                 className="w-full text-left px-4 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
@@ -586,7 +588,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                   setContextMenu({ ...contextMenu, visible: false });
                 }}
               >
-                Mixed
+                {t("sidebar.branches.mixedReset")}
               </button>
               <button 
                 className="w-full text-left px-4 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-red-600 dark:text-red-400 font-medium"
@@ -595,7 +597,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                   setContextMenu({ ...contextMenu, visible: false });
                 }}
               >
-                Hard (discard changes)
+                {t("sidebar.branches.hardReset")}
               </button>
             </>
           )}
@@ -610,7 +612,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                 setContextMenu({ ...contextMenu, visible: false });
               }}
             >
-              Delete
+              {t("sidebar.branches.delete")}
             </button>
             </>
           )}
@@ -637,6 +639,7 @@ function BranchNodeRenderer({
     isRemote?: boolean;
     level?: number;
 }) {
+    const { t } = useTranslation();
     const [expanded, setExpanded] = useState(true); // Default expand trees initially
     
     const children = sortTreeNodes(node);
@@ -716,14 +719,14 @@ function BranchNodeRenderer({
                     <>
                      <button 
                         className="opacity-0 group-hover:opacity-100 p-1 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors text-slate-500"
-                        title={isRemote ? "Checkout Remote Branch" : "Checkout Branch"}
+                        title={isRemote ? t("sidebar.branches.checkoutRemoteBranch") : t("sidebar.branches.checkoutBranch")}
                     >
                         <Check className="w-3.5 h-3.5" />
                     </button>
                     <button 
                         onClick={(e) => onDelete(branch, e)}
                         className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors text-slate-500"
-                        title={isRemote ? "Delete Remote Branch" : "Delete Branch"}
+                        title={isRemote ? t("sidebar.branches.deleteRemoteBranch") : t("sidebar.branches.deleteBranch")}
                     >
                         <Trash2 className="w-3.5 h-3.5" />
                     </button>

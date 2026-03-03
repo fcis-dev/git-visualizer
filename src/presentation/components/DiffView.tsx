@@ -4,6 +4,7 @@ import { X, Play, RotateCcw } from "lucide-react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useGitActions } from "../hooks/useGitActions";
+import { useTranslation } from "react-i18next";
 
 interface DiffViewProps {
   repoPath: string;
@@ -51,6 +52,7 @@ const DiffLine = memo(function DiffLine({
   hunk,
   onStageHunk,
 }: DiffLineProps) {
+  const { t } = useTranslation();
   let colorClass = "text-slate-600 dark:text-slate-400";
   let bgClass = "";
 
@@ -116,7 +118,7 @@ const DiffLine = memo(function DiffLine({
                 : "hover:bg-green-50 text-green-700 border-green-200 dark:border-green-900/50 dark:hover:bg-green-900/30"
             }`}
           >
-            {cached ? "Unstage Line" : "Stage Line"}
+            {cached ? t("diffView.unstageLine") : t("diffView.stageLine")}
           </button>
         )}
       </td>
@@ -132,6 +134,7 @@ export function DiffView({
   onClose,
   onRefresh,
 }: DiffViewProps) {
+  const { t } = useTranslation();
   const [blame, setBlame] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"diff" | "blame">("diff");
   const [loading, setLoading] = useState(true);
@@ -291,7 +294,7 @@ export function DiffView({
           loadDiff();
           onRefresh?.();
       } catch (err: any) {
-          setError("Failed to apply patch: " + err.toString());
+          setError(t('diffView.errorApplyPatchFailed', { error: err.toString() }));
       }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generatePatchForHunk, cached]);
@@ -309,13 +312,13 @@ export function DiffView({
                 onClick={() => setViewMode("diff")}
                 className={`px-3 py-1 text-xs rounded-md transition-all ${viewMode === "diff" ? "bg-white dark:bg-slate-700 shadow text-indigo-600 dark:text-indigo-400 font-medium" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
               >
-                Diff
+                {t("diffView.diffTab")}
               </button>
               <button
                 onClick={() => setViewMode("blame")}
                 className={`px-3 py-1 text-xs rounded-md transition-all ${viewMode === "blame" ? "bg-white dark:bg-slate-700 shadow text-indigo-600 dark:text-indigo-400 font-medium" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
               >
-                Blame
+                {t("diffView.blameTab")}
               </button>
             </div>
           </div>
@@ -338,21 +341,19 @@ export function DiffView({
               error.includes("Not Committed Yet") ? (
                 <>
                   <div className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Not Committed Yet
+                    {t("diffView.notCommittedTitle")}
                   </div>
                   <p className="text-sm text-slate-600 dark:text-slate-300 max-w-sm">
-                    Blame information is not available because this file has not
-                    been committed to the repository yet.
+                    {t("diffView.notCommittedDesc")}
                   </p>
                 </>
               ) : error.includes("ambiguous argument") || error.includes("Cannot lstat") || error.includes("No such file or directory") ? (
                 <>
                   <div className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    File Not Found
+                    {t("diffView.fileNotFoundTitle")}
                   </div>
                   <p className="text-sm text-slate-600 dark:text-slate-300 max-w-sm">
-                    Blame information is not available because this file was
-                    deleted, moved, or did not exist in this commit.
+                    {t("diffView.fileNotFoundDesc")}
                   </p>
                 </>
               ) : (
@@ -376,10 +377,10 @@ export function DiffView({
                             ? "bg-white hover:bg-red-50 text-red-600 border-red-200 dark:bg-slate-900 dark:border-red-900/30 dark:hover:bg-red-900/20 dark:text-red-400" 
                             : "bg-white hover:bg-green-50 text-green-700 border-green-200 dark:bg-slate-900 dark:border-green-900/30 dark:hover:bg-green-900/20 dark:text-green-400"
                         }`}
-                        title={cached ? "Unstage this entire block" : "Stage this entire block"}
+                        title={cached ? t("diffView.unstageBlockTooltip") : t("diffView.stageBlockTooltip")}
                       >
                         {cached ? <RotateCcw className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                        <span>{cached ? "Unstage Hunk" : "Stage Hunk"}</span>
+                        <span>{cached ? t("diffView.unstageHunk") : t("diffView.stageHunk")}</span>
                       </button>
                     )}
                   </div>
@@ -408,13 +409,13 @@ export function DiffView({
             <table className="w-full border-collapse text-xs font-mono">
               <thead className="bg-slate-50 dark:bg-slate-900 sticky top-0 z-10 text-left">
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-                  <th className="py-2 px-4 font-medium w-24">Commit</th>
-                  <th className="py-2 px-4 font-medium w-32">Author</th>
-                  <th className="py-2 px-4 font-medium w-24">Date</th>
+                  <th className="py-2 px-4 font-medium w-24">{t("diffView.headerCommit")}</th>
+                  <th className="py-2 px-4 font-medium w-32">{t("diffView.headerAuthor")}</th>
+                  <th className="py-2 px-4 font-medium w-24">{t("diffView.headerDate")}</th>
                   <th className="py-2 px-4 font-medium w-12 text-right">
-                    Line
+                    {t("diffView.headerLine")}
                   </th>
-                  <th className="py-2 px-4 font-medium">Content</th>
+                  <th className="py-2 px-4 font-medium">{t("diffView.headerContent")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -514,7 +515,7 @@ export function DiffView({
             </table>
           ) : (
             <div className="text-center text-slate-600 dark:text-slate-300 mt-20">
-              No data available.
+              {t("diffView.noData")}
             </div>
           )}
         </div>

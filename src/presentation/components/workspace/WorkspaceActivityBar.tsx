@@ -1,4 +1,5 @@
 import { FolderGit2, GitBranch, Tag, FolderTree, LifeBuoy } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface WorkspaceActivityBarProps {
   activeSidebarTab: string;
@@ -13,6 +14,7 @@ export function WorkspaceActivityBar({
   isWorktree,
   worktreeCount,
 }: WorkspaceActivityBarProps) {
+  const { t } = useTranslation();
   return (
     <div className="w-14 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col items-center py-4 z-20 space-y-4">
       <div className="flex-1 w-full flex flex-col items-center space-y-4">
@@ -23,7 +25,7 @@ export function WorkspaceActivityBar({
               ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 shadow-sm"
               : "text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
           }`}
-          title="Changes"
+          title={t("workspace.activityBar.changes")}
         >
           <FolderGit2 className="w-6 h-6 stroke-[1.5]" />
           {activeSidebarTab === "changes" && (
@@ -38,7 +40,7 @@ export function WorkspaceActivityBar({
               ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 shadow-sm"
               : "text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
           }`}
-          title="Branches"
+          title={t("workspace.activityBar.branches")}
         >
           <GitBranch className="w-6 h-6 stroke-[1.5]" />
           {activeSidebarTab === "branches" && (
@@ -53,7 +55,7 @@ export function WorkspaceActivityBar({
               ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 shadow-sm"
               : "text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
           }`}
-          title="Tags"
+          title={t("workspace.activityBar.tags")}
         >
           <Tag className="w-6 h-6 stroke-[1.5]" />
           {activeSidebarTab === "tags" && (
@@ -71,7 +73,7 @@ export function WorkspaceActivityBar({
                 ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 shadow-sm"
                 : "text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800"
             }`}
-            title={worktreeCount > 0 ? `Manage Worktrees (${worktreeCount})` : "Manage Worktrees"}
+            title={worktreeCount > 0 ? t("workspace.activityBar.worktreesWithCount", { count: worktreeCount }) : t("workspace.activityBar.worktrees")}
           >
             <FolderTree className="w-6 h-6 stroke-[1.5]" />
             {activeSidebarTab === "worktrees" && (
@@ -92,7 +94,7 @@ export function WorkspaceActivityBar({
               ? "text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-500/10 shadow-sm"
               : "text-slate-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10"
           }`}
-          title="Rescue (Reflog)"
+          title={t("workspace.activityBar.rescue")}
         >
           <LifeBuoy className="w-6 h-6 stroke-[1.5]" />
           {activeSidebarTab === "rescue" && (

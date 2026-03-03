@@ -26,6 +26,7 @@ import {
 
 import { useRepositoryWorkspaceController } from "../controllers/useRepositoryWorkspaceController";
 import { useGraphActionsController } from "../controllers/useGraphActionsController";
+import { useTranslation } from "react-i18next";
 
 interface RepositoryWorkspaceProps {
   repoPath: string;
@@ -108,6 +109,7 @@ export function RepositoryWorkspace({
     onActionSuccess
   } = actions;
 
+  const { t } = useTranslation();
   const graphActions = useGraphActionsController(repoPath, branchName, onActionSuccess);
   
   const {
@@ -163,7 +165,7 @@ export function RepositoryWorkspace({
       }
       graphRef.current?.scrollToTop();
       if (pagesSearched >= MAX_PAGES && !commits.find(isHead)) {
-        showAlert("HEAD no encontrado", "No se encontró el commit HEAD en el gráfico actual.");
+        showAlert(t('repositoryWorkspace.headNotFoundTitle'), t('repositoryWorkspace.headNotFoundMsg'));
       }
     } finally {
       actions.setIsScrollingToHead(false);
@@ -171,12 +173,12 @@ export function RepositoryWorkspace({
   };
 
   const handleCheckoutCommit = (hash: string) => {
-    showConfirm("Checkout Commit", `Checkout ${hash.substring(0, 7)}? Detached HEAD.`, async () => {
+    showConfirm(t('repositoryWorkspace.checkoutCommitTitle'), t('repositoryWorkspace.checkoutCommitMsg', { hash: hash.substring(0, 7) }), async () => {
       try {
         await gitActions.checkoutCommit(hash);
-        showAlert("Checked Out", `Checked out ${hash.substring(0, 7)}`);
+        showAlert(t('repositoryWorkspace.checkedOutTitle'), t('repositoryWorkspace.checkedOutMsg', { hash: hash.substring(0, 7) }));
       } catch (e: any) {
-        showAlert("Error", e.toString());
+        showAlert(t('repositoryWorkspace.errorTitle'), e.toString());
       }
     });
   };
@@ -188,21 +190,21 @@ export function RepositoryWorkspace({
     if (isRemote) {
       const parts = refName.split("/");
       const localName = parts.slice(1).join("/");
-      showConfirm("Checkout Remote Branch", `Create and checkout local tracking branch '${localName}'?`, async () => {
+      showConfirm(t('repositoryWorkspace.checkoutRemoteTitle'), t('repositoryWorkspace.checkoutRemoteMsg', { localName }), async () => {
         try {
           await gitActions.createBranch(localName, refName);
           await gitActions.checkoutBranch(localName);
-          showAlert("Success", `Created and checked out '${localName}'.`);
+          showAlert(t('repositoryWorkspace.successTitle'), t('repositoryWorkspace.checkoutRemoteSuccess', { localName }));
           onActionSuccess();
-        } catch (e: any) { showAlert("Error", e.toString()); }
+        } catch (e: any) { showAlert(t('repositoryWorkspace.errorTitle'), e.toString()); }
       });
     } else {
-      showConfirm("Checkout Branch", `Checkout branch '${refName}'?`, async () => {
+      showConfirm(t('repositoryWorkspace.checkoutBranchTitle'), t('repositoryWorkspace.checkoutBranchMsg', { refName }), async () => {
         try {
           await gitActions.checkoutBranch(refName);
-          showAlert("Success", `Checked out '${refName}'.`);
+          showAlert(t('repositoryWorkspace.successTitle'), t('repositoryWorkspace.checkoutBranchSuccess', { refName }));
           onActionSuccess();
-        } catch (e: any) { showAlert("Error", e.toString()); }
+        } catch (e: any) { showAlert(t('repositoryWorkspace.errorTitle'), e.toString()); }
       });
     }
   };
@@ -212,13 +214,13 @@ export function RepositoryWorkspace({
   };
 
   const handleGraphBranchCreateFrom = (refName: string) => {
-    showInput("Create Branch", `New branch name (from ${refName}):`, async (newName) => {
+    showInput(t('repositoryWorkspace.createBranchTitle'), t('repositoryWorkspace.createBranchMsg', { refName }), async (newName) => {
       if (!newName) return;
       try {
         await gitActions.createBranch(newName, refName);
-        showAlert("Success", `Created branch '${newName}' from '${refName}'.`);
+        showAlert(t('repositoryWorkspace.successTitle'), t('repositoryWorkspace.createBranchSuccess', { newName, refName }));
         onActionSuccess();
-      } catch (e: any) { showAlert("Error", e.toString()); }
+      } catch (e: any) { showAlert(t('repositoryWorkspace.errorTitle'), e.toString()); }
     });
   };
 
@@ -239,21 +241,21 @@ export function RepositoryWorkspace({
   };
 
   const handleGraphBranchDelete = (refName: string) => {
-    showConfirm("Delete Branch", `Delete branch '${refName}'? This cannot be undone.`, async () => {
+    showConfirm(t('repositoryWorkspace.deleteBranchTitle'), t('repositoryWorkspace.deleteBranchMsg', { refName }), async () => {
       try {
         await gitActions.deleteBranch(refName, false);
         onActionSuccess();
       } catch (e: any) {
         const msg = e.toString();
         if (msg.includes("not fully merged")) {
-          showConfirm("Force Delete", `Branch '${refName}' is not fully merged. Force-delete anyway?`, async () => {
+          showConfirm(t('repositoryWorkspace.forceDeleteTitle'), t('repositoryWorkspace.forceDeleteMsg', { refName }), async () => {
             try {
               await gitActions.deleteBranch(refName, true);
               onActionSuccess();
-            } catch (fe: any) { showAlert("Error", fe.toString()); }
+            } catch (fe: any) { showAlert(t('repositoryWorkspace.errorTitle'), fe.toString()); }
           });
         } else {
-          showAlert("Error", msg);
+          showAlert(t('repositoryWorkspace.errorTitle'), msg);
         }
       }
     });
@@ -276,10 +278,10 @@ export function RepositoryWorkspace({
             setCheckoutingBranch(branch);
             await checkoutBranch(branch);
             setIsBranchDropdownOpen(false);
-            showAlert("Branch Switched", `Successfully checked out ${branch}`);
+            showAlert(t('repositoryWorkspace.branchSwitchedTitle'), t('repositoryWorkspace.branchSwitchedMsg', { branch }));
           } catch (e: any) {
             setIsBranchDropdownOpen(false);
-            showAlert("Checkout Failed", e.toString());
+            showAlert(t('repositoryWorkspace.checkoutFailedTitle'), e.toString());
           } finally {
             setCheckoutingBranch(null);
           }
@@ -443,7 +445,7 @@ export function RepositoryWorkspace({
                     className="flex items-center space-x-1 text-slate-500 hover:text-slate-900 dark:hover:text-white"
                   >
                     <ArrowLeft className="w-4 h-4" />
-                    <span>Back</span>
+                    <span>{t('repositoryWorkspace.back')}</span>
                   </button>
                   <span className="text-slate-300 dark:text-slate-700">|</span>
                   <span className="font-medium text-slate-700 dark:text-slate-200 truncate max-w-xl">
@@ -539,10 +541,10 @@ export function RepositoryWorkspace({
             await gitActions.createBranch(name, createBranchTarget);
             if (checkout) {
               await gitActions.checkoutBranch(name);
-              showAlert("Success", `Branch '${name}' created and checked out.`);
+              showAlert(t('repositoryWorkspace.successTitle'), t('repositoryWorkspace.branchCreatedAndCheckedOut', { name }));
               loadCommits();
             } else {
-              showAlert("Success", `Branch '${name}' created.`);
+              showAlert(t('repositoryWorkspace.successTitle'), t('repositoryWorkspace.branchCreated', { name }));
             }
           }}
         />

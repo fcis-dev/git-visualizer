@@ -3,6 +3,7 @@ import { ArrowLeft, Copy, Check } from "lucide-react";
 import { useGitActions } from "../hooks/useGitActions";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useTranslation } from 'react-i18next';
 
 interface HistoricalFileContentViewProps {
     repoPath: string;
@@ -22,6 +23,7 @@ export function HistoricalFileContentView({
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(false);
+    const { t } = useTranslation();
 
     const { getFileContentAtCommit } = useGitActions(repoPath);
 
@@ -106,7 +108,7 @@ export function HistoricalFileContentView({
                         className="flex items-center space-x-1 p-1 -ml-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        <span className="text-sm font-medium">Back</span>
+                        <span className="text-sm font-medium">{t('historicalFile.back')}</span>
                     </button>
                     <span className="text-slate-300 dark:text-slate-700 shrink-0">|</span>
                     <div className="flex flex-col min-w-0">
@@ -124,7 +126,7 @@ export function HistoricalFileContentView({
                         onClick={handleCopy}
                         disabled={!content || isLoading}
                         className="p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition-colors disabled:opacity-50"
-                        title="Copy file content"
+                        title={t('historicalFile.copyFileContent')}
                     >
                          {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                     </button>
@@ -138,7 +140,7 @@ export function HistoricalFileContentView({
                     </div>
                 ) : error ? (
                     <div className="text-red-500 flex justify-center items-center h-full text-sm">
-                        Failed to load file content: {error}
+                        {t('historicalFile.failedToLoad')} {error}
                     </div>
                 ) : (
                     <div className="text-sm">

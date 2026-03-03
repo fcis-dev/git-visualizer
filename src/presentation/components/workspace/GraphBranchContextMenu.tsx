@@ -12,6 +12,8 @@ interface GraphBranchContextMenuProps {
   onDelete: (ref: string) => void;
 }
 
+import { useTranslation } from "react-i18next";
+
 export function GraphBranchContextMenu({
   contextMenu,
   onClose,
@@ -25,6 +27,7 @@ export function GraphBranchContextMenu({
   onReset,
   onDelete,
 }: GraphBranchContextMenuProps) {
+  const { t } = useTranslation();
   if (!contextMenu.visible) return null;
 
   const ref = contextMenu.refName;
@@ -51,7 +54,7 @@ export function GraphBranchContextMenu({
             className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
             onClick={() => { onCheckout(ref); onClose(); }}
           >
-            Checkout
+            {t("workspace.contextMenu.checkout")}
           </button>
         )}
 
@@ -59,14 +62,14 @@ export function GraphBranchContextMenu({
           className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
           onClick={() => { onCreateFrom(ref); onClose(); }}
         >
-          Create branch from here…
+          {t("workspace.contextMenu.createBranchFromHere")}
         </button>
 
         <button
           className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
           onClick={() => { onCreateTag(ref); onClose(); }}
         >
-          Create tag here…
+          {t("workspace.contextMenu.createTagHere")}
         </button>
 
         {canMergeRebaseEtc && (
@@ -77,43 +80,43 @@ export function GraphBranchContextMenu({
               className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
               onClick={() => { onMerge(ref); onClose(); }}
             >
-              Merge into current
+              {t("workspace.contextMenu.mergeIntoCurrent")}
             </button>
 
             <button
               className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
               onClick={() => { onRebase(ref); onClose(); }}
             >
-              Rebase current onto this
+              {t("workspace.contextMenu.rebaseOntoThis")}
             </button>
 
             <button
               className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
               onClick={() => { onCherryPick(ref); onClose(); }}
             >
-              Cherry-pick tip
+              {t("workspace.contextMenu.cherryPick")}
             </button>
 
             <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
-            <div className="px-4 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Reset Current To Here</div>
+            <div className="px-4 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{t("workspace.contextMenu.resetCurrentToHere")}</div>
 
             <button
               className="w-full text-left px-4 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
               onClick={() => { onReset(ref, "soft"); onClose(); }}
             >
-              Soft (keep changes)
+              {t("workspace.contextMenu.softReset")}
             </button>
             <button
               className="w-full text-left px-4 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
               onClick={() => { onReset(ref, "mixed"); onClose(); }}
             >
-              Mixed
+              {t("workspace.contextMenu.mixedReset")}
             </button>
             <button
               className="w-full text-left px-4 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-red-600 dark:text-red-400 font-medium"
               onClick={() => { onReset(ref, "hard"); onClose(); }}
             >
-              Hard (discard changes)
+              {t("workspace.contextMenu.hardReset")}
             </button>
           </>
         )}
@@ -125,7 +128,7 @@ export function GraphBranchContextMenu({
               className="w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-red-600 dark:text-red-400"
               onClick={() => { onDelete(ref); onClose(); }}
             >
-              Delete
+              {t("workspace.contextMenu.delete")}
             </button>
           </>
         )}

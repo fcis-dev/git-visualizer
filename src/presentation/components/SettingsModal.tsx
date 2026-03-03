@@ -3,6 +3,7 @@ import { useTheme } from '../context/ThemeContext';
 import { X, Moon, Sun, User, Mail, Save } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { useDialog } from '../context/DialogContext';
+import { useTranslation } from 'react-i18next';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface SettingsModalProps {
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, repoPath }) => {
   const { theme, toggleTheme } = useTheme();
   const { showAlert } = useDialog();
+  const { t } = useTranslation();
 
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -35,10 +37,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
   const handleSaveConfig = async () => {
       try {
           await invoke('set_git_config_user', { path: repoPath || ".", name: userName, email: userEmail });
-          showAlert("Success", "Git user configuration saved successfully.");
+          showAlert(t('settings.successTitle'), t('settings.saveSuccess'));
       } catch (e: any) {
           console.error(e);
-          showAlert("Error", "Failed to save git config: " + e.toString());
+          showAlert(t('settings.errorTitle'), t('settings.saveError') + e.toString());
       }
   };
 
@@ -50,7 +52,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Settings</h2>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('settings.title')}</h2>
           <button 
             onClick={onClose}
             className="p-1 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
@@ -64,7 +66,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
           
           {/* Appearance Section */}
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Appearance</h3>
+            <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{t('settings.appearance')}</h3>
             
             <div className="flex items-center justify-between p-3 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
               <div className="flex items-center space-x-3">
@@ -73,10 +75,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
                 </div>
                 <div>
                   <div className="font-medium text-slate-900 dark:text-slate-200">
-                    {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                    {theme === 'dark' ? t('settings.darkMode') : t('settings.lightMode')}
                   </div>
                   <div className="text-xs text-slate-600 dark:text-slate-300">
-                    Adjust the appearance of the application
+                    {t('settings.themeDesc')}
                   </div>
                 </div>
               </div>
@@ -98,33 +100,33 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
 
           {/* Git Config Section */}
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Git Configuration</h3>
+            <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{t('settings.gitConfig')}</h3>
             
             <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 space-y-4">
                     <>
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                <User className="w-3.5 h-3.5" /> User Name (Global)
+                                <User className="w-3.5 h-3.5" /> {t('settings.userName')}
                             </label>
                             <input 
                                 type="text" 
                                 value={userName}
                                 onChange={(e) => setUserName(e.target.value)}
                                 className="w-full text-sm px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                                placeholder="e.g. John Doe"
+                                placeholder={t('settings.userNamePlaceholder')}
                                 disabled={loadingConfig}
                             />
                         </div>
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                <Mail className="w-3.5 h-3.5" /> User Email (Global)
+                                <Mail className="w-3.5 h-3.5" /> {t('settings.userEmail')}
                             </label>
                             <input 
                                 type="email" 
                                 value={userEmail}
                                 onChange={(e) => setUserEmail(e.target.value)}
                                 className="w-full text-sm px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                                placeholder="e.g. john@example.com"
+                                placeholder={t('settings.userEmailPlaceholder')}
                                 disabled={loadingConfig}
                             />
                         </div>
@@ -134,7 +136,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
                                 disabled={loadingConfig}
                                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50"
                             >
-                                <Save className="w-4 h-4" /> Save Global Config
+                                <Save className="w-4 h-4" /> {t('settings.saveConfig')}
                             </button>
                         </div>
                     </>
@@ -143,7 +145,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
 
           {/* About Section */}
           <section className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">About</h3>
+            <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{t('settings.about')}</h3>
             
             <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 text-center space-y-2">
                 <div className="w-12 h-12 mx-auto bg-transparent flex items-center justify-center">
@@ -151,7 +153,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
                 </div>
                 <h4 className="font-bold text-slate-900 dark:text-white text-lg">GitVi</h4>
                 <p className="text-sm text-slate-600 dark:text-slate-300">
-                    A modern tool to visualize and manage your Git repositories.
+                    {t('settings.aboutDesc')}
                 </p>
                 <div className="pt-2">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-300 font-mono">
@@ -166,7 +168,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
         {/* Footer */}
         <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/30 border-t border-slate-200 dark:border-slate-800 text-center">
             <p className="text-xs text-slate-600 dark:text-slate-400">
-                Created with Tauri + React
+                {t('settings.footer')}
             </p>
         </div>
 

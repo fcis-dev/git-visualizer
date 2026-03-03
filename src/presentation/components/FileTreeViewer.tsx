@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react';
 import { ChevronRight, ChevronDown, File, Folder } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 
 interface FileTreeViewerProps {
     files: string[];
@@ -144,9 +145,10 @@ export function FileTreeViewer({ files, onSelectFile, onViewFileHistory }: FileT
     });
 
     const tree = buildTree(files);
+    const { t } = useTranslation();
 
     if (files.length === 0) {
-       return <div className="p-4 text-xs text-slate-500 text-center">No files in tree</div>;
+       return <div className="p-4 text-xs text-slate-500 text-center">{t("fileTreeViewer.noFiles")}</div>;
     }
 
     return (
@@ -173,7 +175,7 @@ export function FileTreeViewer({ files, onSelectFile, onViewFileHistory }: FileT
                     setContextMenu({ ...contextMenu, visible: false });
                   }}
                 >
-                  View file history
+                  {t("fileTreeViewer.viewFileHistory")}
                 </button>
               </div>
             )}

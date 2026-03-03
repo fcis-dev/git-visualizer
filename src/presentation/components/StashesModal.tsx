@@ -4,6 +4,7 @@ import { StashEntry } from '../../domain/entities/GitEntities';
 import { useGitActions } from '../hooks/useGitActions';
 import { useDialog } from '../context/DialogContext';
 import { createPortal } from 'react-dom';
+import { useTranslation } from "react-i18next";
 
 interface StashesModalProps {
   repoPath: string;
@@ -15,6 +16,7 @@ export function StashesModal({ repoPath, onClose, onRefreshGraph }: StashesModal
   const [stashes, setStashes] = useState<StashEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
   
   const gitActions = useGitActions(repoPath, onRefreshGraph);
   const { showConfirm, showAlert } = useDialog();
@@ -38,12 +40,12 @@ export function StashesModal({ repoPath, onClose, onRefreshGraph }: StashesModal
 
   const handleApply = (index: string) => {
     showConfirm(
-      "Apply Stash",
-      `Are you sure you want to apply ${index}? This will merge the stashed changes into your working directory without dropping the stash.`,
+      t("stashes.applyTitle"),
+      t("stashes.applyConfirm", { index }),
       async () => {
         try {
           await gitActions.applyStash(index);
-          showAlert("Stash Applied", `${index} has been applied to your working directory.`);
+          showAlert(t("stashes.applySuccessTitle"), t("stashes.applySuccessDesc", { index }));
           onClose();
         } catch (e: any) {
           setError(e.toString());
@@ -54,14 +56,14 @@ export function StashesModal({ repoPath, onClose, onRefreshGraph }: StashesModal
 
   const handlePop = (index: string) => {
     showConfirm(
-      "Pop Stash",
-      `Are you sure you want to pop ${index}? This will apply the stash and then permanently delete it from the stash list.`,
+      t("stashes.popTitle"),
+      t("stashes.popConfirm", { index }),
       async () => {
         try {
           // If picking a specific index we use apply + drop
           await gitActions.applyStash(index);
           await gitActions.dropStash(index);
-          showAlert("Stash Popped", `${index} has been applied and dropped.`);
+          showAlert(t("stashes.popSuccessTitle"), t("stashes.popSuccessDesc", { index }));
           onClose();
         } catch (e: any) {
           setError(e.toString());
@@ -72,8 +74,8 @@ export function StashesModal({ repoPath, onClose, onRefreshGraph }: StashesModal
 
   const handleDrop = (index: string) => {
     showConfirm(
-      "Drop Stash",
-      `Are you sure you want to permanently delete ${index}? This action cannot be undone.`,
+      t("stashes.dropTitle"),
+      t("stashes.dropConfirm", { index }),
       async () => {
         try {
           await gitActions.dropStash(index);
@@ -94,7 +96,7 @@ export function StashesModal({ repoPath, onClose, onRefreshGraph }: StashesModal
           <div className="flex items-center space-x-2">
             <Archive className="w-5 h-5 text-indigo-500" />
             <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
-              Stash Manager
+              {t("stashes.title")}
             </h2>
           </div>
           <button 
@@ -109,7 +111,7 @@ export function StashesModal({ repoPath, onClose, onRefreshGraph }: StashesModal
         <div className="flex-1 overflow-y-auto p-6">
           {error && (
             <div className="mb-4 p-4 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-lg text-sm border border-red-200 dark:border-red-500/20">
-              <strong className="block font-bold mb-1">Error</strong>
+              <strong className="block font-bold mb-1">{t("stashes.errorTitle")}</strong>
               {error}
             </div>
           )}
@@ -121,7 +123,7 @@ export function StashesModal({ repoPath, onClose, onRefreshGraph }: StashesModal
           ) : stashes.length === 0 ? (
             <div className="text-center py-12 text-slate-600 dark:text-slate-300">
               <Archive className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
-              <p>No stashes found in this repository.</p>
+              <p>{t("stashes.noStashes")}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -148,21 +150,21 @@ export function StashesModal({ repoPath, onClose, onRefreshGraph }: StashesModal
                     <button
                       onClick={() => handleApply(stash.index)}
                       className="p-2 text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-500/10 rounded-md transition-colors"
-                      title="Apply stash (keep in list)"
+                      title={t("stashes.applyAction")}
                     >
                       <Play className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handlePop(stash.index)}
                       className="p-2 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/10 rounded-md transition-colors"
-                      title="Pop stash (apply and drop)"
+                      title={t("stashes.popAction")}
                     >
                       <Download className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDrop(stash.index)}
                       className="p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 rounded-md transition-colors"
-                      title="Drop stash (delete permanently)"
+                      title={t("stashes.dropAction")}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

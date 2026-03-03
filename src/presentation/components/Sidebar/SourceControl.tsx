@@ -18,6 +18,7 @@ import {
 import { Commit } from "../../../domain/entities/GitEntities";
 import { StashesModal } from "../StashesModal";
 import { useSourceControlController } from "../../controllers/useSourceControlController";
+import { useTranslation } from "react-i18next";
 
 interface SourceControlProps {
   repoPath: string | null;
@@ -42,6 +43,7 @@ export function SourceControl({
   onResolveConflict,
   refreshTrigger,
 }: SourceControlProps) {
+  const { t } = useTranslation();
   const { state, actions } = useSourceControlController(repoPath, onCommit, refreshTrigger);
 
   const [isStashesModalOpen, setIsStashesModalOpen] = useState(false);
@@ -72,7 +74,7 @@ export function SourceControl({
   if (!repoPath) {
     return (
       <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">
-        No repository open.
+        {t("sidebar.sourceControl.noRepo")}
       </div>
     );
   }
@@ -81,7 +83,7 @@ export function SourceControl({
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-slate-200 dark:border-slate-800/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/40 shrink-0">
         <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
-          SOURCE CONTROL
+          {t("sidebar.sourceControl.title")}
         </span>
       </div>
 
@@ -99,11 +101,10 @@ export function SourceControl({
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
               </span>
-              <span>Rebase in Progress</span>
+              <span>{t("sidebar.sourceControl.rebaseInProgress")}</span>
             </div>
             <p className="text-xs text-amber-700 dark:text-amber-500 mb-3 leading-tight font-medium">
-              Resolve any conflicts below, stage them, and then continue. Or
-              abort to cancel.
+              {t("sidebar.sourceControl.rebaseInstructions")}
             </p>
             <div className="flex space-x-2">
               <button
@@ -111,14 +112,14 @@ export function SourceControl({
                 disabled={state.rebaseLoading}
                 className="flex-1 py-1.5 text-xs rounded font-bold transition-colors bg-white hover:bg-red-50 text-red-600 border border-red-200 dark:bg-amber-950/50 dark:hover:bg-red-900/50 dark:border-red-800 dark:text-red-400 disabled:opacity-50"
               >
-                Abort
+                {t("sidebar.sourceControl.abort")}
               </button>
               <button
                 onClick={actions.handleRebaseContinue}
                 disabled={state.rebaseLoading}
                 className="flex-2 py-1.5 text-xs rounded font-bold transition-colors bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white shadow-sm disabled:opacity-50"
               >
-                Continue Rebase
+                {t("sidebar.sourceControl.continueRebase")}
               </button>
             </div>
           </div>
@@ -130,18 +131,18 @@ export function SourceControl({
             onClick={actions.handleStashSave}
             disabled={state.stashLoading}
             className="flex-1 flex items-center justify-center space-x-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 py-1.5 rounded text-xs transition-colors"
-            title="Stash Changes"
+            title={t("sidebar.sourceControl.stashTitle")}
           >
             <Archive className="w-3.5 h-3.5" />
-            <span>Stash</span>
+            <span>{t("sidebar.sourceControl.stash")}</span>
           </button>
           <button
             onClick={() => setIsStashesModalOpen(true)}
             disabled={state.stashLoading}
             className="flex-2 flex items-center justify-center space-x-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 py-1.5 rounded text-xs transition-colors font-medium border border-emerald-200/50 dark:border-emerald-500/20"
-            title="Manage Stashes"
+            title={t("sidebar.sourceControl.stashesTitle")}
           >
-            <span>Stashes</span>
+            <span>{t("sidebar.sourceControl.stashes")}</span>
             {state.stashesCount > 0 && (
               <span className="bg-emerald-200 dark:bg-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded-full text-[10px] leading-none font-bold ml-1">
                 {state.stashesCount}
@@ -172,17 +173,17 @@ export function SourceControl({
                     ? "bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-500/20"
                     : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 border-transparent hover:border-slate-300 dark:hover:border-slate-600"
                 }`}
-                title="Amend previous commit"
+                title={t("sidebar.sourceControl.amendTitle")}
               >
                 {state.isAmend && <Check className="w-3 h-3" />}
-                <span>Amend</span>
+                <span>{t("sidebar.sourceControl.amend")}</span>
               </button>
             </div>
           )}
           <textarea
             value={state.commitMessage}
             onChange={(e) => actions.setCommitMessage(e.target.value)}
-            placeholder="Message (Ctrl+Enter to commit)"
+            placeholder={t("sidebar.sourceControl.commitPlaceholder")}
             className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded p-2 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-indigo-500/50 min-h-[80px]"
             onKeyDown={(e) => {
               if (e.ctrlKey && e.key === "Enter") {
@@ -199,14 +200,14 @@ export function SourceControl({
             className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-1.5 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
           >
             <Check className="w-4 h-4" />
-            {state.isAmend ? "Commit Amend" : "Commit"}
+            {state.isAmend ? t("sidebar.sourceControl.commitAmendButton") : t("sidebar.sourceControl.commitButton")}
           </button>
         </div>
 
         {/* Staged Changes */}
         <div className="space-y-1">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase px-1">
-            <span>Staged Changes</span>
+            <span>{t("sidebar.sourceControl.stagedChanges")}</span>
             <div className="flex items-center space-x-2">
               <span className="bg-slate-200 dark:bg-slate-800 px-1.5 rounded-full text-slate-700 dark:text-slate-300">
                 {state.stagedFiles.length}
@@ -215,7 +216,7 @@ export function SourceControl({
                 <button
                   onClick={actions.handleUnstageAll}
                   className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                  title="Unstage All"
+                  title={t("sidebar.sourceControl.unstageAll")}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -239,7 +240,7 @@ export function SourceControl({
                 <button
                   onClick={(e) => { e.stopPropagation(); actions.handleUnstage(file.path); }}
                   className="p-1 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700/50 rounded"
-                  title="Unstage changes"
+                  title={t("sidebar.sourceControl.unstage")}
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -251,7 +252,7 @@ export function SourceControl({
         {/* Changes */}
         <div className="space-y-1">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase px-1">
-            <span>Changes</span>
+            <span>{t("sidebar.sourceControl.changes")}</span>
             <div className="flex items-center space-x-2">
               <span className="bg-slate-200 dark:bg-slate-800 px-1.5 rounded-full text-slate-700 dark:text-slate-300">
                 {state.changes.length}
@@ -261,14 +262,14 @@ export function SourceControl({
                   <button
                     onClick={actions.handleDiscardAll}
                     className="p-1 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                    title="Discard All Changes"
+                    title={t("sidebar.sourceControl.discardAll")}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={actions.handleStageAll}
                     className="p-1 text-slate-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
-                    title="Stage All"
+                    title={t("sidebar.sourceControl.stageAll")}
                   >
                     <Play className="w-3.5 h-3.5" />
                   </button>
@@ -314,14 +315,14 @@ export function SourceControl({
                     <button
                       onClick={(e) => { e.stopPropagation(); actions.handleResolveConflict(file.path, "ours"); }}
                       className="p-1 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
-                      title="Accept Current (Ours)"
+                      title={t("sidebar.sourceControl.acceptCurrent")}
                     >
                       <ArrowLeftToLine className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); actions.handleResolveConflict(file.path, "theirs"); }}
                       className="p-1 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
-                      title="Accept Incoming (Theirs)"
+                      title={t("sidebar.sourceControl.acceptIncoming")}
                     >
                       <ArrowRightToLine className="w-3.5 h-3.5" />
                     </button>
@@ -331,14 +332,14 @@ export function SourceControl({
                     <button
                       onClick={(e) => { e.stopPropagation(); actions.handleDiscard(file.path); }}
                       className="p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                      title="Discard changes"
+                      title={t("sidebar.sourceControl.discard")}
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); actions.handleStage(file.path); }}
                       className="p-1 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
-                      title="Stage changes"
+                      title={t("sidebar.sourceControl.stage")}
                     >
                       <Play className="w-3.5 h-3.5" />
                     </button>
@@ -352,7 +353,7 @@ export function SourceControl({
         {/* Submodules */}
         <div className="space-y-1 mt-4 border-t border-slate-200 dark:border-slate-800 pt-4">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase px-1">
-            <span>Submodules</span>
+            <span>{t("sidebar.sourceControl.submodules")}</span>
             <div className="flex items-center space-x-2">
               <span className="bg-slate-200 dark:bg-slate-800 px-1.5 rounded-full text-slate-700 dark:text-slate-300">
                 {state.submodules.length}
@@ -362,7 +363,7 @@ export function SourceControl({
                   onClick={actions.handleAddSubmodule}
                   disabled={state.submodulesLoading}
                   className="p-1 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50"
-                  title="Add Submodule"
+                  title={t("sidebar.sourceControl.addSubmodule")}
                 >
                   {state.isAddingSubmodule ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
@@ -374,7 +375,7 @@ export function SourceControl({
                   onClick={actions.handleSyncSubmodules}
                   disabled={state.submodulesLoading}
                   className="p-1 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-50"
-                  title="Sync Submodules"
+                  title={t("sidebar.sourceControl.syncSubmodules")}
                 >
                   <RefreshCw
                     className={`w-3.5 h-3.5 ${state.submodulesLoading ? "animate-spin" : ""}`}
@@ -384,7 +385,7 @@ export function SourceControl({
                   onClick={actions.handleUpdateSubmodules}
                   disabled={state.submodulesLoading}
                   className="p-1 text-slate-500 hover:text-green-600 dark:hover:text-green-400 disabled:opacity-50 flex items-center"
-                  title="Update & Init Submodules"
+                  title={t("sidebar.sourceControl.updateSubmodules")}
                 >
                   <Play className="w-3.5 h-3.5" />
                 </button>
@@ -429,14 +430,14 @@ export function SourceControl({
                       }
                     }}
                     className="p-1 mr-1 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
-                    title="Open Submodule Workspace"
+                    title={t("sidebar.sourceControl.openSubmoduleWorkspace")}
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => actions.handleRemoveSubmodule(sub.path, sub.name)}
                     className="p-1 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                    title="Remove Submodule"
+                    title={t("sidebar.sourceControl.removeSubmodule")}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -444,7 +445,7 @@ export function SourceControl({
               </div>
               <span className="text-xs text-slate-500 ml-6 truncate font-mono mt-0.5">
                 {sub.status === "-"
-                  ? "(Uninitialized)"
+                  ? `(${t("sidebar.sourceControl.uninitialized")})`
                   : sub.hash.substring(0, 7)}
               </span>
             </div>
@@ -484,7 +485,7 @@ export function SourceControl({
               setContextMenu({ ...contextMenu, visible: false });
             }}
           >
-            View file history
+            {t("sidebar.sourceControl.viewFileHistory")}
           </button>
         </div>
       )}

@@ -5,10 +5,12 @@ import { SettingsModal } from "../components/SettingsModal";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { useDialog } from "../context/DialogContext";
 import { ChevronRight, Home } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export function Dashboard() {
   const [pathHistory, setPathHistory] = useState<string[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const { t } = useTranslation();
 
   // Dialog context is used by sub-components but we might need it here too
   const {} = useDialog();
@@ -40,7 +42,7 @@ export function Dashboard() {
             <button 
                 onClick={() => setPathHistory([pathHistory[0]])}
                 className="text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 flex items-center space-x-1"
-                title="Back to root project"
+                title={t("dashboard.backToRoot")}
             >
                 <Home className="w-4 h-4" />
             </button>

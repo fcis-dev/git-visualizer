@@ -33,6 +33,7 @@ The frontend code is located in `src/` and is divided into three main layers:
   - **Context**: React Contexts for global state (Theme, Dialogs).
   - **Utils**: Helper functions specific to the UI.
 - **Dependencies**: React, Domain Layer (Use Cases, Entities), Data Layer (only via dependency injection in top-level containers/hooks).
+- **Rule**: Presentation layer components must avoid using raw, hardcoded strings. All user-facing texts must link to translations (e.g., using \`useTranslation()\` through \`i18next\`).
 
 ## 2. Backend Architecture (Rust/Tauri)
 

@@ -3,6 +3,7 @@ import * as d3 from "d3";
 import { Commit } from "../../domain/entities/GitEntities";
 import { calculateGraphLayout, LANE_COLORS } from "../utils/graphLayout";
 import { useTheme } from "../context/ThemeContext";
+import { useTranslation } from "react-i18next";
 
 export interface GraphHandle {
   scrollToTop: () => void;
@@ -30,6 +31,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph({
   isSearchResult = false,
   onBranchContextMenu,
 }, ref) {
+  const { t } = useTranslation();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -399,12 +401,12 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph({
               strokeDasharray="31.4 31.4"
             />
           </svg>
-          Loading more commits…
+          {t("graph.loadingMore")}
         </div>
       )}
       {!hasMore && commits.length > 0 && (
         <div className="flex items-center justify-center py-3 text-slate-600 text-xs">
-          · End of history ·
+          {t("graph.endOfHistory")}
         </div>
       )}
     </div>

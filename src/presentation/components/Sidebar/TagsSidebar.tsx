@@ -3,6 +3,7 @@ import { Tag, Trash2, UploadCloud, ChevronDown, ChevronRight, Search } from 'luc
 import { TagData } from '../../../domain/entities/GitEntities';
 import { useGitActions } from '../../hooks/useGitActions';
 import { useDialog } from '../../context/DialogContext';
+import { useTranslation } from 'react-i18next';
 
 interface TagsSidebarProps {
   repoPath: string | null;
@@ -16,6 +17,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
 
   const [isTagsExpanded, setIsTagsExpanded] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const { t } = useTranslation();
 
   const gitActions = useGitActions(repoPath || "");
   const { showAlert, showConfirm } = useDialog();
@@ -45,12 +47,12 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
   const handleDeleteTag = (tag: TagData, e: React.MouseEvent) => {
     e.stopPropagation();
     showConfirm(
-      "Delete Tag",
-      `Are you sure you want to delete the tag '${tag.name}'?`,
+      t('tagsSidebar.deleteTagTitle'),
+      t('tagsSidebar.deleteTagConfirm', { tagName: tag.name }),
       async () => {
         try {
           await gitActions.deleteTag(tag.name);
-          showAlert("Success", `Tag '${tag.name}' deleted.`);
+          showAlert(t('tagsSidebar.successTitle'), t('tagsSidebar.tagDeleted', { tagName: tag.name }));
           onRefreshGraph();
           await loadTags();
         } catch (e: any) {
@@ -66,7 +68,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
     setError(null);
     try {
       await gitActions.pushTags();
-      showAlert("Success", "All local tags have been pushed to the remote repository.");
+      showAlert(t('tagsSidebar.successTitle'), t('tagsSidebar.pushTagsSuccess'));
     } catch (e: any) {
       setError(e.toString());
     } finally {
@@ -75,7 +77,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
   };
 
   if (!repoPath) {
-    return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">No repository open.</div>;
+    return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">{t('tagsSidebar.noRepo')}</div>;
   }
 
   const filteredTags = tags.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -85,7 +87,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col bg-slate-50/50 dark:bg-slate-900/40 shrink-0 space-y-3">
         <div className="flex items-center justify-between h-7">
             <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center space-x-2">
-                <span>TAGS</span>
+                <span>{t('tagsSidebar.title')}</span>
             </span>
             <div className="flex items-center space-x-2">
                 {tags.length > 0 && (
@@ -93,7 +95,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
                         onClick={handlePushTags}
                         disabled={loadingTags}
                         className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-indigo-500 transition-colors"
-                        title="Push all tags to remote"
+                        title={t('tagsSidebar.pushTagsTooltip')}
                      >
                         <UploadCloud className="w-3.5 h-3.5" />
                      </button>
@@ -109,7 +111,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
             </div>
             <input
                 type="text"
-                placeholder="Search tags..."
+                placeholder={t('tagsSidebar.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500"
@@ -131,7 +133,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
             >
                 <div className="flex items-center space-x-1">
                     {isTagsExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                    <span>Tags ({filteredTags.length})</span>
+                    <span>{t('tagsSidebar.tagsCount', { count: filteredTags.length })}</span>
                 </div>
             </div>
             
@@ -151,7 +153,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
                             <button 
                                 onClick={(e) => handleDeleteTag(tag, e)}
                                 className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors text-slate-500"
-                                title="Delete Tag"
+                                title={t('tagsSidebar.deleteTagTooltip')}
                             >
                                 <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -159,7 +161,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
                     ))}
 
                     {filteredTags.length === 0 && (
-                        <div className="text-xs text-slate-500 italic px-2 py-1">No tags found</div>
+                        <div className="text-xs text-slate-500 italic px-2 py-1">{t('tagsSidebar.noTags')}</div>
                     )}
                 </div>
             )}

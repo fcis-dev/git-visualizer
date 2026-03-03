@@ -3,6 +3,7 @@ import { X, TrendingUp, Users, GitCommit, Loader2 } from 'lucide-react';
 import { useGitActions } from '../hooks/useGitActions';
 import { RepositoryStats } from '../../domain/entities/GitEntities';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { useTranslation } from 'react-i18next';
 
 interface RepositoryStatsModalProps {
     repoPath: string;
@@ -14,6 +15,7 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
     const [stats, setStats] = useState<RepositoryStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { t } = useTranslation();
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -60,7 +62,7 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
                     <div>
                         <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
                             <TrendingUp className="w-5 h-5 text-indigo-500" />
-                            <span>Repository Insights</span>
+                            <span>{t('repoStats.title')}</span>
                         </h2>
                         <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 truncate max-w-xl">
                             {repoPath}
@@ -79,11 +81,11 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-64 text-slate-500">
                             <Loader2 className="w-8 h-8 animate-spin mb-4 text-indigo-500" />
-                            <p>Analyzing repository history...</p>
+                            <p>{t('repoStats.analyzing')}</p>
                         </div>
                     ) : error ? (
                         <div className="flex flex-col items-center justify-center h-64 text-red-500">
-                            <p>Error loading statistics:</p>
+                            <p>{t('repoStats.errorLoading')}</p>
                             <p className="text-sm font-mono mt-2 bg-red-50 dark:bg-red-950 p-2 rounded">{error}</p>
                         </div>
                     ) : stats ? (
@@ -95,7 +97,7 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
                                         <GitCommit className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Total Commits</p>
+                                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{t('repoStats.totalCommits')}</p>
                                         <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.total_commits.toLocaleString()}</p>
                                     </div>
                                 </div>
@@ -104,7 +106,7 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
                                         <Users className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Contributors</p>
+                                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{t('repoStats.contributors')}</p>
                                         <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.top_contributors.length}</p>
                                     </div>
                                 </div>
@@ -113,7 +115,7 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
                                         <TrendingUp className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Active Days</p>
+                                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{t('repoStats.activeDays')}</p>
                                         <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.timeline.length}</p>
                                     </div>
                                 </div>
@@ -123,7 +125,7 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 {/* Activity Timeline Chart */}
                                 <div className="lg:col-span-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-                                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-6">Commit Activity Over Time</h3>
+                                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-6">{t('repoStats.activityChartTitle')}</h3>
                                     <div className="h-72">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <AreaChart data={stats.timeline} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -158,7 +160,7 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
 
                                 {/* Top Contributors Chart */}
                                 <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-5">
-                                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-6">Top Contributors</h3>
+                                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-6">{t('repoStats.topContributorsTitle')}</h3>
                                     <div className="h-72">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <BarChart data={stats.top_contributors.slice(0, 5)} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>

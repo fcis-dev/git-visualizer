@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useGitActions } from '../hooks/useGitActions';
 import { FileTreeViewer } from './FileTreeViewer';
 import { RebaseModal } from './RebaseModal';
+import { useTranslation } from 'react-i18next';
 
 interface CommitDetailsProps {
     commit: Commit;
@@ -66,6 +67,7 @@ export function CommitDetails({
     }>({ visible: false, x: 0, y: 0, path: null });
 
     const { getCommitTree } = useGitActions(repoPath);
+    const { t } = useTranslation();
 
     useEffect(() => {
         const closeContextMenu = () => setFileContextMenu(prev => ({ ...prev, visible: false }));
@@ -102,7 +104,7 @@ export function CommitDetails({
             <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between">
                  <div className="flex-1 min-w-0 mr-4">
                      <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 leading-snug">
-                         Commit Details
+                         {t('commitDetails.title')}
                      </h2>
                  </div>
                  <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition-colors text-slate-500">
@@ -126,7 +128,7 @@ export function CommitDetails({
                     <div className="flex items-center flex-wrap gap-2 text-xs text-slate-600 dark:text-slate-300 mt-2 pl-8">
                         <div className="flex items-center space-x-1 font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
                              <span>{commit.hash.substring(0, 7)}</span>
-                             <button onClick={() => onCopyHash(commit.hash)} title="Copy Hash" className="hover:text-indigo-500">
+                             <button onClick={() => onCopyHash(commit.hash)} title={t('commitDetails.copyHash')} className="hover:text-indigo-500">
                                  <Copy className="w-3 h-3" />
                              </button>
                         </div>
@@ -169,24 +171,24 @@ export function CommitDetails({
 
                 {/* Actions Section */}
                 <div className="space-y-4">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</h3>
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('commitDetails.actions')}</h3>
                     
                     {/* Primary Actions */}
                     <div className="grid grid-cols-2 gap-2">
                         <button
                             onClick={() => onCheckout(commit.hash)}
                             className="flex items-center justify-center space-x-2 p-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition-colors shadow-sm"
-                            title="Checkout this commit (Detached HEAD)"
+                            title={t('commitDetails.checkoutDesc')}
                         >
                             <Check className="w-3.5 h-3.5" />
-                            <span>Checkout</span>
+                            <span>{t('commitDetails.checkout')}</span>
                         </button>
                          <button
                             onClick={() => onCreateBranch(commit.hash)}
                             className="flex items-center justify-center space-x-2 p-2 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors shadow-sm"
                         >
                             <GitBranch className="w-3.5 h-3.5" />
-                            <span>New Branch</span>
+                            <span>{t('commitDetails.newBranch')}</span>
                         </button>
                     </div>
 
@@ -195,82 +197,82 @@ export function CommitDetails({
                          <button
                             onClick={() => onCherryPick(commit.hash)}
                             className="flex flex-col items-center justify-center gap-1 p-2 rounded bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
-                            title="Cherry Pick"
+                            title={t('commitDetails.cherryPick')}
                          >
                             <GitPullRequest className="w-4 h-4" />
-                            <span>Cherry Pick</span>
+                            <span>{t('commitDetails.cherryPick')}</span>
                          </button>
                          <button
                             onClick={() => onMerge(commit.hash)}
                             className="flex flex-col items-center justify-center gap-1 p-2 rounded bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
-                            title={`Merge into ${currentBranch}`}
+                            title={t('commitDetails.mergeDesc', { branch: currentBranch })}
                          >
                             <GitPullRequest className="w-4 h-4 rotate-90" />
-                            <span>Merge</span>
+                            <span>{t('commitDetails.merge')}</span>
                          </button>
                          <button
                             onClick={() => onCreateTag(commit.hash)}
                             className="flex flex-col items-center justify-center gap-1 p-2 rounded bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors"
                          >
                             <Tag className="w-4 h-4" />
-                            <span>Tag</span>
+                            <span>{t('commitDetails.tag')}</span>
                          </button>
                     </div>
 
                     {/* Advanced / Danger Zone */}
                     <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">History Operations (Advanced)</h4>
+                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">{t('commitDetails.historyOperations')}</h4>
                         <div className="grid grid-cols-2 gap-2">
                              <button
                                 onClick={() => onRevert(commit.hash)}
                                 className="flex items-center justify-center space-x-1.5 p-2 rounded bg-slate-100/50 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs text-slate-600 dark:text-slate-400 transition-colors border border-transparent hover:border-slate-300 dark:hover:border-slate-700"
-                                title="Revert this commit"
+                                title={t('commitDetails.revertDesc')}
                              >
                                 <RotateCcw className="w-3.5 h-3.5" />
-                                <span>Revert</span>
+                                <span>{t('commitDetails.revert')}</span>
                              </button>
                              <button
                                 onClick={() => onRebase(commit.hash)}
                                 className="flex items-center justify-center space-x-1.5 p-2 rounded bg-slate-100/50 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-xs text-slate-600 dark:text-slate-400 transition-colors border border-transparent hover:border-slate-300 dark:hover:border-slate-700"
-                                title="Rebase current branch onto this commit"
+                                title={t('commitDetails.rebaseDesc')}
                              >
                                 <ArrowUp className="w-3.5 h-3.5" />
-                                <span>Rebase</span>
+                                <span>{t('commitDetails.rebase')}</span>
                              </button>
                              <button
                                 onClick={() => setIsRebaseModalOpen(true)}
                                 className="col-span-2 flex items-center justify-center space-x-1.5 p-2 rounded bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-xs text-indigo-700 dark:text-indigo-400 font-medium transition-colors border border-indigo-200/50 dark:border-indigo-500/20"
-                                title="Start an interactive rebase from this commit"
+                                title={t('commitDetails.rebaseInteractiveDesc')}
                              >
                                 <GitMerge className="w-3.5 h-3.5" />
-                                <span>Rebase Interactive from here...</span>
+                                <span>{t('commitDetails.rebaseInteractive')}</span>
                              </button>
                         </div>
                         
                         {/* Reset Dropdown/Group */}
                         <div className="mt-2 text-center">
-                            <div className="text-[10px] text-slate-500 mb-1">Reset {currentBranch} to this commit:</div>
+                            <div className="text-[10px] text-slate-500 mb-1">{t('commitDetails.resetToCommit', { branch: currentBranch })}</div>
                             <div className="flex border border-slate-200 dark:border-slate-800 rounded overflow-hidden">
                                 <button
                                     onClick={() => onReset(commit.hash, "soft")}
                                     className="flex-1 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 border-r border-slate-200 dark:border-slate-800"
-                                    title="Keep all changes staged"
+                                    title={t('commitDetails.softDesc')}
                                 >
-                                    Soft
+                                    {t('commitDetails.soft')}
                                 </button>
                                 <button
                                     onClick={() => onReset(commit.hash, "mixed")}
                                     className="flex-1 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 border-r border-slate-200 dark:border-slate-800"
-                                    title="Keep changes unstaged"
+                                    title={t('commitDetails.mixedDesc')}
                                 >
-                                    Mixed
+                                    {t('commitDetails.mixed')}
                                 </button>
                                 <button
                                     onClick={() => onReset(commit.hash, "hard")}
                                     className="flex-1 py-1.5 text-xs bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 font-medium"
-                                    title="Discard all changes"
+                                    title={t('commitDetails.hardDesc')}
                                 >
-                                    Hard
+                                    {t('commitDetails.hard')}
                                 </button>
                             </div>
                         </div>
@@ -282,20 +284,20 @@ export function CommitDetails({
                     <div className="mx-4 mb-4 bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded flex flex-col p-3">
                         <div className="flex items-center space-x-2 text-indigo-700 dark:text-indigo-400 font-medium text-sm mb-2">
                             <FileText className="w-4 h-4" />
-                            <span className="truncate" title={fileFilter}>Viewing history for: {fileFilter.split('/').pop()}</span>
+                            <span className="truncate" title={fileFilter}>{t('commitDetails.viewingHistory')} {fileFilter.split('/').pop()}</span>
                         </div>
                         <div className="flex space-x-2">
                             <button 
                                 onClick={() => onSelectFile(fileFilter)}
                                 className="flex-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded py-1.5 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                             >
-                                View Diff
+                                {t('commitDetails.viewDiff')}
                             </button>
                             <button 
                                 onClick={() => onViewHistoricalFile(fileFilter)}
                                 className="flex-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded py-1.5 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition"
                             >
-                                View File
+                                {t('commitDetails.viewFile')}
                             </button>
                         </div>
                     </div>
@@ -308,7 +310,7 @@ export function CommitDetails({
                         className={`flex items-center space-x-1.5 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'changes' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         <FileText className="w-3.5 h-3.5" />
-                        <span>Changes</span>
+                        <span>{t('commitDetails.changes')}</span>
                         {activeTab === 'changes' && (
                              <span className="ml-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[10px]">
                                  {details?.files.length || 0}
@@ -320,7 +322,7 @@ export function CommitDetails({
                         className={`flex items-center space-x-1.5 pb-2 text-xs font-semibold uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'tree' ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
                         <FolderTree className="w-3.5 h-3.5" />
-                        <span>File Tree</span>
+                        <span>{t('commitDetails.fileTree')}</span>
                     </button>
                 </div>
 
@@ -330,7 +332,7 @@ export function CommitDetails({
                         {detailsLoading ? (
                             <div className="flex justify-center py-4">
                                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500"></div>
-                                 <span className="ml-2 text-xs text-slate-500">Loading details...</span>
+                                 <span className="ml-2 text-xs text-slate-500">{t('commitDetails.loadingDetails')}</span>
                             </div>
                         ) : details && details.files.length > 0 ? (
                              <div className="space-y-0.5">
@@ -366,7 +368,7 @@ export function CommitDetails({
                              </div>
                         ) : (
                             <div className="text-center py-4 text-xs text-slate-500">
-                                 No files changed or failed to load.
+                                 {t('commitDetails.noFilesChanged')}
                             </div>
                         )}
                     </div>
@@ -375,7 +377,7 @@ export function CommitDetails({
                         {treeLoading ? (
                             <div className="flex justify-center py-4">
                                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500"></div>
-                                 <span className="ml-2 text-xs text-slate-500">Loading tree...</span>
+                                 <span className="ml-2 text-xs text-slate-500">{t('commitDetails.loadingTree')}</span>
                             </div>
                         ) : (
                             <FileTreeViewer files={treeFiles} onSelectFile={onViewHistoricalFile} onViewFileHistory={onViewFileHistory} />
@@ -413,7 +415,7 @@ export function CommitDetails({
                 setFileContextMenu({ ...fileContextMenu, visible: false });
               }}
             >
-              View file history
+              {t('commitDetails.viewFileHistory')}
             </button>
           </div>
         )}

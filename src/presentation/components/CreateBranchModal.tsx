@@ -1,5 +1,6 @@
 ﻿import { useState, useRef, useEffect } from "react";
 import { GitBranch, X, Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface CreateBranchModalProps {
   baseCommit: string;
@@ -16,6 +17,7 @@ export function CreateBranchModal({
   const [checkout, setCheckout] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -56,10 +58,10 @@ export function CreateBranchModal({
             </div>
             <div>
               <h3 className="font-semibold text-slate-900 dark:text-slate-100">
-                Create Branch
+                {t("createBranch.title")}
               </h3>
               <p className="text-[10px] text-slate-500 font-mono mt-0.5">
-                From: {baseCommit.substring(0, 7)}
+                {t("createBranch.from")} {baseCommit.substring(0, 7)}
               </p>
             </div>
           </div>
@@ -84,7 +86,7 @@ export function CreateBranchModal({
                 htmlFor="branchName"
                 className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 ml-0.5"
               >
-                Branch Name
+                {t("createBranch.nameLabel")}
               </label>
               <input
                 ref={inputRef}
@@ -92,7 +94,7 @@ export function CreateBranchModal({
                 type="text"
                 value={branchName}
                 onChange={(e) => setBranchName(e.target.value)}
-                placeholder="e.g. feature/new-ui"
+                placeholder={t("createBranch.namePlaceholder")}
                 className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400 transition-all placeholder:text-slate-500"
                 autoComplete="off"
                 disabled={isSubmitting}
@@ -115,10 +117,10 @@ export function CreateBranchModal({
               </div>
               <div>
                 <span className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Checkout branch immediately
+                  {t("createBranch.checkoutLabel")}
                 </span>
                 <span className="block text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                  Switch your working directory to the new branch
+                  {t("createBranch.checkoutDesc")}
                 </span>
               </div>
             </label>
@@ -131,7 +133,7 @@ export function CreateBranchModal({
               disabled={isSubmitting}
               className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
             >
-              Cancel
+              {t("createBranch.cancel")}
             </button>
             <button
               type="submit"
@@ -141,10 +143,10 @@ export function CreateBranchModal({
               {isSubmitting ? (
                 <>
                   <div className="w-4 h-4 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Creating...
+                  {t("createBranch.creating")}
                 </>
               ) : (
-                "Create Branch"
+                t("createBranch.submit")
               )}
             </button>
           </div>

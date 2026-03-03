@@ -4,6 +4,7 @@ import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
 import { SubmoduleInfo } from "../../domain/entities/GitEntities";
 import { useDialog } from "../context/DialogContext";
 import { useGitActions } from "../hooks/useGitActions";
+import { useTranslation } from "react-i18next";
 
 const repository = new TauriGitRepository();
 
@@ -17,6 +18,7 @@ export function useSourceControlController(
   onCommit?: () => void,
   refreshTrigger?: any
 ) {
+  const { t } = useTranslation();
   const [stagedFiles, setStagedFiles] = useState<FileStatus[]>([]);
   const [changes, setChanges] = useState<FileStatus[]>([]);
   const [commitMessage, setCommitMessage] = useState("");
@@ -140,7 +142,7 @@ export function useSourceControlController(
       loadStatus();
     } catch (err: any) {
       console.error("Failed to resolve conflict", err);
-      setError("Resolve failed: " + err.toString());
+      setError(t('sidebar.sourceControl.errorResolveFailed', { error: err.toString() }));
     }
   };
 
@@ -212,7 +214,7 @@ export function useSourceControlController(
 
   const handleStashSave = () => {
     if (!repoPath) return;
-    showInput("Stash Changes", "Stash message (optional):", async (msg) => {
+    showInput(t('sidebar.sourceControl.stashTitle'), t('sidebar.sourceControl.stashMsg'), async (msg) => {
       setStashLoading(true);
       try {
         await invoke("git_stash_save", {
@@ -259,10 +261,13 @@ export function useSourceControlController(
   };
 
   const handleAddSubmodule = () => {
-    showInput("Add Submodule", "Enter the Submodule URL:", async (url) => {
+    showInput(
+      t('sidebar.sourceControl.addSubmodule'),
+      t('sidebar.sourceControl.addSubmodulePrompt'),
+      async (url) => {
       if (!url) return;
       showInput(
-        "Add Submodule",
+        t('sidebar.sourceControl.addSubmodule'),
         "Enter the target path (e.g. 'vendors/lib'):",
         async (pathName) => {
           if (!pathName) return;
@@ -273,7 +278,7 @@ export function useSourceControlController(
             loadStatus();
           } catch (e: any) {
             setError(e.toString());
-            showAlert("Error Adding Submodule", e.toString());
+            showAlert(t('sidebar.sourceControl.errorAddingSubmodule'), e.toString());
           } finally {
             setSubmodulesLoading(false);
             setIsAddingSubmodule(false);
@@ -315,7 +320,7 @@ export function useSourceControlController(
         } catch (e: any) {
           console.error(e);
           setError(e.toString());
-          showAlert("Error Removing Submodule", e.toString());
+          showAlert(t('sidebar.sourceControl.errorRemovingSubmodule'), e.toString());
         } finally {
           setSubmodulesLoading(false);
         }

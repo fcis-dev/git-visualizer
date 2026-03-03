@@ -3,6 +3,7 @@ import { GitMerge, Play, X, CheckCircle2, ChevronUp, ChevronDown } from 'lucide-
 import { useGitActions } from '../hooks/useGitActions';
 import { Commit } from '../../domain/entities/GitEntities';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 
 interface RebaseModalProps {
   repoPath: string;
@@ -38,6 +39,7 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
   const [rows, setRows] = useState<RebaseRow[]>([]);
   const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
   const dropdownRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const { t } = useTranslation();
 
   // 1. Fetch commits between baseCommit..HEAD
   useEffect(() => {
@@ -171,10 +173,10 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
             </div>
             <div>
                 <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 leading-tight">
-                Interactive Rebase
+                {t('rebase.title')}
                 </h2>
                 <p className="text-xs text-slate-600 dark:text-slate-300">
-                    Rebasing {rows.length} commits onto <b>{baseCommit.substring(0, 7)}</b>
+                    {t('rebase.rebasingDesc', { count: rows.length })} <b>{baseCommit.substring(0, 7)}</b>
                 </p>
             </div>
           </div>
@@ -188,26 +190,25 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
           {loading ? (
             <div className="flex items-center justify-center h-48 space-x-2 text-slate-500">
               <div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-              <span>Analyzing history...</span>
+              <span>{t('rebase.analyzing')}</span>
             </div>
           ) : error ? (
             <div className="m-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg text-red-600 dark:text-red-400 text-sm">
-              <h3 className="font-bold mb-1">Rebase Error</h3>
+              <h3 className="font-bold mb-1">{t('rebase.errorTitle')}</h3>
               <p className="whitespace-pre-wrap font-mono text-xs">{error}</p>
             </div>
           ) : rows.length === 0 ? (
             <div className="m-6 p-8 text-center text-slate-500 flex flex-col items-center">
                 <CheckCircle2 className="w-12 h-12 mb-3 text-emerald-500 opacity-50" />
-                <p>No commits found between HEAD and the chosen base.</p>
-                <p className="text-sm mt-1">There is nothing to rebase.</p>
+                <p>{t('rebase.noCommits')}</p>
+                <p className="text-sm mt-1">{t('rebase.nothingToRebase')}</p>
             </div>
           ) : (
             <div className="p-6">
                 <div className="mb-4 text-sm text-slate-600 dark:text-slate-400 flex items-start space-x-2 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-100 dark:border-blue-900/50">
                     <span className="text-blue-500 font-bold">ℹ️</span>
                     <div>
-                        Commits are listed chronologically <b>oldest first</b>. Reorder them using the arrows, or change their action.
-                        Selecting <span className="font-mono text-xs bg-black/10 px-1 rounded">edit</span> will pause the rebase halfway for you to make manual changes.
+                        {t('rebase.infoChronological')} <b>{t('rebase.infoOldestFirst')}</b>{t('rebase.infoReorder')} <span className="font-mono text-xs bg-black/10 px-1 rounded">{t('rebase.infoEdit')}</span> {t('rebase.infoPause')}
                     </div>
                 </div>
 
@@ -250,7 +251,7 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
                                   {/* colored left pill */}
                                   <span className={`w-1 self-stretch rounded-l shrink-0 ${ACTION_META[row.action].dot.replace('bg-', 'bg-').replace('dark:bg-', 'dark:bg-')}`} />
                                   <span className={`flex-1 pl-2 pr-1 py-1.5 text-xs font-semibold ${ACTION_META[row.action].text}`}>
-                                    {ACTION_META[row.action].label}
+                                    {t(`rebase.action${row.action.charAt(0).toUpperCase() + row.action.slice(1)}` as any) || ACTION_META[row.action].label}
                                   </span>
                                   <ChevronDown className={`w-3 h-3 mr-1.5 text-slate-500 transition-transform ${openDropdownIndex === index ? 'rotate-180' : ''}`} />
                                 </div>
@@ -278,7 +279,7 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
                                           }`}
                                         >
                                           <span className={`w-2 h-2 rounded-full shrink-0 ${ACTION_META[action].dot}`} />
-                                          {ACTION_META[action].label}
+                                          {t(`rebase.action${action.charAt(0).toUpperCase() + action.slice(1)}` as any) || ACTION_META[action].label}
                                         </button>
                                       ))}
                                     </div>
@@ -302,7 +303,7 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
                                         value={row.newMessage || ''}
                                         onChange={(e) => updateMessage(index, e.target.value)}
                                         className="w-full bg-white dark:bg-slate-900 border border-indigo-300 dark:border-indigo-500/50 rounded px-2 py-1 text-sm text-slate-800 dark:text-slate-200 font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none"
-                                        placeholder="New commit message..."
+                                        placeholder={t('rebase.newCommitMessage')}
                                         autoFocus
                                     />
                                 ) : (
@@ -325,7 +326,7 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
             disabled={isSubmitting}
             className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700 transition-colors"
           >
-            Cancel
+            {t('rebase.cancel')}
           </button>
           
           <button
@@ -338,7 +339,7 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
             ) : (
                 <Play className="w-4 h-4 mr-2" />
             )}
-            Start Rebase
+            {t('rebase.startRebase')}
           </button>
         </div>
       </div>

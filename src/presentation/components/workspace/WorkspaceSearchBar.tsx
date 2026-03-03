@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { GitBranch, Search, Filter, Check, ChevronDown, ChevronRight } from "lucide-react";
 import { buildBranchTree, sortTreeNodes, BranchTreeNode } from "../../utils/branchTreeUtils";
+import { useTranslation } from "react-i18next";
 
 interface WorkspaceSearchBarProps {
   graphBranches: string[];
@@ -31,6 +32,7 @@ export function WorkspaceSearchBar({
   isSearching,
   onClearSearch,
 }: WorkspaceSearchBarProps) {
+  const { t } = useTranslation();
   return (
     <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex space-x-2 items-center">
       {/* Branch filter button */}
@@ -61,7 +63,7 @@ export function WorkspaceSearchBar({
           >
             <span>
               {graphBranches.length === 0
-                ? "All branches"
+                ? t("workspace.search.allBranches")
                 : graphBranches.join(" + ")}
             </span>
             <svg
@@ -106,7 +108,7 @@ export function WorkspaceSearchBar({
                     <Check className="w-3 h-3" />
                   )}
                 </span>
-                <span>All branches</span>
+                <span>{t("workspace.search.allBranches")}</span>
               </button>
               <div className="max-h-52 overflow-y-auto custom-scrollbar">
                 {availableBranches.length > 0 && (
@@ -137,12 +139,12 @@ export function WorkspaceSearchBar({
           type="text"
           placeholder={
             searchType === "all"
-              ? "Search globally by message, author..."
+              ? t("workspace.search.placeholderGlobal")
               : searchType === "message"
-                ? "Search commit messages globally..."
+                ? t("workspace.search.placeholderMessage")
                 : searchType === "author"
-                  ? "Search by commit author globally..."
-                  : "Search by changed file path globally..."
+                  ? t("workspace.search.placeholderAuthor")
+                  : t("workspace.search.placeholderFile")
           }
           value={commitSearchQuery}
           onChange={(e) => setCommitSearchQuery(e.target.value)}
@@ -156,7 +158,7 @@ export function WorkspaceSearchBar({
           <button
             onClick={() => { setCommitSearchQuery(""); onClearSearch(); }}
             className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-            title="Clear search"
+            title={t("workspace.search.clearSearch")}
           >
             <svg
               className="w-3.5 h-3.5"
@@ -181,10 +183,10 @@ export function WorkspaceSearchBar({
           onChange={(e) => setSearchType(e.target.value as any)}
           className="py-2 pl-2 pr-6 text-sm bg-transparent border-none focus:outline-none focus:ring-0 text-slate-700 dark:text-slate-300 appearance-none cursor-pointer"
         >
-          <option value="all">Everywhere</option>
-          <option value="message">Message</option>
-          <option value="author">Author</option>
-          <option value="file">File Path</option>
+          <option value="all">{t("workspace.search.typeEverywhere")}</option>
+          <option value="message">{t("workspace.search.typeMessage")}</option>
+          <option value="author">{t("workspace.search.typeAuthor")}</option>
+          <option value="file">{t("workspace.search.typeFilePath")}</option>
         </select>
       </div>
     </div>
@@ -204,6 +206,7 @@ function FilterBranchNodeRenderer({
   onToggle: (b: string) => void;
   level?: number;
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
   const children = sortTreeNodes(node);
   const isFolder = !node.isLeaf && children.length > 0;
@@ -288,7 +291,7 @@ function FilterBranchNodeRenderer({
       <span className="truncate">{node.name}</span>
       {b === branchName && (
         <span className="ml-auto text-xs text-indigo-500 dark:text-indigo-400 shrink-0">
-          current
+          {t("workspace.search.current")}
         </span>
       )}
     </button>

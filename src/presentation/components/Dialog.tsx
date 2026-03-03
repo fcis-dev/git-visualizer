@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useRef, useState } from 'react';
 import { X, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export type DialogType = 'confirm' | 'input' | 'alert';
 
@@ -28,6 +29,7 @@ export const Dialog: React.FC<DialogProps> = ({
     onConfirm,
     onClose,
 }) => {
+    const { t } = useTranslation();
     const [inputValue, setInputValue] = useState(defaultValue);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -101,7 +103,7 @@ export const Dialog: React.FC<DialogProps> = ({
                             onClick={onClose}
                             className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                         >
-                            {cancelText}
+                            {cancelText === 'Cancel' ? t('dialog.cancel') : cancelText}
                         </button>
                     )}
                     <button
@@ -109,7 +111,7 @@ export const Dialog: React.FC<DialogProps> = ({
                         className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-sm shadow-indigo-500/30 transition-colors flex items-center space-x-2"
                     >
                         {type === 'confirm' && <Check className="w-4 h-4 mr-1.5" />}
-                        <span>{confirmText}</span>
+                        <span>{confirmText === 'Confirm' ? t('dialog.confirm') : confirmText}</span>
                     </button>
                 </div>
             </div>

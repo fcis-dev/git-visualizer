@@ -6,6 +6,7 @@ import { useGitActions } from "../hooks/useGitActions";
 import { useDialog } from "../context/DialogContext";
 import { SearchCommitsUseCase } from "../../domain/usecases/SearchCommitsUseCase";
 import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
+import { useTranslation } from "react-i18next";
 
 type SidebarTab = "changes" | "branches" | "tags" | "rescue" | "worktrees";
 
@@ -18,6 +19,7 @@ export function useRepositoryWorkspaceController(
   repoPath: string,
   onBack: () => void
 ) {
+  const { t } = useTranslation();
   const [commitSearchQuery, setCommitSearchQuery] = useState("");
   const [selectedCommit, setSelectedCommit] = useState<Commit | null>(null);
   const [commitDetails, setCommitDetails] = useState<CommitDetails | null>(null);
@@ -251,7 +253,7 @@ export function useRepositoryWorkspaceController(
       await invoke("git_pull", { path: repoPath });
       await triggerFetch();
       loadCommits();
-      showAlert("Pull Completado", "Los cambios remotos se han descargado correctamente.");
+      showAlert(t('workspace.header.pullCompleteTitle'), t('workspace.header.pullCompleteMsg'));
     } catch (e: any) {
       setError(e.toString());
     } finally {
@@ -267,7 +269,7 @@ export function useRepositoryWorkspaceController(
       await invoke("git_push", { path: repoPath });
       await triggerFetch();
       loadCommits();
-      showAlert("Push Completado", "Los cambios locales se han subido correctamente.");
+      showAlert(t('workspace.header.pushCompleteTitle'), t('workspace.header.pushCompleteMsg'));
     } catch (e: any) {
       setError(e.toString());
     } finally {

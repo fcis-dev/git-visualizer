@@ -12,6 +12,7 @@ import {
   ArrowDown,
 } from "lucide-react";
 import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
+import { useTranslation } from "react-i18next";
 
 interface RepoData {
   path: string;
@@ -30,6 +31,7 @@ export function ProjectSelectionView({
   onSelectRepo,
   onOpenSettings,
 }: ProjectSelectionViewProps) {
+  const { t } = useTranslation();
   const [repos, setRepos] = useState<Record<string, RepoData[]>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -172,17 +174,17 @@ export function ProjectSelectionView({
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-              Projects
+              {t("dashboard.title")}
             </h1>
             <p className="text-slate-600 dark:text-slate-300">
-              Select a repository to start working
+              {t("dashboard.subtitle")}
             </p>
           </div>
           <div className="flex items-center space-x-3">
             <button
               onClick={onOpenSettings}
               className="p-2 text-slate-500 hover:text-slate-600 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
-              title="Settings"
+              title={t("dashboard.settingsTitle")}
             >
               <Settings className="w-5 h-5" />
             </button>
@@ -191,7 +193,7 @@ export function ProjectSelectionView({
               className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm hover:shadow-md"
             >
               <FolderPlus className="w-5 h-5" />
-              <span>Add Project</span>
+              <span>{t("dashboard.addProject")}</span>
             </button>
           </div>
         </div>
@@ -201,7 +203,7 @@ export function ProjectSelectionView({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
           <input
             type="text"
-            placeholder="Search projects..."
+            placeholder={t("dashboard.searchPlaceholder")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-3 pl-10 pr-4 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 shadow-sm"
@@ -229,7 +231,7 @@ export function ProjectSelectionView({
                     <button
                       onClick={(e) => handleRemoveRepo(repo.path, e)}
                       className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                      title="Remove Project"
+                      title={t("dashboard.removeProject")}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -265,12 +267,12 @@ export function ProjectSelectionView({
                       <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <circle cx="12" cy="12" r="10" strokeWidth="3" strokeDasharray="31.4 31.4" />
                       </svg>
-                      <span>Syncing…</span>
+                      <span>{t("dashboard.syncing")}</span>
                     </div>
                   ) : (behindCounts[repo.path] ?? 0) > 0 ? (
                     <div className="flex items-center space-x-1 px-2 py-1 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded text-xs font-semibold text-amber-700 dark:text-amber-400">
                       <ArrowDown className="w-3 h-3" />
-                      <span>{behindCounts[repo.path]} behind</span>
+                      <span>{behindCounts[repo.path]} {t("dashboard.behind")}</span>
                     </div>
                   ) : null}
                 </div>
@@ -294,7 +296,7 @@ export function ProjectSelectionView({
                           handleRemoveFolderDirect(folder);
                         }}
                         className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                        title="Remove Folder"
+                        title={t("dashboard.removeFolder")}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -316,7 +318,7 @@ export function ProjectSelectionView({
 
                   <div className="flex items-center space-x-2">
                     <div className="flex items-center space-x-1.5 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs font-medium text-slate-600 dark:text-slate-300">
-                      <span>No Git Repositories Found</span>
+                      <span>{t("dashboard.noGitRepos")}</span>
                     </div>
                   </div>
                 </div>
@@ -328,11 +330,11 @@ export function ProjectSelectionView({
             <div className="w-16 h-16 mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
               <FolderPlus className="w-8 h-8 opacity-50" />
             </div>
-            <p className="text-lg font-medium mb-2">No projects found</p>
+            <p className="text-lg font-medium mb-2">{t("dashboard.noProjects")}</p>
             <p className="text-sm max-w-xs text-center">
               {searchTerm
-                ? "No projects match your search."
-                : "Get started by adding a folder containing your Git repositories."}
+                ? t("dashboard.noProjectsMatch")
+                : t("dashboard.getStarted")}
             </p>
           </div>
         )}

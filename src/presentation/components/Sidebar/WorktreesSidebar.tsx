@@ -9,6 +9,7 @@ import {
 import { WorktreeData } from "../../../domain/entities/GitEntities";
 import { useGitActions } from "../../hooks/useGitActions";
 import { useDialog } from "../../context/DialogContext";
+import { useTranslation } from "react-i18next";
 
 interface WorktreesSidebarProps {
   repoPath: string | null;
@@ -27,6 +28,7 @@ export function WorktreesSidebar({
   const [newPath, setNewPath] = useState("");
   const [newBranch, setNewBranch] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const { t } = useTranslation();
 
   const gitActions = useGitActions(repoPath || "", onRefreshGraph);
   const { showConfirm, showAlert } = useDialog();
@@ -60,7 +62,7 @@ export function WorktreesSidebar({
       setNewPath("");
       setNewBranch("");
       loadWorktrees();
-      showAlert("Success", "Worktree added successfully.");
+      showAlert(t('worktreesSidebar.successTitle', 'Success'), t('worktreesSidebar.addSuccess'));
     } catch (e: any) {
       setError(e.toString());
     } finally {
@@ -70,13 +72,13 @@ export function WorktreesSidebar({
 
   const handleRemove = (worktreePath: string) => {
     showConfirm(
-      "Remove Worktree",
-      `Are you sure you want to remove the worktree at ${worktreePath}? This will not delete the folder if there are untracked files unless forced.`,
+      t('worktreesSidebar.removeTitle'),
+      t('worktreesSidebar.removeConfirm', { path: worktreePath }),
       async () => {
         try {
           await gitActions.removeWorktree(worktreePath);
           loadWorktrees();
-          showAlert("Success", "Worktree removed.");
+          showAlert(t('worktreesSidebar.successTitle', 'Success'), t('worktreesSidebar.removeSuccess'));
         } catch (e: any) {
           setError(e.toString());
         }
@@ -86,13 +88,13 @@ export function WorktreesSidebar({
 
   const handlePrune = () => {
     showConfirm(
-      "Prune Worktrees",
-      "Are you sure you want to prune worktrees? This clears administrative information for worktrees that no longer exist.",
+      t('worktreesSidebar.pruneTitle'),
+      t('worktreesSidebar.pruneConfirm'),
       async () => {
         try {
           await gitActions.pruneWorktrees();
           loadWorktrees();
-          showAlert("Success", "Worktrees pruned.");
+          showAlert(t('worktreesSidebar.successTitle', 'Success'), t('worktreesSidebar.pruneSuccess'));
         } catch (e: any) {
           setError(e.toString());
         }
@@ -103,7 +105,7 @@ export function WorktreesSidebar({
   if (!repoPath) {
     return (
       <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">
-        No repository open.
+        {t('worktreesSidebar.noRepo')}
       </div>
     );
   }
@@ -113,7 +115,7 @@ export function WorktreesSidebar({
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col bg-slate-50/50 dark:bg-slate-900/40 shrink-0 space-y-3">
         <div className="flex items-center justify-between h-7">
           <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center space-x-2">
-            <span>WORKTREES</span>
+            <span>{t('worktreesSidebar.title')}</span>
           </span>
           <div className="flex items-center space-x-2">
             {loading && (
@@ -122,7 +124,7 @@ export function WorktreesSidebar({
             <button
               onClick={handlePrune}
               className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
-              title="Prune Worktrees"
+              title={t('worktreesSidebar.pruneTooltip')}
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
@@ -143,11 +145,11 @@ export function WorktreesSidebar({
             className="p-3 border border-slate-200 dark:border-slate-800 rounded bg-slate-50 dark:bg-slate-800/50 flex flex-col space-y-2"
           >
             <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Add Worktree
+              {t('worktreesSidebar.addWorktree')}
             </span>
             <input
               type="text"
-              placeholder="Path (e.g., ../feature)"
+              placeholder={t('worktreesSidebar.pathPlaceholder')}
               value={newPath}
               onChange={(e) => setNewPath(e.target.value)}
               className="w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500"
@@ -155,7 +157,7 @@ export function WorktreesSidebar({
             />
             <input
               type="text"
-              placeholder="Branch (optional, leaves detached)"
+              placeholder={t('worktreesSidebar.branchPlaceholder')}
               value={newBranch}
               onChange={(e) => setNewBranch(e.target.value)}
               className="w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500"
@@ -170,7 +172,7 @@ export function WorktreesSidebar({
               ) : (
                 <Plus className="w-3.5 h-3.5 mr-1.5" />
               )}
-              Add
+              {t('worktreesSidebar.add')}
             </button>
           </form>
         </div>
@@ -178,7 +180,7 @@ export function WorktreesSidebar({
         <div className="px-2 space-y-0.5 pb-4">
           {worktrees.length === 0 && !loading ? (
             <div className="text-xs text-slate-500 italic py-2 text-center">
-              No worktrees found
+              {t('worktreesSidebar.noWorktrees')}
             </div>
           ) : (
             worktrees.map((wt, i) => {
@@ -201,7 +203,7 @@ export function WorktreesSidebar({
                           </span>
                           {isMain && (
                             <span className="text-[9px] uppercase tracking-wider bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-1 rounded font-bold">
-                              Main
+                              {t('worktreesSidebar.main')}
                             </span>
                           )}
                         </div>
@@ -226,7 +228,7 @@ export function WorktreesSidebar({
                         </span>
                       ) : (
                         <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1 rounded border border-slate-200 dark:border-slate-700">
-                          detached
+                          {t('worktreesSidebar.detached')}
                         </span>
                       )}
                     </div>
@@ -236,16 +238,16 @@ export function WorktreesSidebar({
                           <button
                             onClick={() => onOpenWorktree(wt.path)}
                             className="opacity-0 group-hover:opacity-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:text-indigo-400 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 rounded border border-indigo-200 dark:border-indigo-500/20 transition-all"
-                            title="Open worktree as project"
+                            title={t('worktreesSidebar.openWorkspaceTooltip')}
                           >
-                            Open{" "}
+                            {t('worktreesSidebar.open')}{" "}
                             <ChevronRight className="w-3 h-3 inline -ml-0.5" />
                           </button>
                         )}
                         <button
                           onClick={() => handleRemove(wt.path)}
                           className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all text-slate-500"
-                          title="Remove Worktree"
+                          title={t('worktreesSidebar.removeTooltip')}
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
