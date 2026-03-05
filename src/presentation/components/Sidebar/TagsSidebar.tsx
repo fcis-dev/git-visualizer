@@ -8,9 +8,10 @@ import { useTranslation } from 'react-i18next';
 interface TagsSidebarProps {
   repoPath: string | null;
   onRefreshGraph: () => void;
+  hasRemote: boolean;
 }
 
-export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
+export function TagsSidebar({ repoPath, onRefreshGraph, hasRemote }: TagsSidebarProps) {
   const [tags, setTags] = useState<TagData[]>([]);
   const [loadingTags, setLoadingTags] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,9 +94,9 @@ export function TagsSidebar({ repoPath, onRefreshGraph }: TagsSidebarProps) {
                 {tags.length > 0 && (
                      <button
                         onClick={handlePushTags}
-                        disabled={loadingTags}
-                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-indigo-500 transition-colors"
-                        title={t('tagsSidebar.pushTagsTooltip')}
+                        disabled={loadingTags || !hasRemote}
+                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={!hasRemote ? t("workspace.header.noRemote") : t('tagsSidebar.pushTagsTooltip')}
                      >
                         <UploadCloud className="w-3.5 h-3.5" />
                      </button>

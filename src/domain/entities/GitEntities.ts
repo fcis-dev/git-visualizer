@@ -92,6 +92,7 @@ export interface InitialRepoData {
   head_hash: string;
   is_worktree: boolean;
   worktree_count: number;
+  has_remote: boolean;
 }
 
 /** Aggregated response from get_branches_and_remotes — one IPC call instead of two. */

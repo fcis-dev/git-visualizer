@@ -779,6 +779,7 @@ pub fn get_initial_repo_data(
         Arc::new(Mutex::new(Err("not started".into())));
     let worktree_flag: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
     let worktree_count: Arc<Mutex<usize>> = Arc::new(Mutex::new(0));
+    let has_remote_result: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
 
     std::thread::scope(|s| {
         {
@@ -823,6 +824,13 @@ pub fn get_initial_repo_data(
                 *count.lock().unwrap() = wt_count;
             });
         }
+        {
+            let p = Arc::clone(&path_arc);
+            let r = Arc::clone(&has_remote_result);
+            s.spawn(move || {
+                *r.lock().unwrap() = git_remote_list(&p).map(|v| !v.is_empty()).unwrap_or(false);
+            });
+        }
     });
 
     let commits = Arc::try_unwrap(commits_result)
@@ -859,6 +867,11 @@ pub fn get_initial_repo_data(
         .into_inner()
         .map_err(|_| "Mutex poisoned".to_string())?;
 
+    let has_remote = Arc::try_unwrap(has_remote_result)
+        .map_err(|_| "Arc unwrap failed".to_string())?
+        .into_inner()
+        .map_err(|_| "Mutex poisoned".to_string())?;
+
     let has_more = commits.len() < limit;
     let _ = has_more; // used by caller
 
@@ -869,6 +882,7 @@ pub fn get_initial_repo_data(
         head_hash,
         is_worktree: is_wt,
         worktree_count: wt_count,
+        has_remote,
     })
 }
 

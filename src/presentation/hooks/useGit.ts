@@ -18,6 +18,7 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
   const [headHash, setHeadHash] = useState<string>("");
   const [isWorktree, setIsWorktree] = useState(false);
   const [worktreeCount, setWorktreeCount] = useState(0);
+  const [hasRemote, setHasRemote] = useState(false);
 
   const commitCountRef = useRef(0);
 
@@ -42,6 +43,7 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
       setHeadHash(data.head_hash);
       setIsWorktree(data.is_worktree);
       setWorktreeCount(data.worktree_count);
+      setHasRemote(data.has_remote);
       if (data.commits.length < PAGE_SIZE) setHasMore(false);
     } catch (err: any) {
       console.error(err);
@@ -53,6 +55,7 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
       setHeadHash("");
       setIsWorktree(false);
       setWorktreeCount(0);
+      setHasRemote(false);
     } finally {
       setIsLoading(false);
     }
@@ -125,6 +128,7 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
     fetch,
     setError,
     isWorktree,
-    worktreeCount
+    worktreeCount,
+    hasRemote
   };
 }

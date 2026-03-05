@@ -67,6 +67,7 @@ export function useRepositoryWorkspaceController(
     error,
     isWorktree,
     worktreeCount,
+    hasRemote,
   } = useGit(repoPath, graphBranches);
 
   const gitActions = useGitActions(repoPath, () => {
@@ -116,7 +117,7 @@ export function useRepositoryWorkspaceController(
     prunedBranches: _prunedBranches,
     isFetching: isAutoFetching,
     triggerFetch,
-  } = useAutoFetch(repoPath, branchName, {
+  } = useAutoFetch(repoPath, branchName, hasRemote, {
     onFetchDone: (_behind, pruned, withPrune) => {
       if (withPrune && pruned.length > 0) {
         showConfirm(
@@ -321,7 +322,8 @@ export function useRepositoryWorkspaceController(
       displayCommits,
       aheadCount,
       behindCount,
-      isAutoFetching
+      isAutoFetching,
+      hasRemote
     },
     actions: {
       setCommitSearchQuery,

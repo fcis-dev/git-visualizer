@@ -28,6 +28,7 @@ const repository = new TauriGitRepository();
 export function useAutoFetch(
   repoPath: string,
   branchName: string,
+  hasRemote: boolean,
   options?: UseAutoFetchOptions,
 ): UseAutoFetchResult {
   const [behindCount, setBehindCount] = useState(0);
@@ -41,7 +42,7 @@ export function useAutoFetch(
   onFetchDoneRef.current = options?.onFetchDone;
 
   const runFetch = useCallback(async (withPrune: boolean = false) => {
-    if (!repoPath) return;
+    if (!repoPath || !hasRemote) return;
     setIsFetching(true);
     try {
       await repository.fetch(repoPath);
@@ -64,7 +65,7 @@ export function useAutoFetch(
 
   // Periodic auto-fetch
   useEffect(() => {
-    if (!repoPath) return;
+    if (!repoPath || !hasRemote) return;
 
     // Delay the initial behind/ahead/pruned check by 5 s so the UI is
     // responsive (commit graph visible) before we launch extra git processes.
@@ -94,7 +95,7 @@ export function useAutoFetch(
       clearTimeout(initialTimer);
       clearInterval(interval);
     };
-  }, [repoPath, branchName, runFetch]);
+  }, [repoPath, branchName, runFetch, hasRemote]);
 
   // Reset when repo changes
   useEffect(() => {

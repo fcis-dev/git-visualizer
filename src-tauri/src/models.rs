@@ -121,6 +121,7 @@ pub struct InitialRepoData {
     pub head_hash: String,
     pub is_worktree: bool,
     pub worktree_count: usize,
+    pub has_remote: bool,
 }
 
 /// Aggregated data for the Branches sidebar — branches + remotes in one call.

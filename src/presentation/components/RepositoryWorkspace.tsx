@@ -77,7 +77,8 @@ export function RepositoryWorkspace({
     displayCommits,
     aheadCount,
     behindCount,
-    isAutoFetching
+    isAutoFetching,
+    hasRemote
   } = state;
 
   const {
@@ -299,6 +300,7 @@ export function RepositoryWorkspace({
         isPushing={isPushing}
         aheadCount={aheadCount}
         onPush={handlePush}
+        hasRemote={hasRemote}
       />
 
       {/* Main Content (Activity Bar + Sidebar + Main Area) */}
@@ -339,7 +341,7 @@ export function RepositoryWorkspace({
           )}
 
           {activeSidebarTab === "tags" && (
-            <TagsSidebar repoPath={repoPath} onRefreshGraph={loadCommits} />
+            <TagsSidebar repoPath={repoPath} onRefreshGraph={loadCommits} hasRemote={hasRemote} />
           )}
 
           {activeSidebarTab === "rescue" && (

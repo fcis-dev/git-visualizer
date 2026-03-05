@@ -21,16 +21,19 @@ interface GraphProps {
   onBranchContextMenu?: (refName: string, x: number, y: number) => void;
 }
 
-export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph({
-  commits,
-  selectedCommit,
-  onSelectCommit,
-  onLoadMore,
-  isLoadingMore = false,
-  hasMore = false,
-  isSearchResult = false,
-  onBranchContextMenu,
-}, ref) {
+export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
+  {
+    commits,
+    selectedCommit,
+    onSelectCommit,
+    onLoadMore,
+    isLoadingMore = false,
+    hasMore = false,
+    isSearchResult = false,
+    onBranchContextMenu,
+  },
+  ref,
+) {
   const { t } = useTranslation();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,7 +43,8 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph({
   const PADDING_Y = 25;
 
   useImperativeHandle(ref, () => ({
-    scrollToTop: () => containerRef.current?.scrollTo({ top: 0, behavior: "smooth" }),
+    scrollToTop: () =>
+      containerRef.current?.scrollTo({ top: 0, behavior: "smooth" }),
     scrollToHash: (hash: string) => {
       const idx = commits.findIndex((c) => c.hash === hash);
       if (idx === -1) return false;
@@ -274,12 +278,16 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph({
               border = isDark ? "#4338ca" : "#a5b4fc";
             }
 
+            const safeRef = ref
+              .replace(/"/g, "&quot;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;");
             const safeDisplayName = displayName
               .replace(/"/g, "&quot;")
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;");
             // data-ref stores the raw ref string so we can read it from the DOM event
-            return `<div data-ref="${safeDisplayName}" style="background-color: ${bgFill}; color: ${textFill}; border: 1px solid ${border}; border-radius: 4px; padding: 1px 6px; font-size: 10px; line-height: 14px; white-space: nowrap; pointer-events: auto; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: inline-block; cursor: context-menu;">${safeDisplayName}</div>`;
+            return `<div data-ref="${safeRef}" style="background-color: ${bgFill}; color: ${textFill}; border: 1px solid ${border}; border-radius: 4px; padding: 1px 6px; font-size: 10px; line-height: 14px; white-space: nowrap; pointer-events: auto; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: inline-block; cursor: context-menu;">${safeDisplayName}</div>`;
           })
           .join("");
 
@@ -369,7 +377,11 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph({
               evt.preventDefault();
               evt.stopPropagation();
               const refName = el.getAttribute("data-ref") || "";
-              onBranchContextMenu(refName, (evt as MouseEvent).clientX, (evt as MouseEvent).clientY);
+              onBranchContextMenu(
+                refName,
+                (evt as MouseEvent).clientX,
+                (evt as MouseEvent).clientY,
+              );
             });
           });
         }
@@ -378,7 +390,14 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph({
 
     // Expand the SVG canvas width if the content overflowed the container
     svg.attr("width", maxContentWidth);
-  }, [commits, onSelectCommit, selectedCommit, theme, containerWidth, onBranchContextMenu]);
+  }, [
+    commits,
+    onSelectCommit,
+    selectedCommit,
+    theme,
+    containerWidth,
+    onBranchContextMenu,
+  ]);
 
   return (
     <div ref={containerRef} className="overflow-auto flex-1 custom-scrollbar">

@@ -30,12 +30,15 @@ export function GraphBranchContextMenu({
   const { t } = useTranslation();
   if (!contextMenu.visible) return null;
 
-  const ref = contextMenu.refName;
+  const isTag = contextMenu.refName.startsWith("tag: ");
+  const isRemote = contextMenu.refName.includes("origin/");
+  const ref = isTag ? contextMenu.refName.substring(5) : contextMenu.refName;
+
   const isCurrentBranch = ref === branchName;
   const isHeadRef = ref.toUpperCase().startsWith("HEAD");
-  const isTag = false; // tags from graph start with "tag: " but we strip that in Graph
+  
   const canDelete = !isCurrentBranch && !isHeadRef && !isTag;
-  const canMergeRebaseEtc = !isCurrentBranch && !isHeadRef;
+  const canMergeRebaseEtc = !isCurrentBranch && !isHeadRef && !isTag;
 
   return (
     <>
