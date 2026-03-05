@@ -90,3 +90,20 @@ Use the `Run and Debug` sidebar (Ctrl+Shift+D) and select **"Full Stack Debug"**
   - `src/App.tsx`: Main application layout, state management, and interaction logic.
   - `src/components/Graph.tsx`: Renders the commit graph. Uses D3.js to draw nodes (commits) and curved paths (branch/merge edges).
   - `src/utils/graphLayout.ts`: Implements a lane-assignment algorithm to determine the X/Y coordinates of each commit node, ensuring a clear visualization of parallel branches.
+
+## Releases
+
+This project is configured with a GitHub Actions workflow to automatically build and bundle the application for Windows, macOS, and Linux.
+
+To trigger a new automated release:
+
+1. Make sure the `version` property in `src-tauri/tauri.conf.json` is updated.
+2. Create and push a new lightweight tag starting with `v` (e.g., `v1.0.0`):
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+3. The GitHub Actions workflow will run and create a **Draft Release** on GitHub with the compiled installers (`.exe`, `.dmg`, `.AppImage`, and `.deb`) attached.
+4. Review the drafted release notes, then publish it when you are ready.
+
+You can also trigger the release workflow manually from the **Actions** tab in your GitHub repository.
