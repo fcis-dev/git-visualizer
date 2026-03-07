@@ -6,6 +6,7 @@ import { useGitActions } from "../hooks/useGitActions";
 import { useDialog } from "../context/DialogContext";
 import { SearchCommitsUseCase } from "../../domain/usecases/SearchCommitsUseCase";
 import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
+import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 
 type SidebarTab = "changes" | "branches" | "tags" | "rescue" | "worktrees";
@@ -250,7 +251,6 @@ export function useRepositoryWorkspaceController(
     setIsPulling(true);
     try {
       await gitActions.fetch();
-      const { invoke } = await import("@tauri-apps/api/core");
       await invoke("git_pull", { path: repoPath });
       await triggerFetch();
       loadCommits();
@@ -266,7 +266,6 @@ export function useRepositoryWorkspaceController(
     if (isPushing) return;
     setIsPushing(true);
     try {
-      const { invoke } = await import("@tauri-apps/api/core");
       await invoke("git_push", { path: repoPath });
       await triggerFetch();
       loadCommits();

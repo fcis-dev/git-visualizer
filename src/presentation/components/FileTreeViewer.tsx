@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, File, Folder } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 
@@ -126,23 +126,21 @@ export function FileTreeViewer({ files, onSelectFile, onViewFileHistory }: FileT
     }>({ visible: false, x: 0, y: 0, path: null });
 
     // Handle custom context menu event from tree nodes
-    import('react').then(({ useEffect }) => {
-        useEffect(() => {
-            const handleCustomMenu = (e: any) => {
-                const { path, x, y } = e.detail;
-                setContextMenu({ visible: true, x, y, path });
-            };
-            const closeContextMenu = () => setContextMenu(prev => ({ ...prev, visible: false }));
-            
-            document.addEventListener('file-tree-context-menu', handleCustomMenu);
-            document.addEventListener('click', closeContextMenu);
-            
-            return () => {
-                document.removeEventListener('file-tree-context-menu', handleCustomMenu);
-                document.removeEventListener('click', closeContextMenu);
-            };
-        }, []);
-    });
+    useEffect(() => {
+        const handleCustomMenu = (e: any) => {
+            const { path, x, y } = e.detail;
+            setContextMenu({ visible: true, x, y, path });
+        };
+        const closeContextMenu = () => setContextMenu(prev => ({ ...prev, visible: false }));
+        
+        document.addEventListener('file-tree-context-menu', handleCustomMenu);
+        document.addEventListener('click', closeContextMenu);
+        
+        return () => {
+            document.removeEventListener('file-tree-context-menu', handleCustomMenu);
+            document.removeEventListener('click', closeContextMenu);
+        };
+    }, []);
 
     const tree = buildTree(files);
     const { t } = useTranslation();
