@@ -1,4 +1,4 @@
-﻿import React, { useRef, useEffect, useImperativeHandle } from "react";
+import React, { useRef, useEffect, useImperativeHandle } from "react";
 import * as d3 from "d3";
 import { Commit } from "../../domain/entities/GitEntities";
 import { calculateGraphLayout, LANE_COLORS } from "../utils/graphLayout";
@@ -291,13 +291,13 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
           })
           .join("");
 
-        tagsHtml = `<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;">${tags}</div>`;
+        tagsHtml = `<div style="display: flex; flex-wrap: nowrap; gap: 6px; margin-top: 4px; overflow: hidden;">${tags}</div>`;
       }
 
       const absoluteX = (d as any).x + currentX;
       const minTextWidth = 450;
       const foWidth = Math.max(minTextWidth, width - absoluteX - 16);
-      const foHeight = 88; // Increased heavily to allow wrapping of tags without clipping
+      const foHeight = 56; // Constrain to exactly the row height to prevent overlapping adjacent rows
 
       if (absoluteX + foWidth + 16 > maxContentWidth) {
         maxContentWidth = absoluteX + foWidth + 16;
@@ -354,7 +354,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
         )
         .style("font-size", "12px").html(`
             <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
-                <div class="commit-message" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; color: ${msgColor}; font-weight: ${msgWeight}; pointer-events: auto; transition: color 0.1s;" title="${safeMsg}">
+                <div class="commit-message" style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; color: ${msgColor}; font-weight: ${msgWeight}; pointer-events: auto; transition: color 0.1s;" title="${safeMsg}">
                   ${safeMsg}
                 </div>
                 ${tagsHtml}

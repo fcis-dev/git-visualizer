@@ -1,4 +1,4 @@
-﻿import { useRef } from "react";
+import { useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { ArrowLeft } from "lucide-react";
 import { SourceControl } from "./Sidebar/SourceControl";
@@ -437,36 +437,7 @@ export function RepositoryWorkspace({
             />
           </div>
 
-          {/* Diff View Overlay (over the middle column) */}
-          {diffTarget && (
-            <div className="absolute inset-0 z-20 bg-white dark:bg-slate-950 flex flex-col animate-in slide-in-from-bottom-4 duration-200 shadow-2xl">
-              <header className="h-12 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 bg-slate-50 dark:bg-slate-900/50">
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => setDiffTarget(null)}
-                    className="flex items-center space-x-1 text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>{t('repositoryWorkspace.back')}</span>
-                  </button>
-                  <span className="text-slate-300 dark:text-slate-700">|</span>
-                  <span className="font-medium text-slate-700 dark:text-slate-200 truncate max-w-xl">
-                    {diffTarget.path}
-                  </span>
-                </div>
-              </header>
-              <div className="flex-1 overflow-hidden">
-                  <DiffView
-                      repoPath={repoPath}
-                      filePath={diffTarget.path}
-                      commitHash={diffTarget.commitHash}
-                      cached={diffTarget.cached}
-                      onClose={() => setDiffTarget(null)}
-                      onRefresh={onActionSuccess}
-                  />
-              </div>
-            </div>
-          )}
+
 
           {/* Historical File Content View Overlay */}
           {contentTarget && (
@@ -556,6 +527,18 @@ export function RepositoryWorkspace({
         <RepositoryStatsModal
           repoPath={repoPath}
           onClose={() => setIsStatsModalOpen(false)}
+        />
+      )}
+
+      {/* Full Screen Overlays */}
+      {diffTarget && (
+        <DiffView
+            repoPath={repoPath}
+            filePath={diffTarget.path}
+            commitHash={diffTarget.commitHash}
+            cached={diffTarget.cached}
+            onClose={() => setDiffTarget(null)}
+            onRefresh={onActionSuccess}
         />
       )}
     </div>
