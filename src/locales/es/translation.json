@@ -241,6 +241,14 @@
     "errorTitle": "Error",
     "about": "Acerca de",
     "aboutDesc": "Una herramienta moderna para visualizar y gestionar tus repositorios Git.",
+    "checkForUpdates": "Buscar actualizaciones",
+    "checkingForUpdates": "Buscando...",
+    "updateAvailableTitle": "Actualización disponible",
+    "updateAvailableDesc": "La versión {{version}} está disponible. ¿Deseas descargarla e instalarla?",
+    "upToDateTitle": "Actualizado",
+    "upToDateDesc": "Estás ejecutando la última versión.",
+    "updateError": "Error al buscar actualizaciones: ",
+    "installingUpdate": "Instalando actualización... La aplicación se reiniciará automáticamente.",
     "footer": "Creado con Tauri + React"
   },
   "rebase": {

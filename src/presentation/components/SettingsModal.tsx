@@ -1,9 +1,11 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { X, Moon, Sun, User, Mail, Save } from 'lucide-react';
+import { X, Moon, Sun, User, Mail, Save, Download } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { useDialog } from '../context/DialogContext';
 import { useTranslation } from 'react-i18next';
+import { check } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -13,12 +15,42 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, repoPath }) => {
   const { theme, toggleTheme } = useTheme();
-  const { showAlert } = useDialog();
+  const { showAlert, showConfirm } = useDialog();
   const { t } = useTranslation();
 
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [loadingConfig, setLoadingConfig] = useState(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+
+  const handleCheckUpdate = async () => {
+    try {
+      setCheckingUpdate(true);
+      const update = await check();
+      setCheckingUpdate(false);
+      
+      if (update) {
+        showConfirm(
+          t('settings.updateAvailableTitle'), 
+          t('settings.updateAvailableDesc', { version: update.version }),
+          async () => {
+             try {
+                showAlert(t('settings.title'), t('settings.installingUpdate'));
+                await update.downloadAndInstall();
+                await relaunch();
+             } catch (e: any) {
+                showAlert(t('settings.errorTitle'), t('settings.updateError') + e.toString());
+             }
+          }
+        );
+      } else {
+        showAlert(t('settings.upToDateTitle'), t('settings.upToDateDesc'));
+      }
+    } catch (e: any) {
+      setCheckingUpdate(false);
+      showAlert(t('settings.errorTitle'), t('settings.updateError') + e.toString());
+    }
+  };
 
   useEffect(() => {
       if (isOpen) {
@@ -147,18 +179,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
           <section className="space-y-3">
             <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{t('settings.about')}</h3>
             
-            <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 text-center space-y-2">
-                <div className="w-12 h-12 mx-auto bg-transparent flex items-center justify-center">
-                     <img src="/app-icon.png" alt="GitVi" className="w-full h-full object-contain" />
+            <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 text-center space-y-4">
+                <div className="space-y-2">
+                    <div className="w-12 h-12 mx-auto bg-transparent flex items-center justify-center">
+                         <img src="/app-icon.png" alt="GitVi" className="w-full h-full object-contain" />
+                    </div>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-lg">GitVi</h4>
+                    <p className="text-sm text-slate-600 dark:text-slate-300">
+                        {t('settings.aboutDesc')}
+                    </p>
+                    <div className="pt-2">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-300 font-mono">
+                            v0.1.0
+                        </span>
+                    </div>
                 </div>
-                <h4 className="font-bold text-slate-900 dark:text-white text-lg">GitVi</h4>
-                <p className="text-sm text-slate-600 dark:text-slate-300">
-                    {t('settings.aboutDesc')}
-                </p>
-                <div className="pt-2">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-300 font-mono">
-                        v0.1.0-alpha
-                    </span>
+
+                <div className="pt-3 border-t border-slate-200 dark:border-slate-700/50">
+                    <button
+                        onClick={handleCheckUpdate}
+                        disabled={checkingUpdate}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 w-full sm:w-auto bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                        <Download className="w-4 h-4" /> 
+                        {checkingUpdate ? t('settings.checkingForUpdates') : t('settings.checkForUpdates')}
+                    </button>
                 </div>
             </div>
           </section>
