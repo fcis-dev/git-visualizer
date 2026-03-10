@@ -6,6 +6,8 @@ import { useDialog } from '../context/DialogContext';
 import { useTranslation } from 'react-i18next';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { getVersion } from '@tauri-apps/api/app';
+
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -22,6 +24,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
   const [userEmail, setUserEmail] = useState("");
   const [loadingConfig, setLoadingConfig] = useState(false);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [appVersion, setAppVersion] = useState("...");
+
+  useEffect(() => {
+    getVersion().then(v => setAppVersion(`v${v}`)).catch(console.error);
+  }, []);
 
   const handleCheckUpdate = async () => {
     try {
@@ -190,7 +197,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
                     </p>
                     <div className="pt-2">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-300 font-mono">
-                            v0.1.0
+                            {appVersion}
                         </span>
                     </div>
                 </div>
