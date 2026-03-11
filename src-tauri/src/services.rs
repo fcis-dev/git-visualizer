@@ -610,6 +610,10 @@ pub fn git_tag_delete(path: &str, name: &str) -> Result<String, String> {
     run_git_cmd(path, &["tag", "-d", name])
 }
 
+pub fn git_tag_delete_remote(path: &str, name: &str) -> Result<String, String> {
+    run_git_cmd(path, &["push", "origin", "--delete", name])
+}
+
 pub fn git_branch_create(path: &str, name: &str, hash: &str) -> Result<String, String> {
     run_git_cmd(path, &["branch", name, hash])
 }

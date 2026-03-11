@@ -45,6 +45,7 @@ pub fn run() {
             commands::git_apply_patch,
             commands::git_tag_create,
             commands::git_tag_delete,
+            commands::git_tag_delete_remote,
             commands::get_tags,
             commands::git_branch_create,
             commands::git_branch_rename,

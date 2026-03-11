@@ -92,6 +92,11 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         onSuccess?.();
     };
 
+    const deleteTagRemote = async (name: string) => {
+        if (!repoPath) return;
+        await repository.deleteTagRemote(repoPath, name);
+    };
+
     const createBranch = async (name: string, hash: string) => {
         if (!repoPath) return;
         await repository.createBranch(repoPath, name, hash);
@@ -174,6 +179,7 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         createTag,
         pushTags,
         deleteTag,
+        deleteTagRemote,
         createBranch,
         renameBranch,
         deleteBranch,

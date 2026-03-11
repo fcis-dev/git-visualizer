@@ -406,7 +406,9 @@
   },
   "tagsSidebar": {
     "deleteTagTitle": "Delete Tag",
-    "deleteTagConfirm": "Are you sure you want to delete the tag '{{tagName}}'?",
+    "deleteTagConfirm": "Are you sure you want to delete the local tag '{{tagName}}'?",
+    "deleteTagRemoteTitle": "Delete Remote Tag",
+    "deleteTagRemoteConfirm": "Also delete the tag '{{tagName}}' from the remote server (origin)?",
     "successTitle": "Success",
     "tagDeleted": "Tag '{{tagName}}' deleted.",
     "pushTagsSuccess": "All local tags have been pushed to the remote repository.",

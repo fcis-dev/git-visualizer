@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Tag, Trash2, UploadCloud, ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { TagData } from '../../../domain/entities/GitEntities';
 import { useGitActions } from '../../hooks/useGitActions';
@@ -56,6 +56,27 @@ export function TagsSidebar({ repoPath, onRefreshGraph, hasRemote }: TagsSidebar
           showAlert(t('tagsSidebar.successTitle'), t('tagsSidebar.tagDeleted', { tagName: tag.name }));
           onRefreshGraph();
           await loadTags();
+
+          if (hasRemote) {
+            setTimeout(() => {
+              showConfirm(
+                t('tagsSidebar.deleteTagRemoteTitle'),
+                t('tagsSidebar.deleteTagRemoteConfirm', { tagName: tag.name }),
+                async () => {
+                  try {
+                    setLoadingTags(true);
+                    await gitActions.deleteTagRemote(tag.name);
+                    showAlert(t('tagsSidebar.successTitle'), t('tagsSidebar.tagDeleted', { tagName: tag.name }) + " (Remote)");
+                  } catch (e: any) {
+                    setError(e.toString());
+                  } finally {
+                    setLoadingTags(false);
+                  }
+                }
+              );
+            }, 500); // Small delay to let the first alert close if it was an alert, actually we can just overwrite the alert
+          }
+
         } catch (e: any) {
           setError(e.toString());
         }

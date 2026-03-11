@@ -406,7 +406,9 @@
   },
   "tagsSidebar": {
     "deleteTagTitle": "Eliminar etiqueta",
-    "deleteTagConfirm": "¿Estás seguro de que quieres eliminar la etiqueta '{{tagName}}'?",
+    "deleteTagConfirm": "¿Estás seguro de que quieres eliminar la etiqueta local '{{tagName}}'?",
+    "deleteTagRemoteTitle": "Eliminar etiqueta remota",
+    "deleteTagRemoteConfirm": "¿Eliminar también la etiqueta '{{tagName}}' del servidor remoto (origin)?",
     "successTitle": "Éxito",
     "tagDeleted": "Etiqueta '{{tagName}}' eliminada.",
     "pushTagsSuccess": "Todas las etiquetas locales han sido subidas al repositorio remoto.",

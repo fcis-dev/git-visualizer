@@ -184,6 +184,11 @@ pub async fn git_tag_delete(path: &str, name: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
+pub async fn git_tag_delete_remote(path: &str, name: &str) -> Result<String, String> {
+    services::git_tag_delete_remote(path, name)
+}
+
+#[tauri::command]
 pub async fn get_tags(path: &str) -> Result<Vec<TagData>, String> {
     services::get_tags(path)
 }

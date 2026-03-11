@@ -159,6 +159,10 @@ export class TauriGitRepository implements IGitRepository {
     await invoke("git_tag_delete", { path, name });
   }
 
+  async deleteTagRemote(path: string, name: string): Promise<string> {
+    return await invoke<string>("git_tag_delete_remote", { path, name });
+  }
+
   async createBranch(path: string, name: string, hash: string): Promise<void> {
     await invoke("git_branch_create", { path, name, hash });
   }
