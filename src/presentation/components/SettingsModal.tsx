@@ -90,7 +90,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
       <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 shrink-0">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('settings.title')}</h2>
           <button 
             onClick={onClose}
@@ -104,7 +104,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
         <div className="p-6 space-y-6 overflow-y-auto">
           
           {/* Appearance Section */}
-          <section className="space-y-3 flex-shrink-0">
+          <section className="space-y-3 shrink-0">
             <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{t('settings.appearance')}</h3>
             
             <div className="flex items-center justify-between p-3 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
@@ -138,7 +138,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
           </section>
 
           {/* Git Config Section */}
-          <section className="space-y-3 flex-shrink-0">
+          <section className="space-y-3 shrink-0">
             <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{t('settings.gitConfig')}</h3>
             
             <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 space-y-4">
@@ -183,7 +183,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
           </section>
 
           {/* About Section */}
-          <section className="space-y-3 flex-shrink-0">
+          <section className="space-y-3 shrink-0">
             <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{t('settings.about')}</h3>
             
             <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 text-center space-y-4">
@@ -218,7 +218,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
         </div>
         
         {/* Footer */}
-        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/30 border-t border-slate-200 dark:border-slate-800 text-center flex-shrink-0">
+        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/30 border-t border-slate-200 dark:border-slate-800 text-center shrink-0">
             <p className="text-xs text-slate-600 dark:text-slate-400">
                 {t('settings.footer')}
             </p>
