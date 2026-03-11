@@ -23,7 +23,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEY2MzJENkNDMEEyQTM5NkQKUldSdE9Tb0t6Tll5OWdQajEwczRyc3FwaW5RRFY2VXYyRUJKTTgweEVSRUY2Vm04NHBScGE3QmYK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ0NDAzN0RBQUNDMkYyODcKUldTSDhzS3MyamRBMU1FNmtnU1gzREtWbmIyWm4zVFhvRFFwa2Y4bkJYVzlXSHh4S1hUUWFlZTcK",
       "endpoints": [
         "https://github.com/fcis-dev/git-visualizer/releases/latest/download/latest.json"
       ]
