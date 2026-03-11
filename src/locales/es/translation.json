@@ -38,11 +38,7 @@
       "pull": "Pull",
       "pullBehind": "Pull ({{count}} atrás)",
       "push": "Push",
-      "pushAhead": "Push ({{count}} adelante)",
-      "pullCompleteTitle": "Pull completado",
-      "pullCompleteMsg": "Los cambios remotos se han descargado correctamente.",
-      "pushCompleteTitle": "Push completado",
-      "pushCompleteMsg": "Los cambios locales se han subido correctamente."
+      "pushAhead": "Push ({{count}} adelante)"
     },
     "search": {
       "allBranches": "Todas las ramas",

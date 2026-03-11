@@ -250,11 +250,9 @@ export function useRepositoryWorkspaceController(
     if (isPulling) return;
     setIsPulling(true);
     try {
-      await gitActions.fetch();
       await invoke("git_pull", { path: repoPath });
       await triggerFetch();
       loadCommits();
-      showAlert(t('workspace.header.pullCompleteTitle'), t('workspace.header.pullCompleteMsg'));
     } catch (e: any) {
       setError(e.toString());
     } finally {
@@ -269,7 +267,6 @@ export function useRepositoryWorkspaceController(
       await invoke("git_push", { path: repoPath });
       await triggerFetch();
       loadCommits();
-      showAlert(t('workspace.header.pushCompleteTitle'), t('workspace.header.pushCompleteMsg'));
     } catch (e: any) {
       setError(e.toString());
     } finally {

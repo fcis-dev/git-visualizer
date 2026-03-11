@@ -46,6 +46,12 @@ export function useAutoFetch(
     setIsFetching(true);
     try {
       await repository.fetch(repoPath);
+    } catch {
+      // Silently ignore network / no-remote errors during fetch
+    }
+
+    try {
+      // Always update local tracking stats, even if the remote fetch failed
       const [behind, ahead, pruned] = await Promise.all([
         repository.checkBehind(repoPath),
         repository.checkAhead(repoPath),
@@ -56,8 +62,8 @@ export function useAutoFetch(
       setPrunedBranches(pruned);
       setLastFetchedAt(new Date());
       onFetchDoneRef.current?.(behind, pruned, withPrune);
-    } catch {
-      // Silently ignore network / no-remote errors
+    } catch (e) {
+      console.warn("Failed to check behind/ahead stats:", e);
     } finally {
       setIsFetching(false);
     }

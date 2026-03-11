@@ -38,11 +38,7 @@
       "pull": "Pull",
       "pullBehind": "Pull ({{count}} behind)",
       "push": "Push",
-      "pushAhead": "Push ({{count}} ahead)",
-      "pullCompleteTitle": "Pull Complete",
-      "pullCompleteMsg": "Remote changes have been downloaded successfully.",
-      "pushCompleteTitle": "Push Complete",
-      "pushCompleteMsg": "Local changes have been uploaded successfully."
+      "pushAhead": "Push ({{count}} ahead)"
     },
     "search": {
       "allBranches": "All branches",
