@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Play,
   Check,
@@ -6,7 +6,6 @@ import {
   Archive,
   Trash2,
   RotateCcw,
-  Box,
   RefreshCw,
   Plus,
   ExternalLink,
@@ -16,7 +15,6 @@ import {
   ArrowRightToLine,
 } from "lucide-react";
 import { Commit } from "../../../domain/entities/GitEntities";
-import { StashesModal } from "../StashesModal";
 import { useSourceControlController } from "../../controllers/useSourceControlController";
 import { useTranslation } from "react-i18next";
 
@@ -46,7 +44,6 @@ export function SourceControl({
   const { t } = useTranslation();
   const { state, actions } = useSourceControlController(repoPath, onCommit, refreshTrigger);
 
-  const [isStashesModalOpen, setIsStashesModalOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     x: number;
@@ -81,8 +78,8 @@ export function SourceControl({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-slate-200 dark:border-slate-800/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/40 shrink-0">
-        <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
+      <div className="p-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm shrink-0 flex items-center justify-between sticky top-0 z-10">
+        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest flex items-center gap-2">
           {t("sidebar.sourceControl.title")}
         </span>
       </div>
@@ -125,38 +122,13 @@ export function SourceControl({
           </div>
         )}
 
-        {/* Stash Actions */}
-        <div className="flex space-x-2">
-          <button
-            onClick={actions.handleStashSave}
-            disabled={state.stashLoading}
-            className="flex-1 flex items-center justify-center space-x-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 py-1.5 rounded text-xs transition-colors"
-            title={t("sidebar.sourceControl.stashTitle")}
-          >
-            <Archive className="w-3.5 h-3.5" />
-            <span>{t("sidebar.sourceControl.stash")}</span>
-          </button>
-          <button
-            onClick={() => setIsStashesModalOpen(true)}
-            disabled={state.stashLoading}
-            className="flex-2 flex items-center justify-center space-x-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 py-1.5 rounded text-xs transition-colors font-medium border border-emerald-200/50 dark:border-emerald-500/20"
-            title={t("sidebar.sourceControl.stashesTitle")}
-          >
-            <span>{t("sidebar.sourceControl.stashes")}</span>
-            {state.stashesCount > 0 && (
-              <span className="bg-emerald-200 dark:bg-emerald-500/30 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded-full text-[10px] leading-none font-bold ml-1">
-                {state.stashesCount}
-              </span>
-            )}
-          </button>
-        </div>
-
         {/* Removed Conflicted Files section, moved to Changes */}
 
         {/* Commit Input */}
-        <div className="space-y-2">
+        <div className="space-y-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-2 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl rounded-full pointer-events-none transition-opacity duration-500 opacity-0 group-focus-within:opacity-100" />
           {latestCommit && (
-            <div className="flex justify-end mb-1">
+            <div className="flex justify-end mb-1 relative z-10">
               <button
                 onClick={() => {
                   const checked = !state.isAmend;
@@ -168,10 +140,10 @@ export function SourceControl({
                     actions.setCommitMessage(state.previousMessage);
                   }
                 }}
-                className={`flex items-center space-x-1.5 py-1 px-2.5 rounded text-xs transition-colors font-medium border ${
+                className={`flex items-center space-x-1.5 py-1 px-2.5 rounded-md text-xs transition-all font-medium border ${
                   state.isAmend
-                    ? "bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-500/20"
-                    : "bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 border-transparent hover:border-slate-300 dark:hover:border-slate-600"
+                    ? "bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/20 dark:hover:bg-indigo-500/30 text-indigo-700 dark:text-indigo-300 border-indigo-200/50 dark:border-indigo-500/30 shadow-sm"
+                    : "bg-transparent text-slate-500 dark:text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
                 title={t("sidebar.sourceControl.amendTitle")}
               >
@@ -184,7 +156,7 @@ export function SourceControl({
             value={state.commitMessage}
             onChange={(e) => actions.setCommitMessage(e.target.value)}
             placeholder={t("sidebar.sourceControl.commitPlaceholder")}
-            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded p-2 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-indigo-500/50 min-h-[80px]"
+            className="w-full bg-transparent border-none rounded p-1 text-sm text-slate-900 dark:text-slate-100 focus:outline-none min-h-[80px] resize-y placeholder:text-slate-400 dark:placeholder:text-slate-500 relative z-10"
             onKeyDown={(e) => {
               if (e.ctrlKey && e.key === "Enter") {
                 actions.handleCommit();
@@ -197,7 +169,7 @@ export function SourceControl({
               !state.commitMessage ||
               (!state.isAmend && state.stagedFiles.length === 0 && !state.lastMergeMsg)
             }
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-1.5 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed text-white py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm disabled:shadow-none relative z-10"
           >
             <Check className="w-4 h-4" />
             {state.isAmend ? t("sidebar.sourceControl.commitAmendButton") : t("sidebar.sourceControl.commitButton")}
@@ -206,16 +178,16 @@ export function SourceControl({
 
         {/* Staged Changes */}
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase px-1">
+          <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 py-1.5 bg-slate-100/50 dark:bg-slate-800/30 rounded-md">
             <span>{t("sidebar.sourceControl.stagedChanges")}</span>
             <div className="flex items-center space-x-2">
-              <span className="bg-slate-200 dark:bg-slate-800 px-1.5 rounded-full text-slate-700 dark:text-slate-300">
+              <span className="bg-white dark:bg-slate-700 px-1.5 py-0.5 rounded-full text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-600 leading-none">
                 {state.stagedFiles.length}
               </span>
               {state.stagedFiles.length > 0 && (
                 <button
                   onClick={actions.handleUnstageAll}
-                  className="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                  className="p-1 text-slate-400 hover:text-red-500 transition-colors"
                   title={t("sidebar.sourceControl.unstageAll")}
                 >
                   <X className="w-3.5 h-3.5" />
@@ -223,52 +195,57 @@ export function SourceControl({
               )}
             </div>
           </div>
-          {state.stagedFiles.map((file) => (
-            <div
-              key={file.path}
-              className="group flex items-center justify-between p-1 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded cursor-pointer"
-              onClick={() => onSelectFile(file.path, true)}
-              onContextMenu={(e) => handleContextMenu(file.path, e)}
-            >
-              <span
-                className="text-xs text-slate-600 dark:text-slate-300 truncate flex-1"
-                title={file.path}
+          <div className="pl-1">
+            {state.stagedFiles.map((file) => (
+              <div
+                key={file.path}
+                className="group flex items-center justify-between p-1.5 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/10 rounded-md cursor-pointer transition-colors border border-transparent hover:border-indigo-100 dark:hover:border-indigo-800/50"
+                onClick={() => onSelectFile(file.path, true)}
+                onContextMenu={(e) => handleContextMenu(file.path, e)}
               >
-                {file.path}
-              </span>
-              <div className="flex opacity-0 group-hover:opacity-100">
-                <button
-                  onClick={(e) => { e.stopPropagation(); actions.handleUnstage(file.path); }}
-                  className="p-1 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700/50 rounded"
-                  title={t("sidebar.sourceControl.unstage")}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center space-x-2 min-w-0 flex-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                  <span
+                    className="text-xs text-slate-700 dark:text-slate-300 truncate"
+                    title={file.path}
+                  >
+                    {file.path}
+                  </span>
+                </div>
+                <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); actions.handleUnstage(file.path); }}
+                    className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                    title={t("sidebar.sourceControl.unstage")}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Changes */}
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase px-1">
+          <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 py-1.5 bg-slate-100/50 dark:bg-slate-800/30 rounded-md mt-4">
             <span>{t("sidebar.sourceControl.changes")}</span>
             <div className="flex items-center space-x-2">
-              <span className="bg-slate-200 dark:bg-slate-800 px-1.5 rounded-full text-slate-700 dark:text-slate-300">
+              <span className="bg-white dark:bg-slate-700 px-1.5 py-0.5 rounded-full text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-600 leading-none">
                 {state.changes.length}
               </span>
               {state.changes.length > 0 && (
                 <div className="flex items-center space-x-1">
                   <button
                     onClick={actions.handleDiscardAll}
-                    className="p-1 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                    className="p-1 text-slate-400 hover:text-red-500 transition-colors"
                     title={t("sidebar.sourceControl.discardAll")}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={actions.handleStageAll}
-                    className="p-1 text-slate-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
+                    className="p-1 text-slate-400 hover:text-green-500 transition-colors"
                     title={t("sidebar.sourceControl.stageAll")}
                   >
                     <Play className="w-3.5 h-3.5" />
@@ -277,193 +254,81 @@ export function SourceControl({
               )}
             </div>
           </div>
-          {state.changes.map((file) => (
-            <div
-              key={file.path}
-              className="group flex items-center justify-between p-1 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded cursor-pointer"
-              onClick={() => {
-                if (file.status === "conflicted" && onResolveConflict) {
-                  onResolveConflict(file.path);
-                } else {
-                  onSelectFile(file.path);
-                }
-              }}
-              onContextMenu={(e) => handleContextMenu(file.path, e)}
-            >
-              <div className="flex items-center space-x-1.5 min-w-0 flex-1">
-                {file.status === "conflicted" && (
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                )}
-                <span
-                  className={`text-xs truncate ${
-                    file.status === "deleted"
-                      ? "text-red-500 dark:text-red-400 line-through"
-                      : file.status === "new"
-                        ? "text-green-600 dark:text-green-400"
-                        : file.status === "conflicted"
-                          ? "text-amber-600 dark:text-amber-400 font-medium"
-                          : "text-amber-600 dark:text-amber-400"
-                  }`}
-                  title={file.path}
-                >
-                  {file.path}
-                </span>
-              </div>
-              <div className="flex opacity-0 group-hover:opacity-100 space-x-1 shrink-0">
-                {file.status === "conflicted" ? (
-                  <>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); actions.handleResolveConflict(file.path, "ours"); }}
-                      className="p-1 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
-                      title={t("sidebar.sourceControl.acceptCurrent")}
-                    >
-                      <ArrowLeftToLine className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); actions.handleResolveConflict(file.path, "theirs"); }}
-                      className="p-1 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
-                      title={t("sidebar.sourceControl.acceptIncoming")}
-                    >
-                      <ArrowRightToLine className="w-3.5 h-3.5" />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); actions.handleDiscard(file.path); }}
-                      className="p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                      title={t("sidebar.sourceControl.discard")}
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); actions.handleStage(file.path); }}
-                      className="p-1 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
-                      title={t("sidebar.sourceControl.stage")}
-                    >
-                      <Play className="w-3.5 h-3.5" />
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Submodules */}
-        <div className="space-y-1 mt-4 border-t border-slate-200 dark:border-slate-800 pt-4">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase px-1">
-            <span>{t("sidebar.sourceControl.submodules")}</span>
-            <div className="flex items-center space-x-2">
-              <span className="bg-slate-200 dark:bg-slate-800 px-1.5 rounded-full text-slate-700 dark:text-slate-300">
-                {state.submodules.length}
-              </span>
-              <div className="flex border-l border-slate-300 dark:border-slate-700 pl-1 ml-1 space-x-1">
-                <button
-                  onClick={actions.handleAddSubmodule}
-                  disabled={state.submodulesLoading}
-                  className="p-1 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50"
-                  title={t("sidebar.sourceControl.addSubmodule")}
-                >
-                  {state.isAddingSubmodule ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
+          <div className="pl-1">
+            {state.changes.map((file) => (
+              <div
+                key={file.path}
+                className="group flex items-center justify-between p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-md cursor-pointer transition-colors"
+                onClick={() => {
+                  if (file.status === "conflicted" && onResolveConflict) {
+                    onResolveConflict(file.path);
+                  } else {
+                    onSelectFile(file.path);
+                  }
+                }}
+                onContextMenu={(e) => handleContextMenu(file.path, e)}
+              >
+                <div className="flex items-center space-x-2 min-w-0 flex-1">
+                  {file.status === "conflicted" ? (
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                   ) : (
-                    <Plus className="w-3.5 h-3.5" />
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${file.status === "deleted" ? "bg-red-500" : file.status === "new" ? "bg-green-500" : "bg-amber-500"}`} />
                   )}
-                </button>
-                <button
-                  onClick={actions.handleSyncSubmodules}
-                  disabled={state.submodulesLoading}
-                  className="p-1 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-50"
-                  title={t("sidebar.sourceControl.syncSubmodules")}
-                >
-                  <RefreshCw
-                    className={`w-3.5 h-3.5 ${state.submodulesLoading ? "animate-spin" : ""}`}
-                  />
-                </button>
-                <button
-                  onClick={actions.handleUpdateSubmodules}
-                  disabled={state.submodulesLoading}
-                  className="p-1 text-slate-500 hover:text-green-600 dark:hover:text-green-400 disabled:opacity-50 flex items-center"
-                  title={t("sidebar.sourceControl.updateSubmodules")}
-                >
-                  <Play className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
-          {state.submodules.map((sub, idx) => (
-            <div
-              key={idx}
-              className="group flex flex-col p-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded mb-1 cursor-default"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Box
-                    className={`w-4 h-4 shrink-0 ${
-                      sub.status === "+"
-                        ? "text-amber-500"
-                        : sub.status === "-"
-                          ? "text-slate-500"
-                          : sub.status === "U"
-                            ? "text-red-500"
-                            : "text-green-500"
-                    }`}
-                  />
                   <span
-                    className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate max-w-[120px]"
-                    title={sub.path}
+                    className={`text-xs truncate ${
+                      file.status === "deleted"
+                        ? "text-red-500/80 dark:text-red-400/80 line-through"
+                        : file.status === "conflicted"
+                          ? "text-amber-600 dark:text-amber-400 font-bold"
+                          : "text-slate-700 dark:text-slate-300"
+                    }`}
+                    title={file.path}
                   >
-                    {sub.name}
+                    {file.path}
                   </span>
                 </div>
-                <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => {
-                      if (onOpenSubmodule) {
-                        // Normalize path separators just in case
-                        const fullPath = `${repoPath}/${sub.path}`.replace(
-                          /\\/g,
-                          "/",
-                        );
-                        onOpenSubmodule(fullPath);
-                      }
-                    }}
-                    className="p-1 mr-1 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
-                    title={t("sidebar.sourceControl.openSubmoduleWorkspace")}
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => actions.handleRemoveSubmodule(sub.path, sub.name)}
-                    className="p-1 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                    title={t("sidebar.sourceControl.removeSubmodule")}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                <div className="flex opacity-0 group-hover:opacity-100 space-x-1 shrink-0 transition-opacity">
+                  {file.status === "conflicted" ? (
+                    <>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); actions.handleResolveConflict(file.path, "ours"); }}
+                        className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded transition-colors"
+                        title={t("sidebar.sourceControl.acceptCurrent")}
+                      >
+                        <ArrowLeftToLine className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); actions.handleResolveConflict(file.path, "theirs"); }}
+                        className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                        title={t("sidebar.sourceControl.acceptIncoming")}
+                      >
+                        <ArrowRightToLine className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); actions.handleDiscard(file.path); }}
+                        className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                        title={t("sidebar.sourceControl.discard")}
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); actions.handleStage(file.path); }}
+                        className="p-1 text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                        title={t("sidebar.sourceControl.stage")}
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
-              <span className="text-xs text-slate-500 ml-6 truncate font-mono mt-0.5">
-                {sub.status === "-"
-                  ? `(${t("sidebar.sourceControl.uninitialized")})`
-                  : sub.hash.substring(0, 7)}
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
-
-      {isStashesModalOpen && repoPath && (
-        <StashesModal
-          repoPath={repoPath}
-          onClose={() => setIsStashesModalOpen(false)}
-          onRefreshGraph={() => {
-            actions.loadStatus();
-            if (onCommit) onCommit(); // Trigger graph reload
-          }}
-        />
-      )}
-
       {/* File History Context Menu */}
       {contextMenu.visible && contextMenu.path && onViewFileHistory && (
         <div

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { RefreshCcw, AlertTriangle, GitBranch } from 'lucide-react';
 import { ReflogEntry } from '../../../domain/entities/GitEntities';
 import { useGitActions } from '../../hooks/useGitActions';
@@ -89,8 +89,9 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-950">
-      <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/40 shrink-0">
-        <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center space-x-2">
+      <div className="p-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm shrink-0 flex items-center justify-between sticky top-0 z-10">
+        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest flex items-center gap-2">
+            <RefreshCcw className="w-4 h-4 text-indigo-500" />
             <span>{t('rescueSidebar.title')}</span>
         </span>
       </div>
@@ -102,11 +103,14 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
             </div>
         )}
 
-        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded p-2 text-xs text-amber-800 dark:text-amber-400">
-            <div className="font-bold flex items-center mb-1">
+        <div className="bg-amber-50/80 dark:bg-amber-500/10 border border-amber-200/80 dark:border-amber-500/20 rounded-xl p-3 text-xs text-amber-800 dark:text-amber-400 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-16 h-16 bg-amber-400/20 blur-2xl rounded-full pointer-events-none" />
+            <div className="font-bold flex items-center mb-1 drop-shadow-sm">
                 <AlertTriangle className="w-3.5 h-3.5 mr-1" /> {t('rescueSidebar.reflog')}
             </div>
-            {t('rescueSidebar.reflogDesc')}
+            <div className="opacity-90 leading-relaxed">
+                {t('rescueSidebar.reflogDesc')}
+            </div>
         </div>
 
         {loading ? (

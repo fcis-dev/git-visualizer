@@ -106,9 +106,10 @@ export function TagsSidebar({ repoPath, onRefreshGraph, hasRemote }: TagsSidebar
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-950">
-      <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col bg-slate-50/50 dark:bg-slate-900/40 shrink-0 space-y-3">
+      <div className="p-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm shrink-0 flex flex-col space-y-3 sticky top-0 z-10">
         <div className="flex items-center justify-between h-7">
-            <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center space-x-2">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest flex items-center gap-2">
+                <Tag className="w-4 h-4 text-indigo-500" />
                 <span>{t('tagsSidebar.title')}</span>
             </span>
             <div className="flex items-center space-x-2">
@@ -116,7 +117,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph, hasRemote }: TagsSidebar
                      <button
                         onClick={handlePushTags}
                         disabled={loadingTags || !hasRemote}
-                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded text-slate-500 hover:text-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-1 hover:bg-white dark:hover:bg-slate-700/50 rounded-md transition-colors text-slate-400 hover:text-indigo-500 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                         title={!hasRemote ? t("workspace.header.noRemote") : t('tagsSidebar.pushTagsTooltip')}
                      >
                         <UploadCloud className="w-3.5 h-3.5" />
@@ -136,7 +137,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph, hasRemote }: TagsSidebar
                 placeholder={t('tagsSidebar.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500"
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500 shadow-sm"
             />
         </div>
       </div>
@@ -148,9 +149,9 @@ export function TagsSidebar({ repoPath, onRefreshGraph, hasRemote }: TagsSidebar
             </div>
         )}
 
-        <div className="space-y-1">
+        <div className="space-y-1 mt-2">
             <div 
-                className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase px-1 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer select-none transition-colors"
+                className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 py-1.5 bg-slate-100/50 dark:bg-slate-800/30 rounded-md cursor-pointer select-none transition-colors"
                 onClick={() => setIsTagsExpanded(!isTagsExpanded)}
             >
                 <div className="flex items-center space-x-1">

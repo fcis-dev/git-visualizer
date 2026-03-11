@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   FolderTree,
   Trash2,
@@ -112,23 +112,22 @@ export function WorktreesSidebar({
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-950">
-      <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col bg-slate-50/50 dark:bg-slate-900/40 shrink-0 space-y-3">
-        <div className="flex items-center justify-between h-7">
-          <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center space-x-2">
-            <span>{t('worktreesSidebar.title')}</span>
-          </span>
-          <div className="flex items-center space-x-2">
-            {loading && (
-              <div className="animate-spin rounded-full h-3.5 w-3.5 border-t-2 border-b-2 border-indigo-500"></div>
-            )}
-            <button
-              onClick={handlePrune}
-              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
-              title={t('worktreesSidebar.pruneTooltip')}
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
-          </div>
+      <div className="p-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm shrink-0 flex items-center justify-between sticky top-0 z-10">
+        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest flex items-center gap-2">
+          <FolderTree className="w-4 h-4 text-indigo-500" />
+          {t('worktreesSidebar.title')}
+        </span>
+        <div className="flex items-center space-x-2">
+          {loading && (
+            <div className="animate-spin rounded-full h-3.5 w-3.5 border-t-2 border-b-2 border-indigo-500"></div>
+          )}
+          <button
+            onClick={handlePrune}
+            className="p-1 hover:bg-white dark:hover:bg-slate-700/50 rounded-md transition-colors text-slate-400 hover:text-indigo-500 shadow-xs"
+            title={t('worktreesSidebar.pruneTooltip')}
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
@@ -142,9 +141,9 @@ export function WorktreesSidebar({
         <div className="px-2 pt-2">
           <form
             onSubmit={handleAdd}
-            className="p-3 border border-slate-200 dark:border-slate-800 rounded bg-slate-50 dark:bg-slate-800/50 flex flex-col space-y-2"
+            className="p-3 border border-slate-200/50 dark:border-slate-700/50 rounded-xl bg-slate-50/50 dark:bg-slate-800/30 flex flex-col space-y-2 shadow-sm"
           >
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <span className="text-[11px] uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 mb-1">
               {t('worktreesSidebar.addWorktree')}
             </span>
             <input
@@ -165,10 +164,10 @@ export function WorktreesSidebar({
             <button
               type="submit"
               disabled={isAdding || !newPath.trim()}
-              className="w-full py-1.5 flex items-center justify-center bg-indigo-600 text-white rounded text-xs font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="w-full py-2 flex items-center justify-center bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-500 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed transition-all shadow-sm disabled:shadow-none mt-1"
             >
               {isAdding ? (
-                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1.5" />
+                <div className="w-3.5 h-3.5 border-2 border-slate-400 dark:border-slate-500 border-t-transparent rounded-full animate-spin mr-1.5" />
               ) : (
                 <Plus className="w-3.5 h-3.5 mr-1.5" />
               )}

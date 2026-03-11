@@ -1,4 +1,4 @@
-import { FolderGit2, GitBranch, Tag, FolderTree, LifeBuoy } from "lucide-react";
+import { FolderGit2, GitBranch, Tag, FolderTree, LifeBuoy, Archive, Box } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface WorkspaceActivityBarProps {
@@ -86,6 +86,36 @@ export function WorkspaceActivityBar({
             )}
           </button>
         )}
+
+        <button
+          onClick={() => setActiveSidebarTab("stashes")}
+          className={`p-3 rounded-xl transition-all relative ${
+            activeSidebarTab === "stashes"
+              ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 shadow-sm"
+              : "text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
+          title={t("stashes.title")}
+        >
+          <Archive className="w-6 h-6 stroke-[1.5]" />
+          {activeSidebarTab === "stashes" && (
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-r-full -ml-[9px]"></div>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveSidebarTab("submodules")}
+          className={`p-3 rounded-xl transition-all relative ${
+            activeSidebarTab === "submodules"
+              ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 shadow-sm"
+              : "text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
+          title={t("sidebar.sourceControl.submodules")}
+        >
+          <Box className="w-6 h-6 stroke-[1.5]" />
+          {activeSidebarTab === "submodules" && (
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-600 dark:bg-blue-500 rounded-r-full -ml-[9px]"></div>
+          )}
+        </button>
 
         <button
           onClick={() => setActiveSidebarTab("rescue")}

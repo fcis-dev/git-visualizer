@@ -127,10 +127,37 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
 
     // Dynamic colors based on theme
     const isDark = theme === "dark";
-    // const textColor = isDark ? "#e2e8f0" : "#1e293b"; // slate-200 / slate-800
-    const mutedColor = isDark ? "#64748b" : "#94a3b8"; // slate-500 / slate-400
-    const authorColor = isDark ? "#94a3b8" : "#64748b"; // slate-400 / slate-500
-    const dateColor = isDark ? "#475569" : "#cbd5e1"; // slate-600 / slate-300
+    const mutedColor = isDark ? "#94a3b8" : "#64748b"; // slate-400 / slate-500
+    const authorColor = isDark ? "#cbd5e1" : "#475569"; // slate-300 / slate-600
+    const dateColor = isDark ? "#64748b" : "#94a3b8"; // slate-500 / slate-400
+
+    const getAvatarColor = (name: string) => {
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const h = Math.abs(hash) % 360;
+      const s = isDark ? 65 : 75;
+      const l = isDark ? 45 : 55;
+      return `hsl(${h}, ${s}%, ${l}%)`;
+    };
+
+    // Add filter definitions for glow effect
+    const defs = svg.append("defs");
+    const filter = defs
+      .append("filter")
+      .attr("id", "glow")
+      .attr("x", "-50%")
+      .attr("y", "-50%")
+      .attr("width", "200%")
+      .attr("height", "200%");
+    filter
+      .append("feGaussianBlur")
+      .attr("stdDeviation", "2.5")
+      .attr("result", "coloredBlur");
+    const feMerge = filter.append("feMerge");
+    feMerge.append("feMergeNode").attr("in", "coloredBlur");
+    feMerge.append("feMergeNode").attr("in", "SourceGraphic");
 
     // Group links by color to drastically reduce DOM elements
     const groupedLinks = new Map<string, typeof links>();
@@ -215,18 +242,20 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       .style("cursor", "pointer")
       .on("click", (_event, d) => onSelectCommit(d))
       .on("mouseover", function () {
-        d3.select(this).select("circle").attr("r", 8).attr("stroke-width", 4);
+        d3.select(this).select("circle").attr("r", 7).attr("stroke-width", 4);
         d3.select(this)
           .select(".commit-message")
-          .style("color", isDark ? "#fff" : "#000"); // Highlight text
+          .style("color", isDark ? "#ffffff" : "#0f172a"); // Highlight text
       })
       .on("mouseout", function () {
         // Reset to normal size if not selected
         const data = d3.select(this).datum() as any;
         const isSelected = selectedCommit?.hash === data.hash;
         if (!isSelected) {
-          d3.select(this).select("circle").attr("r", 6).attr("stroke-width", 3);
-          d3.select(this).select(".commit-message").style("color", mutedColor);
+          d3.select(this).select("circle").attr("r", 5).attr("stroke-width", 3);
+          d3.select(this)
+            .select(".commit-message")
+            .style("color", authorColor);
         }
       });
 
@@ -235,17 +264,31 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
     // Node Circle
     nodeGroup
       .append("circle")
-      .attr("r", (d) => (selectedCommit?.hash === d.hash ? 8 : 6))
+      .attr("r", (d) => (selectedCommit?.hash === d.hash ? 7 : 5))
       .attr("fill", bgFill)
       .attr("stroke", (d) => LANE_COLORS[d.lane % LANE_COLORS.length])
-      .attr("stroke-width", (d) => (selectedCommit?.hash === d.hash ? 4 : 3))
-      .style("transition", "all 0.2s ease");
+      .attr("stroke-width", (d) => (selectedCommit?.hash === d.hash ? 5 : 3))
+      .style("filter", (d) =>
+        selectedCommit?.hash === d.hash ? "url(#glow)" : "none",
+      )
+      .style("transition", "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)");
 
     let maxContentWidth = containerWidth;
 
     // Commit Message and Refs
     nodeGroup.each(function (d) {
       const group = d3.select(this);
+      
+      // Add right-click listener to the whole row
+      group.on("contextmenu", (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        if (onBranchContextMenu) {
+            // Pass the commit hash as the context reference. 
+            // We use a prefix 'commit:' so the handler knows it's a commit and not a branch name
+            onBranchContextMenu(`commit:${d.hash}`, evt.clientX, evt.clientY);
+        }
+      });
       // Find max lane among all nodes to determine common starting X
       const maxLane =
         nodes.length > 0 ? Math.max(...nodes.map((n) => n.lane || 0)) : 0;
@@ -261,21 +304,33 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       if (d.refs && d.refs.length > 0) {
         const tags = d.refs
           .map((ref) => {
-            let bgFill = isDark ? "#312e81" : "#e0e7ff";
-            let textFill = isDark ? "#e0e7ff" : "#4338ca";
-            let border = isDark ? "#3730a3" : "#c7d2fe";
+            let bgFill = isDark
+              ? "rgba(79, 70, 229, 0.15)"
+              : "rgba(99, 102, 241, 0.1)";
+            let textFill = isDark ? "#818cf8" : "#4338ca";
+            let border = isDark
+              ? "rgba(99, 102, 241, 0.3)"
+              : "rgba(99, 102, 241, 0.2)";
 
             const isTag = ref.startsWith("tag: ");
             const displayName = isTag ? ref.substring(5) : ref;
 
             if (ref.includes("HEAD") || isTag) {
-              bgFill = isDark ? "#064e3b" : "#d1fae5";
-              textFill = isDark ? "#d1fae5" : "#059669";
-              border = isDark ? "#065f46" : "#6ee7b7";
+              bgFill = isDark
+                ? "rgba(16, 185, 129, 0.15)"
+                : "rgba(16, 185, 129, 0.1)";
+              textFill = isDark ? "#34d399" : "#059669";
+              border = isDark
+                ? "rgba(52, 211, 153, 0.3)"
+                : "rgba(16, 185, 129, 0.2)";
             } else if (ref.includes("origin")) {
-              bgFill = isDark ? "#3730a3" : "#c7d2fe";
-              textFill = isDark ? "#e0e7ff" : "#3730a3";
-              border = isDark ? "#4338ca" : "#a5b4fc";
+              bgFill = isDark
+                ? "rgba(236, 72, 153, 0.15)"
+                : "rgba(236, 72, 153, 0.1)";
+              textFill = isDark ? "#f472b6" : "#db2777";
+              border = isDark
+                ? "rgba(244, 114, 182, 0.3)"
+                : "rgba(236, 72, 153, 0.2)";
             }
 
             const safeRef = ref
@@ -287,11 +342,11 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;");
             // data-ref stores the raw ref string so we can read it from the DOM event
-            return `<div data-ref="${safeRef}" style="background-color: ${bgFill}; color: ${textFill}; border: 1px solid ${border}; border-radius: 4px; padding: 1px 6px; font-size: 10px; line-height: 14px; white-space: nowrap; pointer-events: auto; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: inline-block; cursor: context-menu;">${safeDisplayName}</div>`;
+            return `<div data-ref="${safeRef}" style="background-color: ${bgFill}; color: ${textFill}; border: 1px solid ${border}; border-radius: 9999px; padding: 2px 10px; font-size: 11px; font-weight: 500; line-height: 14px; white-space: nowrap; pointer-events: auto; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: inline-block; cursor: context-menu; backdrop-filter: blur(4px); box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.15s ease, filter 0.15s ease;" onmouseover="this.style.transform='scale(1.05)'; this.style.filter='brightness(1.1)'" onmouseout="this.style.transform='scale(1)'; this.style.filter='brightness(1)'">${safeDisplayName}</div>`;
           })
           .join("");
 
-        tagsHtml = `<div style="display: flex; flex-wrap: nowrap; gap: 6px; margin-top: 4px; overflow: hidden;">${tags}</div>`;
+        tagsHtml = `<div style="display: flex; flex-wrap: nowrap; gap: 8px; margin-top: 6px; overflow: hidden;">${tags}</div>`;
       }
 
       const absoluteX = (d as any).x + currentX;
@@ -318,15 +373,18 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       const msgColor =
         selectedCommit?.hash === d.hash
           ? isDark
-            ? "#fff"
-            : "#000"
-          : mutedColor;
-      const msgWeight = selectedCommit?.hash === d.hash ? "bold" : "normal";
+            ? "#ffffff"
+            : "#0f172a"
+          : authorColor;
+      const msgWeight = selectedCommit?.hash === d.hash ? "600" : "500";
+      const hoverBg = isDark
+        ? "rgba(30, 41, 59, 0.5)"
+        : "rgba(241, 245, 249, 0.7)";
 
       const fo = group
         .append("foreignObject")
         .attr("x", currentX)
-        .attr("y", -16) // Shifted up slightly
+        .attr("y", -24)
         .attr("width", foWidth)
         .attr("height", foHeight)
         .style("pointer-events", "none")
@@ -342,29 +400,49 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
 
-      fo
+      const authorInitial = safeAuthor.charAt(0).toUpperCase();
+      const avatarColor = getAvatarColor(safeAuthor);
+
+      const contentDiv = fo
         .append("xhtml:div")
         .style("display", "flex")
-        .style("align-items", "flex-start")
+        .style("align-items", "center")
         .style("gap", "16px")
         .style("width", "100%")
+        .style("height", "48px")
+        .style("padding", "0 12px")
+        .style("border-radius", "8px")
+        .style("font-family", "'Inter', 'Roboto', 'Segoe UI', sans-serif")
+        .style("font-size", "13px")
+        .style("pointer-events", "auto")
         .style(
-          "font-family",
-          "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+          "transition",
+          "background-color 0.15s ease, transform 0.15s ease",
         )
-        .style("font-size", "12px").html(`
-            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
-                <div class="commit-message" style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; color: ${msgColor}; font-weight: ${msgWeight}; pointer-events: auto; transition: color 0.1s;" title="${safeMsg}">
+        .on("mouseover", function () {
+          d3.select(this).style("background-color", hoverBg);
+        })
+        .on("mouseout", function () {
+          d3.select(this).style("background-color", "transparent");
+        })
+        .on("click", (_event) => onSelectCommit(d));
+
+      contentDiv.html(`
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; pointer-events: none;">
+                <div class="commit-message" style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.5; color: ${msgColor}; font-weight: ${msgWeight}; transition: color 0.15s;">
                   ${safeMsg}
                 </div>
                 ${tagsHtml}
             </div>
-            <div style="width: 130px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${authorColor}; text-align: left; pointer-events: auto;" title="${safeAuthor}">
-              ${safeAuthor}
+            <div style="width: 160px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; overflow: hidden; color: ${authorColor}; pointer-events: none;" title="${safeAuthor}">
+              <div style="width: 24px; height: 24px; border-radius: 50%; background-color: ${avatarColor}; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.15);">
+                ${authorInitial}
+              </div>
+              <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; font-size: 12px;">${safeAuthor}</span>
             </div>
-            <div style="width: 100px; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; color: ${dateColor}; pointer-events: auto; white-space: nowrap;" title="${datePart} ${timePart}">
-              <span>${datePart}</span>
-              <span style="font-size: 10px; opacity: 0.7;">${timePart}</span>
+            <div style="width: 90px; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; color: ${dateColor}; pointer-events: none; white-space: nowrap;" title="${datePart} ${timePart}">
+              <span style="font-weight: 500; font-size: 12px;">${datePart}</span>
+              <span style="font-size: 11px; opacity: 0.7;">${timePart}</span>
             </div>
           `);
 

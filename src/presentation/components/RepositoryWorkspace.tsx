@@ -13,6 +13,8 @@ import { CreateBranchModal } from "./CreateBranchModal";
 import { RepositoryStatsModal } from "./RepositoryStatsModal";
 import { MergeConflictEditor } from "./MergeConflictEditor";
 import { WorktreesSidebar } from "./Sidebar/WorktreesSidebar";
+import { StashesSidebar } from "./Sidebar/StashesSidebar";
+import { SubmodulesSidebar } from "./Sidebar/SubmodulesSidebar";
 import { WorkspaceHeader } from "./workspace/WorkspaceHeader";
 import { WorkspaceActivityBar } from "./workspace/WorkspaceActivityBar";
 import { WorkspaceSearchBar } from "./workspace/WorkspaceSearchBar";
@@ -237,6 +239,10 @@ export function RepositoryWorkspace({
       graphActions.handleCherryPick(refName);
   };
 
+  const handleGraphBranchRevert = (refName: string) => {
+      graphActions.handleRevert(refName);
+  };
+
   const handleGraphBranchReset = (refName: string, mode: "soft" | "mixed" | "hard") => {
       graphActions.handleReset(refName, mode);
   };
@@ -371,6 +377,21 @@ export function RepositoryWorkspace({
                onOpenWorktree={onOpenSubmodule}
             />
           )}
+
+          {activeSidebarTab === "stashes" && (
+            <StashesSidebar
+              repoPath={repoPath}
+              onRefreshGraph={loadCommits}
+            />
+          )}
+
+          {activeSidebarTab === "submodules" && (
+            <SubmodulesSidebar
+              repoPath={repoPath}
+              onOpenSubmodule={onOpenSubmodule}
+              onRefreshGraph={loadCommits}
+            />
+          )}
         </div>
 
         {/* Middle Column: History Graph & Search (and Overlay Diff) */}
@@ -432,6 +453,7 @@ export function RepositoryWorkspace({
               onMerge={handleGraphBranchMerge}
               onRebase={handleGraphBranchRebase}
               onCherryPick={handleGraphBranchCherryPick}
+              onRevert={handleGraphBranchRevert}
               onReset={handleGraphBranchReset}
               onDelete={handleGraphBranchDelete}
             />
@@ -491,14 +513,6 @@ export function RepositoryWorkspace({
                 setContentTarget({ path: p, commitHash: selectedCommit.hash })
               }
               onViewFileHistory={handleViewFileHistory}
-              onCheckout={handleCheckoutCommit}
-              onCreateBranch={handleCreateBranch}
-              onCreateTag={handleCreateTag}
-              onMerge={handleMerge}
-              onRevert={handleRevert}
-              onCherryPick={handleCherryPick}
-              onRebase={handleRebase}
-              onReset={handleReset}
               onRefreshGraph={() => loadCommits()}
             />
           </div>

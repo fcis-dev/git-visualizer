@@ -1,12 +1,13 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { GitBranch, Trash2, Check, ChevronDown, ChevronRight, Search, Globe, Plus } from 'lucide-react';
+import { GitBranch, Trash2, Check, ChevronDown, ChevronRight, Search, Globe, Plus, Folder, FolderOpen } from 'lucide-react';
 import { BranchData } from '../../../domain/entities/GitEntities';
 import { TauriGitRepository } from '../../../data/repositories/TauriGitRepository';
 import { useGitActions } from '../../hooks/useGitActions';
 import { useDialog } from '../../context/DialogContext';
 import { buildBranchTree, sortTreeNodes, BranchTreeNode } from '../../utils/branchTreeUtils';
 import { useTranslation } from "react-i18next";
+import { GraphBranchContextMenu } from "../workspace/GraphBranchContextMenu";
 
 // Module-level singleton — avoids recreating on every render
 const repository = new TauriGitRepository();
@@ -345,9 +346,10 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-950">
-      <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col bg-slate-50/50 dark:bg-slate-900/40 shrink-0 space-y-3">
+      <div className="p-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm shrink-0 flex flex-col space-y-3 sticky top-0 z-10">
         <div className="flex items-center justify-between h-7">
-            <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center space-x-2">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest flex items-center gap-2">
+                <GitBranch className="w-4 h-4 text-indigo-500" />
                 <span>{t("sidebar.branches.title")}</span>
             </span>
             {loadingBranches && <div className="animate-spin rounded-full h-3.5 w-3.5 border-t-2 border-b-2 border-indigo-500"></div>}
@@ -361,7 +363,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
                 placeholder={t("sidebar.branches.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500"
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500 shadow-sm"
             />
         </div>
       </div>
@@ -373,15 +375,18 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
             </div>
         )}
 
-        <div className="space-y-1">
+        <div className="space-y-1 mt-2">
             <div 
-                className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase px-1 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer select-none transition-colors"
+                className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 py-1.5 bg-slate-100/50 dark:bg-slate-800/30 rounded-md cursor-pointer select-none transition-colors"
                 onClick={() => setIsLocalExpanded(!isLocalExpanded)}
             >
                 <div className="flex items-center space-x-1">
                     {isLocalExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                    <span>{t("sidebar.branches.local")} ({localBranches.length})</span>
+                    <span>{t("sidebar.branches.local")}</span>
                 </div>
+                <span className="bg-white dark:bg-slate-700 px-1.5 py-0.5 rounded-full text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-600 leading-none">
+                    {localBranches.length}
+                </span>
             </div>
             
             {isLocalExpanded && !loadingBranches && (
@@ -401,15 +406,18 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
             )}
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-1 mt-4">
             <div 
-                className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase px-1 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer select-none transition-colors"
+                className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 py-1.5 bg-slate-100/50 dark:bg-slate-800/30 rounded-md cursor-pointer select-none transition-colors"
                 onClick={() => setIsRemoteExpanded(!isRemoteExpanded)}
             >
                 <div className="flex items-center space-x-1">
                     {isRemoteExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                    <span>{t("sidebar.branches.remote")} ({remoteBranches.length})</span>
+                    <span>{t("sidebar.branches.remote")}</span>
                 </div>
+                <span className="bg-white dark:bg-slate-700 px-1.5 py-0.5 rounded-full text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-600 leading-none">
+                    {remoteBranches.length}
+                </span>
             </div>
             
             {isRemoteExpanded && !loadingBranches && (
@@ -430,25 +438,30 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
             )}
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-1 mt-4">
             <div 
-                className="flex items-center justify-between text-xs font-bold text-slate-500 uppercase px-1 py-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer select-none transition-colors"
+                className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 py-1.5 bg-slate-100/50 dark:bg-slate-800/30 rounded-md cursor-pointer select-none transition-colors"
                 onClick={() => setIsRemotesExpanded(!isRemotesExpanded)}
             >
                 <div className="flex items-center space-x-1">
                     {isRemotesExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                    <span>{t("sidebar.branches.remotes")} ({remotes.length})</span>
+                    <span>{t("sidebar.branches.remotes")}</span>
                 </div>
-                <button 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddRemote();
-                    }}
-                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"
-                    title={t("sidebar.branches.addRemote")}
-                >
-                    <Plus className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center space-x-2">
+                    <span className="bg-white dark:bg-slate-700 px-1.5 py-0.5 rounded-full text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-600 leading-none">
+                        {remotes.length}
+                    </span>
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddRemote();
+                        }}
+                        className="p-1 hover:bg-white dark:hover:bg-slate-700/50 rounded-md transition-colors text-slate-400 hover:text-indigo-500 shadow-xs"
+                        title={t("sidebar.branches.addRemote")}
+                    >
+                        <Plus className="w-3.5 h-3.5" />
+                    </button>
+                </div>
             </div>
             
             {isRemotesExpanded && (
@@ -484,139 +497,25 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
       </div>
 
       {contextMenu.visible && contextMenu.branch && (
-        <div 
-          className="fixed z-50 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg min-w-[160px] text-sm overflow-hidden"
-          style={{ top: contextMenu.y, left: contextMenu.x }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 truncate max-w-[200px]" title={contextMenu.branch.name}>
-            {contextMenu.branch.name}
-          </div>
-          
-          <button 
-            className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
-            onClick={() => {
-              handleCheckoutBranch(contextMenu.branch!);
-              setContextMenu({ ...contextMenu, visible: false });
-            }}
-          >
-            {t("sidebar.branches.checkout")}
-          </button>
-
-          {!contextMenu.branch.is_remote && (
-            <button 
-              className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
-              onClick={() => {
-                handleRenameBranch(contextMenu.branch!);
-                setContextMenu({ ...contextMenu, visible: false });
-              }}
-            >
-              {t("sidebar.branches.rename")}
-            </button>
-          )}
-
-          <button 
-            className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
-            onClick={() => {
-              handleCreateBranchFrom(contextMenu.branch!);
-              setContextMenu({ ...contextMenu, visible: false });
-            }}
-          >
-            {t("sidebar.branches.createBranchFromHere")}
-          </button>
-
-          <button 
-            className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
-            onClick={() => {
-              handleCreateTagFrom(contextMenu.branch!);
-              setContextMenu({ ...contextMenu, visible: false });
-            }}
-          >
-            {t("sidebar.branches.createTagHere")}
-          </button>
-
-          {contextMenu.branch.name !== currentBranch && (
-            <>
-              <div className="border-t border-slate-100 dark:border-slate-800 my-1"></div>
-              
-              <button 
-                className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
-                onClick={() => {
-                  handleMergeBranch(contextMenu.branch!);
-                  setContextMenu({ ...contextMenu, visible: false });
-                }}
-              >
-                {t("sidebar.branches.mergeIntoCurrent")}
-              </button>
-
-              <button 
-                className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
-                onClick={() => {
-                  handleRebaseOnto(contextMenu.branch!);
-                  setContextMenu({ ...contextMenu, visible: false });
-                }}
-              >
-                {t("sidebar.branches.rebaseOntoThis")}
-              </button>
-
-              <button 
-                className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
-                onClick={() => {
-                  handleCherryPickBranch(contextMenu.branch!);
-                  setContextMenu({ ...contextMenu, visible: false });
-                }}
-              >
-                {t("sidebar.branches.cherryPick")}
-              </button>
-
-              <div className="border-t border-slate-100 dark:border-slate-800 my-1"></div>
-              <div className="px-4 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{t("sidebar.branches.resetCurrentToHere")}</div>
-              
-              <button 
-                className="w-full text-left px-4 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
-                onClick={() => {
-                  handleResetTo(contextMenu.branch!, "soft");
-                  setContextMenu({ ...contextMenu, visible: false });
-                }}
-              >
-                {t("sidebar.branches.softReset")}
-              </button>
-              <button 
-                className="w-full text-left px-4 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
-                onClick={() => {
-                  handleResetTo(contextMenu.branch!, "mixed");
-                  setContextMenu({ ...contextMenu, visible: false });
-                }}
-              >
-                {t("sidebar.branches.mixedReset")}
-              </button>
-              <button 
-                className="w-full text-left px-4 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-red-600 dark:text-red-400 font-medium"
-                onClick={() => {
-                  handleResetTo(contextMenu.branch!, "hard");
-                  setContextMenu({ ...contextMenu, visible: false });
-                }}
-              >
-                {t("sidebar.branches.hardReset")}
-              </button>
-            </>
-          )}
-
-          {contextMenu.branch.name !== currentBranch && (
-            <>
-              <div className="border-t border-slate-100 dark:border-slate-800 my-1"></div>
-              <button 
-                className="w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-red-600 dark:text-red-400 hover:text-red-700"
-                onClick={(e) => {
-                handleDeleteBranch(contextMenu.branch!, e);
-                setContextMenu({ ...contextMenu, visible: false });
-              }}
-            >
-              {t("sidebar.branches.delete")}
-            </button>
-            </>
-          )}
-        </div>
+        <GraphBranchContextMenu
+          contextMenu={{
+            visible: contextMenu.visible,
+            x: contextMenu.x,
+            y: contextMenu.y,
+            refName: contextMenu.branch.name
+          }}
+          onClose={() => setContextMenu({ ...contextMenu, visible: false })}
+          branchName={currentBranch}
+          onCheckout={(ref) => handleCheckoutBranch({ ...contextMenu.branch!, name: ref })}
+          onCreateFrom={(ref) => handleCreateBranchFrom({ ...contextMenu.branch!, name: ref })}
+          onCreateTag={(ref) => handleCreateTagFrom({ ...contextMenu.branch!, name: ref })}
+          onMerge={(ref) => handleMergeBranch({ ...contextMenu.branch!, name: ref })}
+          onRebase={(ref) => handleRebaseOnto({ ...contextMenu.branch!, name: ref })}
+          onCherryPick={(ref) => handleCherryPickBranch({ ...contextMenu.branch!, name: ref })}
+          onRevert={(ref) => { /* Sub-branches context menu doesn't need revert yet, or we hook it up if needed */ }}
+          onReset={(ref, mode) => handleResetTo({ ...contextMenu.branch!, name: ref }, mode)}
+          onDelete={(ref) => handleDeleteBranch({ ...contextMenu.branch!, name: ref }, { stopPropagation: () => {} } as any)}
+        />
       )}
     </div>
   );
@@ -640,7 +539,7 @@ function BranchNodeRenderer({
     level?: number;
 }) {
     const { t } = useTranslation();
-    const [expanded, setExpanded] = useState(true); // Default expand trees initially
+    const [expanded, setExpanded] = useState(false); // Default collapsed
     
     const children = sortTreeNodes(node);
     const isFolder = !node.isLeaf && children.length > 0;
@@ -666,14 +565,23 @@ function BranchNodeRenderer({
 
     if (isFolder) {
         return (
-            <div className="flex flex-col">
+            <div className="flex flex-col mb-0.5">
                 <div 
                     onClick={() => setExpanded(!expanded)}
-                    className="flex items-center space-x-1.5 p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded cursor-pointer select-none transition-colors"
-                    style={{ paddingLeft: `${level * 12 + 6}px` }}
+                    className="group flex items-center space-x-1.5 py-1.5 pr-2 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-md cursor-pointer select-none transition-colors"
+                    style={{ paddingLeft: `${level * 12 + 2}px` }}
                 >
-                    {expanded ? <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />}
-                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 truncate" title={node.path}>{node.name}/</span>
+                    <div className="flex items-center justify-center w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 transition-colors">
+                        {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                    </div>
+                    {expanded ? (
+                        <FolderOpen className="w-3.5 h-3.5 text-indigo-400 dark:text-indigo-500 shrink-0" />
+                    ) : (
+                        <Folder className="w-3.5 h-3.5 text-indigo-400 dark:text-indigo-500 shrink-0" />
+                    )}
+                    <span className="text-[13px] font-medium text-slate-700 dark:text-slate-200 truncate" title={node.path}>
+                        {node.name}
+                    </span>
                 </div>
                 {expanded && (
                     <div className="flex flex-col space-y-0.5 pt-0.5">
