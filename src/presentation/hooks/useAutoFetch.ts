@@ -67,7 +67,7 @@ export function useAutoFetch(
     } finally {
       setIsFetching(false);
     }
-  }, [repoPath]);
+  }, [repoPath, hasRemote]);
 
   // Periodic auto-fetch
   useEffect(() => {

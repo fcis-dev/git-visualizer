@@ -12,14 +12,25 @@
 @layer base {
   :root {
     color-scheme: light dark;
+    /* Enhance light mode contrast: darken mid-tones for better readability */
+    --color-slate-400: #7b8ca3;
+    --color-slate-500: #57677d;
   }
 
   body {
-    @apply bg-white text-slate-900 antialiased font-sans selection:bg-indigo-500/30 selection:text-indigo-600;
+    @apply bg-white text-slate-950 antialiased font-sans selection:bg-indigo-500/30 selection:text-indigo-600;
+  }
+
+  :root.dark {
+    /* Enhance dark mode contrast: lighten mid-tones, increase border visibility, and darken background */
+    --color-slate-400: #acb8cc;
+    --color-slate-500: #8294ad;
+    --color-slate-800: #2b394d;
+    --color-slate-950: #060913;
   }
 
   :root.dark body {
-    @apply bg-slate-950 text-slate-200 selection:text-indigo-200;
+    @apply bg-slate-950 text-slate-50 selection:text-indigo-200;
   }
 }
 
