@@ -156,7 +156,7 @@ export function SourceControl({
             value={state.commitMessage}
             onChange={(e) => actions.setCommitMessage(e.target.value)}
             placeholder={t("sidebar.sourceControl.commitPlaceholder")}
-            className="w-full bg-transparent border-none rounded p-1 text-sm text-slate-900 dark:text-slate-100 focus:outline-none min-h-[80px] resize-y placeholder:text-slate-400 dark:placeholder:text-slate-500 relative z-10"
+            className="w-full bg-transparent border-none rounded p-1 text-sm text-slate-900 dark:text-slate-100 focus:outline-none h-[80px] resize-none overflow-y-auto custom-scrollbar placeholder:text-slate-400 dark:placeholder:text-slate-500 relative z-10"
             onKeyDown={(e) => {
               if (e.ctrlKey && e.key === "Enter") {
                 actions.handleCommit();
