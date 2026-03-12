@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo, memo, useCallback } from "react";
+import { useEffect, useState, useMemo, memo, useCallback, startTransition } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { X, Play, RotateCcw } from "lucide-react";
+import { X, Play, RotateCcw, Search } from "lucide-react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useGitActions } from "../hooks/useGitActions";
@@ -40,6 +40,7 @@ interface DiffLineProps {
   commitHash?: string;
   cached: boolean;
   hunk: Hunk;
+  searchQuery: string;
   onStageHunk: (hunk: Hunk) => void;
 }
 
@@ -50,18 +51,23 @@ const DiffLine = memo(function DiffLine({
   commitHash,
   cached,
   hunk,
+  searchQuery,
   onStageHunk,
 }: DiffLineProps) {
   const { t } = useTranslation();
   let colorClass = "text-slate-600 dark:text-slate-400";
   let bgClass = "";
 
+  const isMatch = searchQuery && line.content.toLowerCase().includes(searchQuery.toLowerCase());
+
   if (line.type === "add") {
     colorClass = "text-green-700 dark:text-green-400";
-    bgClass = "bg-green-50 dark:bg-green-900/10";
+    bgClass = isMatch ? "bg-yellow-200/50 dark:bg-yellow-900/40" : "bg-green-50 dark:bg-green-900/10";
   } else if (line.type === "delete") {
     colorClass = "text-red-700 dark:text-red-400";
-    bgClass = "bg-red-50 dark:bg-red-900/10";
+    bgClass = isMatch ? "bg-yellow-200/50 dark:bg-yellow-900/40" : "bg-red-50 dark:bg-red-900/10";
+  } else if (isMatch) {
+    bgClass = "bg-yellow-200/50 dark:bg-yellow-900/40";
   }
 
   const handleStageLine = () => {
@@ -126,6 +132,38 @@ const DiffLine = memo(function DiffLine({
   );
 });
 
+const DebouncedSearchInput = ({ onSearch, className = "w-48 ml-4 mr-2" }: { onSearch: (query: string) => void, className?: string }) => {
+  const { t } = useTranslation();
+  const [input, setInput] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      startTransition(() => {
+        onSearch(input);
+      });
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [input, onSearch]);
+
+  return (
+    <div className={`flex items-center relative ${className}`}>
+      <Search className="w-3.5 h-3.5 absolute left-2 text-slate-400" />
+      <input
+        type="text"
+        placeholder={t('common.search', 'Search...')}
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        className="pl-7 pr-6 py-1 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full"
+      />
+      {input && (
+        <button onClick={() => setInput("")} className="absolute right-1.5 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <X className="w-3 h-3" />
+        </button>
+      )}
+    </div>
+  );
+};
+
 export function DiffView({
   repoPath,
   filePath,
@@ -142,7 +180,40 @@ export function DiffView({
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [parsedHunks, setParsedHunks] = useState<Hunk[]>([]);
   const [diffHeaders, setDiffHeaders] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const gitActions = useGitActions(repoPath, onRefresh);
+
+  const { searchMatchesDiff, totalDiffLines } = useMemo(() => {
+      if (!parsedHunks.length || !searchQuery) return { searchMatchesDiff: [], totalDiffLines: 1 };
+      
+      let totalLines = 0;
+      const matches: number[] = [];
+      const query = searchQuery.toLowerCase();
+      
+      for (const hunk of parsedHunks) {
+          totalLines++; // Header
+          for (const line of hunk.lines) {
+              if (line.content.toLowerCase().includes(query)) {
+                  matches.push(totalLines);
+              }
+              totalLines++;
+          }
+      }
+      return { searchMatchesDiff: matches, totalDiffLines: totalLines || 1 };
+  }, [parsedHunks, searchQuery]);
+
+  const { searchMatchesBlame, totalBlameLines } = useMemo(() => {
+      if (!blame || !searchQuery) return { searchMatchesBlame: [], totalBlameLines: 1 };
+      const lines = blame.split('\n');
+      const matches: number[] = [];
+      const query = searchQuery.toLowerCase();
+      for (let i = 0; i < lines.length; i++) {
+          if (lines[i].toLowerCase().includes(query)) {
+              matches.push(i);
+          }
+      }
+      return { searchMatchesBlame: matches, totalBlameLines: lines.length || 1 };
+  }, [blame, searchQuery]);
 
   const getLanguage = (path: string) => {
       const ext = path.split('.').pop()?.toLowerCase();
@@ -350,12 +421,20 @@ export function DiffView({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-[90vw] h-[90vh] bg-white dark:bg-slate-950 rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-          <div className="flex items-center space-x-2">
-            <span className="font-mono text-sm text-slate-700 dark:text-slate-300 font-semibold">
-              {filePath}
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-x-4">
+          <div className="flex-1 min-w-0 flex items-center">
+            <span 
+                className="font-mono text-sm text-slate-700 dark:text-slate-300 font-semibold truncate block w-full"
+                title={filePath}
+                style={{ direction: 'rtl', textAlign: 'left' }}
+            >
+              &lrm;{filePath}&lrm;
             </span>
-            <div className="flex bg-slate-200 dark:bg-slate-800 rounded-lg p-0.5">
+          </div>
+          <div className="flex items-center space-x-3 shrink-0">
+            {/* Search Input */}
+            <DebouncedSearchInput onSearch={setSearchQuery} className="w-48" />
+            <div className="flex bg-slate-200 dark:bg-slate-800 rounded-lg p-0.5 shrink-0">
               <button
                 onClick={() => setViewMode("diff")}
                 className={`px-3 py-1 text-xs rounded-md transition-all ${viewMode === "diff" ? "bg-white dark:bg-slate-700 shadow text-indigo-600 dark:text-indigo-400 font-medium" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
@@ -369,17 +448,18 @@ export function DiffView({
                 {t("diffView.blameTab")}
               </button>
             </div>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-colors shrink-0 ml-2"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
-        <div className="flex-1 overflow-auto bg-white dark:bg-slate-950 custom-scrollbar">
-          {loading ? (
+        <div className="flex-1 relative flex overflow-hidden bg-white dark:bg-slate-950">
+          <div className="flex-1 overflow-auto custom-scrollbar">
+            {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
             </div>
@@ -445,6 +525,7 @@ export function DiffView({
                           commitHash={commitHash}
                           cached={cached}
                           hunk={hunk}
+                          searchQuery={searchQuery}
                           onStageHunk={handleStageHunk}
                         />
                       ))}
@@ -494,10 +575,16 @@ export function DiffView({
                       };
                       const commitColor = getColor(shortHash);
 
+                      let isMatch = false;
+                      if (searchQuery && content.toLowerCase().includes(searchQuery.toLowerCase())) {
+                          isMatch = true;
+                      }
+                      const rowClass = isMatch ? "bg-yellow-200/50 dark:bg-yellow-900/30" : "hover:bg-indigo-50 dark:hover:bg-indigo-900/10";
+
                       return (
                         <tr
                           key={i}
-                          className="hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-colors border-b border-transparent"
+                          className={`${rowClass} transition-colors border-b border-transparent`}
                         >
                           <td className="py-0.5 px-4 font-mono select-none relative">
                             {!isSameCommit && (
@@ -565,6 +652,33 @@ export function DiffView({
             <div className="text-center text-slate-600 dark:text-slate-300 mt-20">
               {t("diffView.noData")}
             </div>
+          )}
+          </div>
+
+          {/* Scrollbar Minimap for Search Matches (Diff) */}
+          {viewMode === "diff" && searchMatchesDiff.length > 0 && (
+              <div className="absolute top-0 right-2 bottom-0 w-2 pointer-events-none z-10 opacity-70">
+                  {searchMatchesDiff.map(lineIndex => (
+                      <div
+                          key={lineIndex}
+                          className="absolute w-full bg-yellow-400 dark:bg-yellow-500 rounded-sm shadow-sm"
+                          style={{ top: `${(lineIndex / totalDiffLines) * 100}%`, height: '3px' }}
+                      />
+                  ))}
+              </div>
+          )}
+
+          {/* Scrollbar Minimap for Search Matches (Blame) */}
+          {viewMode === "blame" && searchMatchesBlame.length > 0 && (
+              <div className="absolute top-0 right-2 bottom-0 w-2 pointer-events-none z-10 opacity-70">
+                  {searchMatchesBlame.map(lineIndex => (
+                      <div
+                          key={lineIndex}
+                          className="absolute w-full bg-yellow-400 dark:bg-yellow-500 rounded-sm shadow-sm"
+                          style={{ top: `${(lineIndex / totalBlameLines) * 100}%`, height: '3px' }}
+                      />
+                  ))}
+              </div>
           )}
         </div>
       </div>
