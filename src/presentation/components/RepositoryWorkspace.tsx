@@ -343,11 +343,12 @@ export function RepositoryWorkspace({
               repoPath={repoPath}
               currentBranch={branchName}
               onRefreshGraph={loadCommits}
+              refreshTrigger={refreshDate}
             />
           )}
 
           {activeSidebarTab === "tags" && (
-            <TagsSidebar repoPath={repoPath} onRefreshGraph={loadCommits} hasRemote={hasRemote} />
+            <TagsSidebar repoPath={repoPath} onRefreshGraph={loadCommits} hasRemote={hasRemote} refreshTrigger={refreshDate} />
           )}
 
           {activeSidebarTab === "rescue" && (
@@ -529,10 +530,10 @@ export function RepositoryWorkspace({
             if (checkout) {
               await gitActions.checkoutBranch(name);
               showAlert(t('repositoryWorkspace.successTitle'), t('repositoryWorkspace.branchCreatedAndCheckedOut', { name }));
-              loadCommits();
             } else {
               showAlert(t('repositoryWorkspace.successTitle'), t('repositoryWorkspace.branchCreated', { name }));
             }
+            onActionSuccess();
           }}
         />
       )}

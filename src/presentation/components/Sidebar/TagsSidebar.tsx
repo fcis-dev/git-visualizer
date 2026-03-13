@@ -9,9 +9,10 @@ interface TagsSidebarProps {
   repoPath: string | null;
   onRefreshGraph: () => void;
   hasRemote: boolean;
+  refreshTrigger?: Date;
 }
 
-export function TagsSidebar({ repoPath, onRefreshGraph, hasRemote }: TagsSidebarProps) {
+export function TagsSidebar({ repoPath, onRefreshGraph, hasRemote, refreshTrigger }: TagsSidebarProps) {
   const [tags, setTags] = useState<TagData[]>([]);
   const [loadingTags, setLoadingTags] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +30,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph, hasRemote }: TagsSidebar
     } else {
       setTags([]);
     }
-  }, [repoPath]);
+  }, [repoPath, refreshTrigger]);
 
   const loadTags = async () => {
     setLoadingTags(true);

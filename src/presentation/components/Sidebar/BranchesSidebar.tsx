@@ -16,9 +16,10 @@ interface BranchesSidebarProps {
   repoPath: string | null;
   currentBranch: string;
   onRefreshGraph: () => void;
+  refreshTrigger?: Date;
 }
 
-export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: BranchesSidebarProps) {
+export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refreshTrigger }: BranchesSidebarProps) {
   const { t } = useTranslation();
   const [branches, setBranches] = useState<BranchData[]>([]);
   const [loadingBranches, setLoadingBranches] = useState(false);
@@ -54,7 +55,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph }: Bra
         setBranches([]);
         setRemotes([]);
     }
-  }, [repoPath]);
+  }, [repoPath, refreshTrigger]);
 
   // Single aggregated call: branches (local + remote) + remotes list
   const loadBranchesAndRemotes = async () => {
