@@ -57,5 +57,5 @@ jobs:
           releaseName: "Git Visualizer v__VERSION__"
           releaseBody: "See the assets to download this version and install."
           # Created as "Draft" so you can review it before publishing. Set to `false` if you want it to publish automatically.
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
