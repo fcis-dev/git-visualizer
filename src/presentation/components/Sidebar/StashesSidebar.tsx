@@ -108,7 +108,7 @@ export function StashesSidebar({ repoPath, onRefreshGraph }: StashesSidebarProps
   };
 
   if (!repoPath) {
-    return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">No repository loaded</div>;
+    return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">{t("stashes.noRepo")}</div>;
   }
 
   return (

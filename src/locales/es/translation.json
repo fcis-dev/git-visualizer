@@ -1,5 +1,9 @@
 {
   "welcome": "Bienvenido a Git Visualizer",
+  "common": {
+    "search": "Buscar...",
+    "repository": "Repositorio"
+  },
   "dashboard": {
     "title": "Proyectos",
     "subtitle": "Selecciona un repositorio para empezar a trabajar",
@@ -34,6 +38,7 @@
       "scrollToHead": "Ir al commit HEAD de la rama actual",
       "head": "HEAD",
       "repoStats": "Estadísticas del repositorio",
+      "noRemote": "No hay ningún remoto configurado",
       "fetchWithPrune": "Fetch (con Prune)",
       "pull": "Pull",
       "pullBehind": "Pull ({{count}} atrás)",
@@ -64,7 +69,13 @@
       "softReset": "Soft (mantener cambios)",
       "mixedReset": "Mixed",
       "hardReset": "Hard (descartar cambios)",
-      "delete": "Eliminar"
+      "delete": "Eliminar",
+      "revert": "Revertir",
+      "commitPrefix": "Commit:"
+    },
+    "prune": {
+      "title": "Ramas remotas eliminadas",
+      "message": "Las siguientes ramas locales rastrean refs remotas ya borradas:\n\n{{branches}}\n\n¿Eliminarlas localmente?"
     }
   },
   "sidebar": {
@@ -104,9 +115,17 @@
       "viewFileHistory": "Ver historial del archivo",
       "stashMsg": "Mensaje para el stash (opcional):",
       "addSubmodulePrompt": "Introduce la URL del submódulo:",
+      "addSubmodulePathPrompt": "Introduce la ruta de destino (p.ej. 'vendors/lib'):",
       "errorAddingSubmodule": "Error al añadir submódulo",
       "errorRemovingSubmodule": "Error al eliminar submódulo",
-      "errorResolveFailed": "Error al resolver: {{error}}"
+      "errorResolveFailed": "Error al resolver: {{error}}",
+      "discardTitle": "Descartar cambios",
+      "discardMsg": "¿Estás seguro de que quieres descartar los cambios en {{file}}? Esta acción no se puede deshacer.",
+      "discardAllTitle": "Descartar todos los cambios",
+      "discardAllMsg": "¿Estás seguro de que quieres descartar TODOS los {{count}} cambios? Esta acción no se puede deshacer.",
+      "removeSubmoduleTitle": "Eliminar submódulo",
+      "removeSubmoduleMsg": "¿Estás seguro de que quieres eliminar completamente el submódulo '{{name}}'? Esto lo borrará del árbol de trabajo y de .git/modules.",
+      "commitErrorConflicts": "No se puede hacer commit: debes añadir al stage todos los archivos y resolver los conflictos primero."
     },
     "branches": {
       "title": "RAMAS",
@@ -147,7 +166,35 @@
       "successReset": "Restablecido a {{name}} ({{mode}}).",
       "successRemoteAdded": "Remoto añadido correctamente.",
       "successTitle": "Éxito",
-      "errorAddRemoteFailed": "Error al añadir remoto: {{error}}"
+      "errorAddRemoteFailed": "Error al añadir remoto: {{error}}",
+      "branchExistsTitle": "La rama ya existe",
+      "branchExistsMsg": "Ya existe una rama local llamada '{{name}}'. ¿Quieres cambiar a ella en su lugar?",
+      "checkoutRemoteTitle": "Hacer checkout de rama remota",
+      "checkoutRemoteMsg": "¿Quieres crear y hacer checkout de la rama de seguimiento local '{{name}}'?",
+      "deleteBranchTitle": "Eliminar rama",
+      "deleteBranchMsg": "¿Estás seguro de que quieres eliminar la rama '{{name}}'? Esta acción no se puede deshacer.",
+      "forceDeleteTitle": "Eliminar forzosamente",
+      "forceDeleteMsg": "La rama '{{name}}' no está completamente fusionada. ¿Forzar eliminación de todas formas?",
+      "mergeBranchTitle": "Fusionar rama",
+      "mergeBranchMsg": "¿Fusionar '{{name}}' en la rama actual '{{current}}'?",
+      "renameBranchTitle": "Renombrar rama",
+      "renameBranchPrompt": "Nuevo nombre de la rama:",
+      "createBranchTitle": "Crear rama",
+      "createBranchPrompt": "Nuevo nombre de la rama (desde {{name}}):",
+      "createTagTitle": "Crear etiqueta",
+      "createTagPrompt": "Nuevo nombre de la etiqueta (en {{name}}):",
+      "cherryPickTitle": "Cherry Pick",
+      "cherryPickMsg": "¿Hacer cherry-pick del commit '{{name}}' ({{hash}}) en la rama actual?",
+      "rebaseTitle": "Rebase",
+      "rebaseMsg": "¿Hacer rebase de la rama actual '{{current}}' sobre '{{name}}'?",
+      "resetTitle": "Restablecer a {{name}}",
+      "resetMsgHard": "¿Estás seguro de que quieres hacer un HARD reset de la rama actual a '{{name}}'? SE PERDERÁN TODOS LOS CAMBIOS no commiteados.",
+      "resetMsgSoft": "¿Restablecer la rama actual a '{{name}}' usando el modo {{mode}}?",
+      "addRemoteTitle": "Añadir remoto",
+      "addRemoteNamePrompt": "Nombre del remoto:",
+      "addRemoteUrlPrompt": "URL del remoto:",
+      "removeRemoteTitle": "Eliminar remoto",
+      "removeRemoteMsg": "¿Estás seguro de que quieres eliminar el remoto '{{name}}'?"
     }
   },
   "graph": {
@@ -159,6 +206,14 @@
     "createTagPrompt": "Nombre de la etiqueta:",
     "revertTitle": "Revertir",
     "revertConfirm": "¿Revertir {{hash}}?",
+    "mergeTitle": "Fusionar",
+    "mergeConfirm": "¿Fusionar {{hash}} en {{branch}}?",
+    "cherryPickTitle": "Cherry Pick",
+    "cherryPickConfirm": "¿Hacer cherry-pick de {{hash}}?",
+    "rebaseTitle": "Rebase",
+    "rebaseConfirm": "¿Hacer rebase de {{branch}} sobre {{hash}}?",
+    "resetTitle": "Reset ({{mode}})",
+    "resetConfirm": "¿Restablecer a {{hash}}?",
     "rebaseCompleteTitle": "Rebase completado",
     "rebaseCompleteMsg": "Éxito.",
     "resetCompleteTitle": "Reset completado",
@@ -203,6 +258,7 @@
   },
   "stashes": {
     "title": "Gestor de Stashes",
+    "noRepo": "No hay ningún repositorio abierto.",
     "errorTitle": "Error",
     "noStashes": "No se han encontrado stashes en este repositorio.",
     "applyTitle": "Aplicar Stash",
@@ -276,7 +332,8 @@
     "contributors": "Contribuidores",
     "activeDays": "Días activos",
     "activityChartTitle": "Actividad de commits a lo largo del tiempo",
-    "topContributorsTitle": "Top contribuidores"
+    "topContributorsTitle": "Top contribuidores",
+    "commits": "Commits"
   },
   "commitDetails": {
     "title": "Detalles del Commit",
@@ -346,6 +403,7 @@
     "current": "Actual:",
     "incoming": "Entrante:",
     "empty": "<vacío>",
+    "vs": "VS",
     "cannotSave": "No se puede guardar con {{count}} conflicto(s) sin resolver."
   },
   "repositoryWorkspace": {
@@ -411,6 +469,7 @@
     "deleteTagRemoteConfirm": "¿Eliminar también la etiqueta '{{tagName}}' del servidor remoto (origin)?",
     "successTitle": "Éxito",
     "tagDeleted": "Etiqueta '{{tagName}}' eliminada.",
+    "tagDeletedRemote": "La etiqueta '{{tagName}}' ha sido eliminada del repositorio remoto.",
     "pushTagsSuccess": "Todas las etiquetas locales han sido subidas al repositorio remoto.",
     "noRepo": "No hay ningún repositorio abierto.",
     "title": "ETIQUETAS",
@@ -434,6 +493,7 @@
     "addWorktree": "Añadir Worktree",
     "pathPlaceholder": "Ruta (ej. ../feature)",
     "branchPlaceholder": "Rama (opcional, se separará el HEAD si está vacía)",
+    "successTitle": "Éxito",
     "add": "Añadir",
     "noWorktrees": "No se encontraron worktrees",
     "main": "Principal",
@@ -441,5 +501,26 @@
     "openWorkspaceTooltip": "Abrir worktree como proyecto",
     "open": "Abrir",
     "removeTooltip": "Eliminar Worktree"
+  },
+  "reflogActions": {
+    "checkout": "Checkout",
+    "commit": "Commit",
+    "commitamend": "Commit (enmendar)",
+    "reset": "Reset",
+    "merge": "Fusión (merge)",
+    "pull": "Pull",
+    "rebase": "Rebase",
+    "rebaseinteractive": "Rebase (interactivo)",
+    "rebasestart": "Rebase (inicio)",
+    "rebasefinish": "Rebase (fin)",
+    "cherrypick": "Cherry-pick",
+    "revert": "Revertir",
+    "branch": "Rama",
+    "deleted": "Eliminado",
+    "created": "Creado",
+    "movingFrom": "cambiando de {{from}} a {{to}}",
+    "branchDeleted": "Rama {{name}} eliminada",
+    "branchCreated": "Rama {{name}} creada desde {{from}}",
+    "rebaseOnto": "rebase (sobre {{target}})"
   }
 }

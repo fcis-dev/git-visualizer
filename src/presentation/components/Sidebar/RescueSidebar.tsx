@@ -83,6 +83,59 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
     );
   };
 
+  const translateAction = (action: string) => {
+    // Handle complex actions like "rebase (onto master)"
+    if (action.includes("(onto ")) {
+      const match = action.match(/(.+) \(onto (.+)\)/);
+      if (match) {
+        const baseAction = match[1].toLowerCase().replace(/[^a-z0-9]/g, "");
+        const target = match[2];
+        return t("reflogActions.rebaseOnto", { target });
+      }
+    }
+
+    const normalized = action.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const key = `reflogActions.${normalized}`;
+    const translated = t(key);
+    return translated !== key ? translated : action;
+  };
+
+  const translateMessage = (message: string) => {
+    if (!message) return "";
+
+    // moving from refs/heads/master to master
+    if (message.includes("moving from")) {
+      const match = message.match(/moving from (.+) to (.+)/);
+      if (match) {
+        let from = match[1].replace("refs/heads/", "");
+        let to = match[2].replace("refs/heads/", "");
+        return t("reflogActions.movingFrom", { from, to });
+      }
+    }
+
+    if (message.startsWith("Deleted branch ")) {
+      return t("reflogActions.branchDeleted", {
+        name: message.replace("Deleted branch ", ""),
+      });
+    }
+    if (message.startsWith("Deleted refs/heads/")) {
+      return t("reflogActions.branchDeleted", {
+        name: message.replace("Deleted refs/heads/", ""),
+      });
+    }
+    if (message.startsWith("Created from ")) {
+      return t("reflogActions.branchCreated", {
+        name: "",
+        from: message.replace("Created from ", ""),
+      });
+    }
+    if (message.includes("clone: from ")) {
+       return message.replace("clone: from ", t("reflogActions.created") + ": ");
+    }
+
+    return message;
+  };
+
   if (!repoPath) {
     return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">{t('rescueSidebar.noRepo')}</div>;
   }
@@ -155,8 +208,8 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
                      </div>
                   </div>
                   <span className="text-xs font-medium text-slate-600 dark:text-slate-300 line-clamp-2">
-                     <span className="text-slate-500 border-r border-slate-300 dark:border-slate-700 pr-1 mr-1">{entry.action}</span>
-                     {entry.message}
+                     <span className="text-slate-500 border-r border-slate-300 dark:border-slate-700 pr-1 mr-1">{translateAction(entry.action)}</span>
+                     {translateMessage(entry.message)}
                   </span>
                 </div>
               ))}

@@ -57,7 +57,7 @@ export function GraphBranchContextMenu({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 text-xs font-semibold text-slate-500 truncate max-w-[220px]" title={ref}>
-          {isCommit ? `Commit: ${ref.substring(0, 7)}` : ref}
+          {isCommit ? `${t("workspace.contextMenu.commitPrefix")} ${ref.substring(0, 7)}` : ref}
         </div>
 
         {canCheckout && (

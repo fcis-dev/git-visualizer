@@ -33,8 +33,8 @@ export function useGraphActionsController(
 
   const handleMerge = (hash: string) => {
     showConfirm(
-      "Merge",
-      `Merge ${hash.substring(0, 7)} into ${branchName}?`,
+      t('graphActions.mergeTitle'),
+      t('graphActions.mergeConfirm', { hash: hash.substring(0, 7), branch: branchName }),
       async () => {
         try {
           await executeGitActionUseCase.merge(repoPath, hash);
@@ -59,8 +59,8 @@ export function useGraphActionsController(
 
   const handleCherryPick = (hash: string) => {
     showConfirm(
-      "Cherry Pick",
-      `Cherry-pick ${hash.substring(0, 7)}?`,
+      t('graphActions.cherryPickTitle'),
+      t('graphActions.cherryPickConfirm', { hash: hash.substring(0, 7) }),
       async () => {
         try {
           await executeGitActionUseCase.cherryPick(repoPath, hash);
@@ -74,8 +74,8 @@ export function useGraphActionsController(
 
   const handleRebase = (hash: string) => {
     showConfirm(
-      "Rebase",
-      `Rebase ${branchName} onto ${hash.substring(0, 7)}?`,
+      t('graphActions.rebaseTitle'),
+      t('graphActions.rebaseConfirm', { branch: branchName, hash: hash.substring(0, 7) }),
       async () => {
         try {
           await executeGitActionUseCase.rebase(repoPath, hash);
@@ -90,8 +90,8 @@ export function useGraphActionsController(
 
   const handleReset = (hash: string, mode: "soft" | "mixed" | "hard") => {
     showConfirm(
-      `Reset (${mode})`,
-      `Reset to ${hash.substring(0, 7)}?`,
+      t('graphActions.resetTitle', { mode }),
+      t('graphActions.resetConfirm', { hash: hash.substring(0, 7) }),
       async () => {
         try {
           await executeGitActionUseCase.reset(repoPath, hash, mode);

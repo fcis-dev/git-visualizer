@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
@@ -243,9 +243,9 @@ export function ProjectSelectionView({
 
                 <h3
                   className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-1 truncate"
-                  title={repo.name}
+                  title={repo.name || t('common.repository')}
                 >
-                  {repo.name}
+                  {repo.name || t('common.repository')}
                 </h3>
                 <p
                   className="text-sm text-slate-500 dark:text-slate-400 truncate mb-4"

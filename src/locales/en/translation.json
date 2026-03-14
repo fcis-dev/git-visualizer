@@ -1,5 +1,9 @@
 {
   "welcome": "Welcome to Git Visualizer",
+  "common": {
+    "search": "Search...",
+    "repository": "Repository"
+  },
   "dashboard": {
     "title": "Projects",
     "subtitle": "Select a repository to start working",
@@ -34,6 +38,7 @@
       "scrollToHead": "Scroll to HEAD commit of current branch",
       "head": "HEAD",
       "repoStats": "Repository Statistics",
+      "noRemote": "No remote configured",
       "fetchWithPrune": "Fetch (with Prune)",
       "pull": "Pull",
       "pullBehind": "Pull ({{count}} behind)",
@@ -64,7 +69,13 @@
       "softReset": "Soft (keep changes)",
       "mixedReset": "Mixed",
       "hardReset": "Hard (discard changes)",
-      "delete": "Delete"
+      "delete": "Delete",
+      "revert": "Revert",
+      "commitPrefix": "Commit:"
+    },
+    "prune": {
+      "title": "Remote branches deleted",
+      "message": "The following local branches track removed remote refs:\n\n{{branches}}\n\nDelete them locally?"
     }
   },
   "sidebar": {
@@ -104,9 +115,17 @@
       "viewFileHistory": "View file history",
       "stashMsg": "Stash message (optional):",
       "addSubmodulePrompt": "Enter the Submodule URL:",
+      "addSubmodulePathPrompt": "Enter the target path (e.g. 'vendors/lib'):",
       "errorAddingSubmodule": "Error Adding Submodule",
       "errorRemovingSubmodule": "Error Removing Submodule",
-      "errorResolveFailed": "Resolve failed: {{error}}"
+      "errorResolveFailed": "Resolve failed: {{error}}",
+      "discardTitle": "Discard Changes",
+      "discardMsg": "Are you sure you want to discard changes in {{file}}? This cannot be undone.",
+      "discardAllTitle": "Discard All Changes",
+      "discardAllMsg": "Are you sure you want to discard ALL {{count}} changes? This cannot be undone.",
+      "removeSubmoduleTitle": "Remove Submodule",
+      "removeSubmoduleMsg": "Are you sure you want to completely remove the submodule '{{name}}'? This deletes it from the working tree and .git/modules.",
+      "commitErrorConflicts": "Cannot commit: You must stage all files and resolve conflicts first."
     },
     "branches": {
       "title": "BRANCHES",
@@ -147,7 +166,35 @@
       "successReset": "Reset to {{name}} ({{mode}}).",
       "successRemoteAdded": "Remote added successfully.",
       "successTitle": "Success",
-      "errorAddRemoteFailed": "Add remote failed: {{error}}"
+      "errorAddRemoteFailed": "Add remote failed: {{error}}",
+      "branchExistsTitle": "Branch Exists",
+      "branchExistsMsg": "A local branch named '{{name}}' already exists. Do you want to switch to it instead?",
+      "checkoutRemoteTitle": "Checkout Remote Branch",
+      "checkoutRemoteMsg": "Do you want to create and checkout a local tracking branch named '{{name}}'?",
+      "deleteBranchTitle": "Delete Branch",
+      "deleteBranchMsg": "Are you sure you want to delete branch '{{name}}'? This cannot be undone.",
+      "forceDeleteTitle": "Force Delete Branch",
+      "forceDeleteMsg": "Branch '{{name}}' is not fully merged. Force-delete it anyway?",
+      "mergeBranchTitle": "Merge Branch",
+      "mergeBranchMsg": "Merge '{{name}}' into current branch '{{current}}'?",
+      "renameBranchTitle": "Rename Branch",
+      "renameBranchPrompt": "New branch name:",
+      "createBranchTitle": "Create Branch",
+      "createBranchPrompt": "New branch name (from {{name}}):",
+      "createTagTitle": "Create Tag",
+      "createTagPrompt": "New tag name (at {{name}}):",
+      "cherryPickTitle": "Cherry Pick",
+      "cherryPickMsg": "Cherry pick the tip commit of '{{name}}' ({{hash}}) into current branch?",
+      "rebaseTitle": "Rebase",
+      "rebaseMsg": "Rebase current branch '{{current}}' onto '{{name}}'?",
+      "resetTitle": "Reset to {{name}}",
+      "resetMsgHard": "Are you sure you want to HARD reset current branch to '{{name}}'? ALL uncommitted changes will be lost.",
+      "resetMsgSoft": "Reset current branch to '{{name}}' using {{mode}} mode?",
+      "addRemoteTitle": "Add Remote",
+      "addRemoteNamePrompt": "Remote Name:",
+      "addRemoteUrlPrompt": "Remote URL:",
+      "removeRemoteTitle": "Remove Remote",
+      "removeRemoteMsg": "Are you sure you want to remove remote '{{name}}'?"
     }
   },
   "graph": {
@@ -159,6 +206,14 @@
     "createTagPrompt": "Tag name:",
     "revertTitle": "Revert",
     "revertConfirm": "Revert {{hash}}?",
+    "mergeTitle": "Merge",
+    "mergeConfirm": "Merge {{hash}} into {{branch}}?",
+    "cherryPickTitle": "Cherry Pick",
+    "cherryPickConfirm": "Cherry-pick {{hash}}?",
+    "rebaseTitle": "Rebase",
+    "rebaseConfirm": "Rebase {{branch}} onto {{hash}}?",
+    "resetTitle": "Reset ({{mode}})",
+    "resetConfirm": "Reset to {{hash}}?",
     "rebaseCompleteTitle": "Rebase Complete",
     "rebaseCompleteMsg": "Success.",
     "resetCompleteTitle": "Reset Complete",
@@ -203,6 +258,7 @@
   },
   "stashes": {
     "title": "Stash Manager",
+    "noRepo": "No repository open.",
     "errorTitle": "Error",
     "noStashes": "No stashes found in this repository.",
     "applyTitle": "Apply Stash",
@@ -276,7 +332,8 @@
     "contributors": "Contributors",
     "activeDays": "Active Days",
     "activityChartTitle": "Commit Activity Over Time",
-    "topContributorsTitle": "Top Contributors"
+    "topContributorsTitle": "Top Contributors",
+    "commits": "Commits"
   },
   "commitDetails": {
     "title": "Commit Details",
@@ -346,6 +403,7 @@
     "current": "Current:",
     "incoming": "Incoming:",
     "empty": "<empty>",
+    "vs": "VS",
     "cannotSave": "Cannot save with {{count}} unresolved conflict(s)."
   },
   "repositoryWorkspace": {
@@ -411,6 +469,7 @@
     "deleteTagRemoteConfirm": "Also delete the tag '{{tagName}}' from the remote server (origin)?",
     "successTitle": "Success",
     "tagDeleted": "Tag '{{tagName}}' deleted.",
+    "tagDeletedRemote": "Tag '{{tagName}}' deleted from remote repository.",
     "pushTagsSuccess": "All local tags have been pushed to the remote repository.",
     "noRepo": "No repository open.",
     "title": "TAGS",
@@ -434,6 +493,7 @@
     "addWorktree": "Add Worktree",
     "pathPlaceholder": "Path (e.g., ../feature)",
     "branchPlaceholder": "Branch (optional, leaves detached)",
+    "successTitle": "Success",
     "add": "Add",
     "noWorktrees": "No worktrees found",
     "main": "Main",
@@ -441,5 +501,26 @@
     "openWorkspaceTooltip": "Open worktree as project",
     "open": "Open",
     "removeTooltip": "Remove Worktree"
+  },
+  "reflogActions": {
+    "checkout": "Checkout",
+    "commit": "Commit",
+    "commitamend": "Commit (amend)",
+    "reset": "Reset",
+    "merge": "Merge",
+    "pull": "Pull",
+    "rebase": "Rebase",
+    "rebaseinteractive": "Rebase (interactive)",
+    "rebasestart": "Rebase (start)",
+    "rebasefinish": "Rebase (finish)",
+    "cherrypick": "Cherry-pick",
+    "revert": "Revert",
+    "branch": "Branch",
+    "deleted": "Deleted",
+    "created": "Created",
+    "movingFrom": "moving from {{from}} to {{to}}",
+    "branchDeleted": "Deleted branch {{name}}",
+    "branchCreated": "Created branch {{name}} from {{from}}",
+    "rebaseOnto": "rebase (onto {{target}})"
   }
 }

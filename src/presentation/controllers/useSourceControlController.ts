@@ -149,8 +149,8 @@ export function useSourceControlController(
   const handleDiscard = async (file: string) => {
     if (!repoPath) return;
     showConfirm(
-      "Discard Changes",
-      `Are you sure you want to discard changes in ${file}? This cannot be undone.`,
+      t('sidebar.sourceControl.discardTitle'),
+      t('sidebar.sourceControl.discardMsg', { file }),
       async () => {
         try {
           await invoke("git_discard_changes", {
@@ -169,8 +169,8 @@ export function useSourceControlController(
   const handleDiscardAll = () => {
     if (!repoPath || changes.length === 0) return;
     showConfirm(
-      "Discard All Changes",
-      `Are you sure you want to discard ALL ${changes.length} changes? This cannot be undone.`,
+      t('sidebar.sourceControl.discardAllTitle'),
+      t('sidebar.sourceControl.discardAllMsg', { count: changes.length }),
       async () => {
         try {
           const files = changes.map((c) => c.path);
@@ -205,8 +205,7 @@ export function useSourceControlController(
         errMsg.includes("not fully merged index") ||
         errMsg.includes("Unmerged (-10)")
       ) {
-        errMsg =
-          "Cannot commit: You must stage all files and resolve conflicts first.";
+        errMsg = t('sidebar.sourceControl.commitErrorConflicts');
       }
       setError(errMsg);
     }
@@ -268,7 +267,7 @@ export function useSourceControlController(
       if (!url) return;
       showInput(
         t('sidebar.sourceControl.addSubmodule'),
-        "Enter the target path (e.g. 'vendors/lib'):",
+        t('sidebar.sourceControl.addSubmodulePathPrompt'),
         async (pathName) => {
           if (!pathName) return;
           try {
@@ -310,8 +309,8 @@ export function useSourceControlController(
 
   const handleRemoveSubmodule = (subPath: string, subName: string) => {
     showConfirm(
-      "Remove Submodule",
-      `Are you sure you want to completely remove the submodule '${subName}'? This deletes it from the working tree and .git/modules.`,
+      t('sidebar.sourceControl.removeSubmoduleTitle'),
+      t('sidebar.sourceControl.removeSubmoduleMsg', { name: subName }),
       async () => {
         try {
           setSubmodulesLoading(true);

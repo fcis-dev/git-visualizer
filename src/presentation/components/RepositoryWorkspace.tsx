@@ -186,7 +186,7 @@ export function RepositoryWorkspace({
     });
   };
 
-  const repoName = repoPath.split(/[\/\\]/).pop() || "Repository";
+  const repoName = repoPath.split(/[\/\\]/).pop() || t('common.repository');
 
   const handleGraphBranchCheckout = (refName: string) => {
     const isRemote = refName.includes("/");

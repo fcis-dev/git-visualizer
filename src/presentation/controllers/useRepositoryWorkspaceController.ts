@@ -122,8 +122,8 @@ export function useRepositoryWorkspaceController(
     onFetchDone: (_behind, pruned, withPrune) => {
       if (withPrune && pruned.length > 0) {
         showConfirm(
-          "Ramas remotas eliminadas",
-          `Las siguientes ramas locales rastrean refs remotas ya borradas:\n\n${pruned.join(", ")}\n\n¿Eliminarlas localmente?`,
+          t("workspace.prune.title"),
+          t("workspace.prune.message", { branches: pruned.join(", ") }),
           async () => {
             for (const branch of pruned) {
               try {

@@ -17,7 +17,7 @@ export function SubmodulesSidebar({ repoPath, onOpenSubmodule, onRefreshGraph }:
   const { state, actions } = useSourceControlController(repoPath, onRefreshGraph);
 
   if (!repoPath) {
-    return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">No repository loaded</div>;
+    return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">{t("sidebar.sourceControl.noRepo")}</div>;
   }
 
   return (

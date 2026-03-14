@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, TrendingUp, Users, GitCommit, Loader2 } from 'lucide-react';
 import { useGitActions } from '../hooks/useGitActions';
 import { RepositoryStats } from '../../domain/entities/GitEntities';
@@ -152,7 +152,7 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
                                                     contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px', color: '#f8fafc' }}
                                                     itemStyle={{ color: '#818cf8', fontWeight: 'bold' }}
                                                 />
-                                                <Area type="monotone" dataKey="count" name="Commits" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorCount)" />
+                                                <Area type="monotone" dataKey="count" name={t('repoStats.commits')} stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorCount)" />
                                             </AreaChart>
                                         </ResponsiveContainer>
                                     </div>
@@ -172,7 +172,7 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
                                                     contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px', color: '#f8fafc' }}
                                                     itemStyle={{ color: '#10b981', fontWeight: 'bold' }}
                                                 />
-                                                <Bar dataKey="commits" name="Commits" fill="#10b981" radius={[0, 4, 4, 0]} barSize={24} />
+                                                <Bar dataKey="commits" name={t('repoStats.commits')} fill="#10b981" radius={[0, 4, 4, 0]} barSize={24} />
                                             </BarChart>
                                         </ResponsiveContainer>
                                     </div>

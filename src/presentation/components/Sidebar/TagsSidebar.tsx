@@ -67,7 +67,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph, hasRemote, refreshTrigge
                   try {
                     setLoadingTags(true);
                     await gitActions.deleteTagRemote(tag.name);
-                    showAlert(t('tagsSidebar.successTitle'), t('tagsSidebar.tagDeleted', { tagName: tag.name }) + " (Remote)");
+                    showAlert(t('tagsSidebar.successTitle'), t('tagsSidebar.tagDeletedRemote', { tagName: tag.name }));
                   } catch (e: any) {
                     setError(e.toString());
                   } finally {

@@ -300,15 +300,15 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       // Wait, the group is translated to d.x. So an offset of (maxLaneX - d.x + padding) is needed.
       const currentX = maxLaneX - d.x + 18;
 
-      let tagsHtml = "";
+      let tagsRowHtml = "";
       if (d.refs && d.refs.length > 0) {
-        const tags = d.refs
+        tagsRowHtml = d.refs
           .map((ref) => {
-            let bgFill = isDark
+            let chipBg = isDark
               ? "rgba(79, 70, 229, 0.15)"
               : "rgba(99, 102, 241, 0.1)";
-            let textFill = isDark ? "#818cf8" : "#4338ca";
-            let border = isDark
+            let chipText = isDark ? "#818cf8" : "#4338ca";
+            let chipBorder = isDark
               ? "rgba(99, 102, 241, 0.3)"
               : "rgba(99, 102, 241, 0.2)";
 
@@ -316,19 +316,19 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
             const displayName = isTag ? ref.substring(5) : ref;
 
             if (ref.includes("HEAD") || isTag) {
-              bgFill = isDark
+              chipBg = isDark
                 ? "rgba(16, 185, 129, 0.15)"
                 : "rgba(16, 185, 129, 0.1)";
-              textFill = isDark ? "#34d399" : "#059669";
-              border = isDark
+              chipText = isDark ? "#34d399" : "#059669";
+              chipBorder = isDark
                 ? "rgba(52, 211, 153, 0.3)"
                 : "rgba(16, 185, 129, 0.2)";
             } else if (ref.includes("origin")) {
-              bgFill = isDark
+              chipBg = isDark
                 ? "rgba(236, 72, 153, 0.15)"
                 : "rgba(236, 72, 153, 0.1)";
-              textFill = isDark ? "#f472b6" : "#db2777";
-              border = isDark
+              chipText = isDark ? "#f472b6" : "#db2777";
+              chipBorder = isDark
                 ? "rgba(244, 114, 182, 0.3)"
                 : "rgba(236, 72, 153, 0.2)";
             }
@@ -341,12 +341,9 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
               .replace(/"/g, "&quot;")
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;");
-            // data-ref stores the raw ref string so we can read it from the DOM event
-            return `<div data-ref="${safeRef}" style="background-color: ${bgFill}; color: ${textFill}; border: 1px solid ${border}; border-radius: 9999px; padding: 2px 10px; font-size: 11px; font-weight: 500; line-height: 14px; white-space: nowrap; pointer-events: auto; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: inline-block; cursor: context-menu; backdrop-filter: blur(4px); box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.15s ease, filter 0.15s ease;" onmouseover="this.style.transform='scale(1.05)'; this.style.filter='brightness(1.1)'" onmouseout="this.style.transform='scale(1)'; this.style.filter='brightness(1)'">${safeDisplayName}</div>`;
+            return `<div data-ref="${safeRef}" style="background-color: ${chipBg}; color: ${chipText}; border: 1px solid ${chipBorder}; border-radius: 9999px; padding: 1px 8px; font-size: 10px; font-weight: 500; line-height: 14px; white-space: nowrap; pointer-events: auto; max-width: 130px; overflow: hidden; text-overflow: ellipsis; display: inline-block; cursor: context-menu; backdrop-filter: blur(4px); box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.15s ease, filter 0.15s ease;" onmouseover="this.style.transform='scale(1.05)'; this.style.filter='brightness(1.1)'" onmouseout="this.style.transform='scale(1)'; this.style.filter='brightness(1)'">${safeDisplayName}</div>`;
           })
           .join("");
-
-        tagsHtml = `<div style="display: flex; flex-wrap: nowrap; gap: 8px; margin-top: 6px; overflow: hidden;">${tags}</div>`;
       }
 
       const absoluteX = (d as any).x + currentX;
@@ -403,21 +400,22 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       const authorInitial = safeAuthor.charAt(0).toUpperCase();
       const avatarColor = getAvatarColor(safeAuthor);
 
+      // Use display:block + explicit row heights to avoid WebKit foreignObject column-flex bug
       const contentDiv = fo
         .append("xhtml:div")
-        .style("display", "flex")
-        .style("align-items", "center")
-        .style("gap", "16px")
+        .style("display", "block")
         .style("width", "100%")
-        .style("height", "48px")
-        .style("padding", "0 12px")
+        .style("height", "56px")
+        .style("-webkit-box-sizing", "border-box")
+        .style("box-sizing", "border-box")
+        .style("padding", "2px 12px 2px 8px")
         .style("border-radius", "8px")
         .style("font-family", "'Inter', 'Roboto', 'Segoe UI', sans-serif")
         .style("font-size", "13px")
         .style("pointer-events", "auto")
         .style(
           "transition",
-          "background-color 0.15s ease, transform 0.15s ease",
+          "background-color 0.15s ease",
         )
         .on("mouseover", function () {
           d3.select(this).style("background-color", hoverBg);
@@ -427,24 +425,25 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
         })
         .on("click", (_event) => onSelectCommit(d));
 
+      // Row 1 (top): branch chips + time
+      // Row 2 (bottom): commit message + author avatar + author name + date (no time)
+      // Note: All flex containers use full webkit prefixes to fix Safari/WKWebView foreignObject rendering
       contentDiv.html(`
-            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; pointer-events: none;">
-                <div class="commit-message" style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.5; color: ${msgColor}; font-weight: ${msgWeight}; transition: color 0.15s;">
-                  ${safeMsg}
-                </div>
-                ${tagsHtml}
-            </div>
-            <div style="width: 160px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; overflow: hidden; color: ${authorColor}; pointer-events: none;" title="${safeAuthor}">
-              <div style="width: 24px; height: 24px; border-radius: 50%; background-color: ${avatarColor}; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.15);">
-                ${authorInitial}
-              </div>
-              <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; font-size: 12px;">${safeAuthor}</span>
-            </div>
-            <div style="width: 90px; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; color: ${dateColor}; pointer-events: none; white-space: nowrap;" title="${datePart} ${timePart}">
-              <span style="font-weight: 500; font-size: 12px;">${datePart}</span>
-              <span style="font-size: 11px; opacity: 0.7;">${timePart}</span>
-            </div>
-          `);
+        <div style="height: 24px; overflow: hidden; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-orient: horizontal; -webkit-flex-direction: row; flex-direction: row; -webkit-box-align: center; -webkit-align-items: center; align-items: center; gap: 6px;">
+          <div style="-webkit-box-flex: 1; -webkit-flex: 1; flex: 1; min-width: 0; overflow: hidden; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-orient: horizontal; -webkit-flex-direction: row; flex-direction: row; -webkit-box-align: center; -webkit-align-items: center; align-items: center; gap: 5px;">
+            ${tagsRowHtml}
+          </div>
+          <div style="-webkit-flex-shrink: 0; flex-shrink: 0; font-size: 11px; color: ${dateColor}; white-space: nowrap; opacity: 0.8; pointer-events: none;">${timePart}</div>
+        </div>
+        <div style="height: 28px; overflow: hidden; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-orient: horizontal; -webkit-flex-direction: row; flex-direction: row; -webkit-box-align: center; -webkit-align-items: center; align-items: center; gap: 8px;">
+          <div class="commit-message" style="-webkit-box-flex: 1; -webkit-flex: 1; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: ${msgColor}; font-weight: ${msgWeight}; font-size: 13px; line-height: 1.4; pointer-events: none; transition: color 0.15s;">${safeMsg}</div>
+          <div style="width: 150px; -webkit-flex-shrink: 0; flex-shrink: 0; overflow: hidden; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-orient: horizontal; -webkit-flex-direction: row; flex-direction: row; -webkit-box-align: center; -webkit-align-items: center; align-items: center; gap: 6px; color: ${authorColor}; pointer-events: none;" title="${safeAuthor}">
+            <div style="width: 20px; height: 20px; -webkit-flex-shrink: 0; flex-shrink: 0; border-radius: 50%; background-color: ${avatarColor}; color: white; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; font-size: 10px; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.15);">${authorInitial}</div>
+            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; font-size: 12px;">${safeAuthor}</span>
+          </div>
+          <div style="width: 78px; -webkit-flex-shrink: 0; flex-shrink: 0; text-align: right; color: ${dateColor}; white-space: nowrap; font-size: 11px; font-weight: 500; pointer-events: none;" title="${datePart} ${timePart}">${datePart}</div>
+        </div>
+      `);
 
       // Attach contextmenu listeners to ref badge divs after HTML is injected
       if (onBranchContextMenu) {

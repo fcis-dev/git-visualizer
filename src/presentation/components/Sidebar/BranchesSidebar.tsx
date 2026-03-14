@@ -82,8 +82,8 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
         const localExists = branches.find(b => !b.is_remote && b.name === localName);
         if (localExists) {
           showConfirm(
-            "Branch Exists",
-            `A local branch named '${localName}' already exists. Do you want to switch to it instead?`,
+            t('sidebar.branches.branchExistsTitle'),
+            t('sidebar.branches.branchExistsMsg', { name: localName }),
             async () => {
               try {
                 await gitActions.checkoutBranch(localName);
@@ -99,8 +99,8 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
         }
 
         showConfirm(
-          "Checkout Remote Branch", 
-          `Do you want to create and checkout a local tracking branch named '${localName}'?`,
+          t('sidebar.branches.checkoutRemoteTitle'),
+          t('sidebar.branches.checkoutRemoteMsg', { name: localName }),
           async () => {
             try {
               await gitActions.createBranch(localName, branch.hash);
@@ -129,8 +129,8 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
   const handleDeleteBranch = async (branch: BranchData, e: React.MouseEvent) => {
     e.stopPropagation();
     showConfirm(
-      "Delete Branch",
-      `Are you sure you want to delete branch '${branch.name}'? This cannot be undone.`,
+      t('sidebar.branches.deleteBranchTitle'),
+      t('sidebar.branches.deleteBranchMsg', { name: branch.name }),
       async () => {
         try {
           await gitActions.deleteBranch(branch.name, false);
@@ -140,8 +140,8 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
           const msg = e.toString();
           if (msg.includes("not fully merged")) {
             showConfirm(
-              "Force Delete Branch",
-              `Branch '${branch.name}' is not fully merged. Force-delete it anyway?`,
+              t('sidebar.branches.forceDeleteTitle'),
+              t('sidebar.branches.forceDeleteMsg', { name: branch.name }),
               async () => {
                 try {
                   await gitActions.deleteBranch(branch.name, true);
@@ -162,8 +162,8 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
 
   const handleMergeBranch = async (branch: BranchData) => {
     showConfirm(
-      "Merge Branch",
-      `Merge '${branch.name}' into current branch '${currentBranch}'?`,
+      t('sidebar.branches.mergeBranchTitle'),
+      t('sidebar.branches.mergeBranchMsg', { name: branch.name, current: currentBranch }),
       async () => {
         try {
           await gitActions.merge(branch.name);
@@ -179,8 +179,8 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
 
   const handleRenameBranch = async (branch: BranchData) => {
     showInput(
-      "Rename Branch",
-      "New branch name:",
+      t('sidebar.branches.renameBranchTitle'),
+      t('sidebar.branches.renameBranchPrompt'),
       async (newName) => {
         if (!newName || newName === branch.name) return;
         try {
@@ -198,8 +198,8 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
 
   const handleCreateBranchFrom = (branch: BranchData) => {
     showInput(
-      "Create Branch",
-      `New branch name (from ${branch.name}):`,
+      t('sidebar.branches.createBranchTitle'),
+      t('sidebar.branches.createBranchPrompt', { name: branch.name }),
       async (newName) => {
         if (!newName) return;
         try {
@@ -216,8 +216,8 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
 
   const handleCreateTagFrom = (branch: BranchData) => {
     showInput(
-      "Create Tag",
-      `New tag name (at ${branch.name}):`,
+      t('sidebar.branches.createTagTitle'),
+      t('sidebar.branches.createTagPrompt', { name: branch.name }),
       async (tagName) => {
         if (!tagName) return;
         try {
@@ -233,8 +233,8 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
 
   const handleCherryPickBranch = (branch: BranchData) => {
     showConfirm(
-      "Cherry Pick",
-      `Cherry pick the tip commit of '${branch.name}' (${branch.hash.substring(0, 7)}) into current branch?`,
+      t('sidebar.branches.cherryPickTitle'),
+      t('sidebar.branches.cherryPickMsg', { name: branch.name, hash: branch.hash.substring(0, 7) }),
       async () => {
         try {
           await gitActions.cherryPick(branch.hash);
@@ -249,8 +249,8 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
 
   const handleRebaseOnto = (branch: BranchData) => {
     showConfirm(
-      "Rebase",
-      `Rebase current branch '${currentBranch}' onto '${branch.name}'?`,
+      t('sidebar.branches.rebaseTitle'),
+      t('sidebar.branches.rebaseMsg', { current: currentBranch, name: branch.name }),
       async () => {
         try {
           await gitActions.rebase(branch.name);
@@ -266,11 +266,11 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
   const handleResetTo = (branch: BranchData, mode: "soft" | "mixed" | "hard") => {
     const isHard = mode === "hard";
     const msg = isHard 
-        ? `Are you sure you want to HARD reset current branch to '${branch.name}'? ALL uncommitted changes will be lost.`
-        : `Reset current branch to '${branch.name}' using ${mode} mode?`;
+        ? t('sidebar.branches.resetMsgHard', { name: branch.name })
+        : t('sidebar.branches.resetMsgSoft', { name: branch.name, mode });
         
     showConfirm(
-      `Reset to ${branch.name}`,
+      t('sidebar.branches.resetTitle', { name: branch.name }),
       msg,
       async () => {
         try {
@@ -298,13 +298,13 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
   const handleAddRemote = () => {
       if (!repoPath) return;
       showInput(
-          "Add Remote",
-          "Remote Name:",
+          t('sidebar.branches.addRemoteTitle'),
+          t('sidebar.branches.addRemoteNamePrompt'),
           (name) => {
               if (!name) return;
               showInput(
-                  "Add Remote",
-                  "Remote URL:",
+                  t('sidebar.branches.addRemoteTitle'),
+                  t('sidebar.branches.addRemoteUrlPrompt'),
                   async (url) => {
                       if (!url) return;
                       try {
@@ -324,8 +324,8 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
       if (!repoPath) return;
       const name = remoteLine.split(/\s+/)[0]; // "origin https://..." -> "origin"
       showConfirm(
-          "Remove Remote",
-          `Are you sure you want to remove remote '${name}'?`,
+          t('sidebar.branches.removeRemoteTitle'),
+          t('sidebar.branches.removeRemoteMsg', { name }),
           async () => {
               try {
                   await invoke('git_remote_remove', { path: repoPath, name });

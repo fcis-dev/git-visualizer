@@ -722,7 +722,7 @@ export function MergeConflictEditor({
                         </SyntaxHighlighter>
                       ) : (
                         <span className="italic text-slate-500">
-                          {"<empty>"}
+                          {t('mergeConflictEditor.empty')}
                         </span>
                       )}
                     </div>
@@ -730,7 +730,7 @@ export function MergeConflictEditor({
 
                   <div className="h-px w-full bg-slate-200 dark:bg-slate-700 relative">
                     <span className="absolute left-1/2 -ml-3 -top-2.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] px-1 rounded-full font-bold">
-                      VS
+                      {t('mergeConflictEditor.vs')}
                     </span>
                   </div>
 
