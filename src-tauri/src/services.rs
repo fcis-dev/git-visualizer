@@ -933,6 +933,46 @@ pub fn get_branches_and_remotes(path: &str) -> Result<crate::models::BranchesAnd
     Ok(crate::models::BranchesAndRemotes { branches, remotes })
 }
 
+fn fetch_git_status(path_arc: &std::sync::Arc<String>, files_r: &std::sync::Arc<std::sync::Mutex<Vec<crate::models::FileStatus>>>) {
+    if let Ok(files) = get_git_status(path_arc) {
+        if let Ok(mut lock) = files_r.lock() {
+            *lock = files;
+        }
+    }
+}
+
+fn fetch_rebase_state(path_arc: &std::sync::Arc<String>, rebasing_r: &std::sync::Arc<std::sync::Mutex<bool>>) {
+    if let Ok(mut lock) = rebasing_r.lock() {
+        *lock = git_get_rebase_state(path_arc).unwrap_or(false);
+    }
+}
+
+fn fetch_merge_msg(path_arc: &std::sync::Arc<String>, merge_msg_r: &std::sync::Arc<std::sync::Mutex<Option<String>>>) {
+    let merge_msg_path = std::path::Path::new(path_arc.as_str()).join(".git/MERGE_MSG");
+    if let Ok(msg) = std::fs::read_to_string(merge_msg_path) {
+        if !msg.trim().is_empty() {
+            if let Ok(mut lock) = merge_msg_r.lock() {
+                *lock = Some(msg.trim().to_string());
+            }
+        }
+    }
+}
+
+fn fetch_submodules(path_arc: &std::sync::Arc<String>, submodules_r: &std::sync::Arc<std::sync::Mutex<Vec<crate::models::SubmoduleInfo>>>) {
+    if let Ok(subs) = get_git_submodules(path_arc) {
+        if let Ok(mut lock) = submodules_r.lock() {
+            *lock = subs;
+        }
+    }
+}
+
+fn fetch_stash_count(path_arc: &std::sync::Arc<String>, stash_count_r: &std::sync::Arc<std::sync::Mutex<usize>>) {
+    let count = git_stash_list(path_arc).map(|v| v.len()).unwrap_or(0);
+    if let Ok(mut lock) = stash_count_r.lock() {
+        *lock = count;
+    }
+}
+
 /// Aggregated SourceControl status — replaces 4+ sequential IPC calls that poll every few seconds.
 /// Runs git_status, rebase check, MERGE_MSG read, submodule list, and stash count in parallel.
 pub fn get_source_control_status(path: &str) -> Result<crate::models::SourceControlStatus, String> {
@@ -952,51 +992,31 @@ pub fn get_source_control_status(path: &str) -> Result<crate::models::SourceCont
         {
             let p = Arc::clone(&path_arc);
             let r = Arc::clone(&files_r);
-            s.spawn(move || {
-                if let Ok(files) = get_git_status(&p) {
-                    *r.lock().unwrap() = files;
-                }
-            });
+            s.spawn(move || fetch_git_status(&p, &r));
         }
         // rebase state (filesystem check — very fast)
         {
             let p = Arc::clone(&path_arc);
             let r = Arc::clone(&rebasing_r);
-            s.spawn(move || {
-                *r.lock().unwrap() = git_get_rebase_state(&p).unwrap_or(false);
-            });
+            s.spawn(move || fetch_rebase_state(&p, &r));
         }
         // MERGE_MSG
         {
             let p = Arc::clone(&path_arc);
             let r = Arc::clone(&merge_msg_r);
-            s.spawn(move || {
-                let merge_msg_path = Path::new(p.as_str()).join(".git/MERGE_MSG");
-                if let Ok(msg) = std::fs::read_to_string(merge_msg_path) {
-                    if !msg.trim().is_empty() {
-                        *r.lock().unwrap() = Some(msg.trim().to_string());
-                    }
-                }
-            });
+            s.spawn(move || fetch_merge_msg(&p, &r));
         }
         // submodules
         {
             let p = Arc::clone(&path_arc);
             let r = Arc::clone(&submodules_r);
-            s.spawn(move || {
-                if let Ok(subs) = get_git_submodules(&p) {
-                    *r.lock().unwrap() = subs;
-                }
-            });
+            s.spawn(move || fetch_submodules(&p, &r));
         }
         // stash count
         {
             let p = Arc::clone(&path_arc);
             let r = Arc::clone(&stash_count_r);
-            s.spawn(move || {
-                let count = git_stash_list(&p).map(|v| v.len()).unwrap_or(0);
-                *r.lock().unwrap() = count;
-            });
+            s.spawn(move || fetch_stash_count(&p, &r));
         }
     });
 
