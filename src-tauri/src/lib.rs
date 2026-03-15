@@ -1,7 +1,7 @@
 mod commands;
 mod config;
 mod models;
-mod services;
+pub mod services;
 
 use config::AppState;
 
