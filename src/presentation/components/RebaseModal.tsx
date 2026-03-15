@@ -123,30 +123,29 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
 
     try {
         // Compile the sequence string
-        let sequenceText = "";
+        const sequenceLines: string[] = [];
         
         for (const row of rows) {
-            // For standard commands: action hash message
-            sequenceText += `${row.action} ${row.commit.hash} ${row.commit.message.split('\n')[0]}\n`;
+            const firstLineOfMessage = row.commit.message.split('\n')[0];
             
+            if (row.action === 'reword' && row.newMessage) {
             // If it's a reword, Interactive Rebase normally halts the terminal and opens vim to edit the message.
             // Since we use GIT_EDITOR=true to bypass vim, that commit will keep its original message.
             // But wait! Rebase interactive also supports `exec <cmd>`.
             // So if action is 'reword', we will actually emit `pick <hash>\nexec git commit --amend -m "newMessage"`
-            if (row.action === 'reword' && row.newMessage) {
-                // Actually hack: replace the line we just wrote with a pick + amend
-                const lines = sequenceText.split('\n');
-                lines.pop(); // Remove empty line at end
-                lines.pop(); // Remove the `reword ...` line
-                
-                sequenceText = lines.join('\n') + (lines.length > 0 ? '\n' : '');
-                sequenceText += `pick ${row.commit.hash} ${row.commit.message.split('\n')[0]}\n`;
+
+                // We use pick instead of reword so we can manually amend the message using exec
+                sequenceLines.push(`pick ${row.commit.hash} ${firstLineOfMessage}`);
                 // Escape quotes in the new message
                 const escapedMsg = row.newMessage.replace(/"/g, '\\"');
-                sequenceText += `exec git commit --amend -m "${escapedMsg}"\n`;
+                sequenceLines.push(`exec git commit --amend -m "${escapedMsg}"`);
+            } else {
+                // For standard commands: action hash message
+                sequenceLines.push(`${row.action} ${row.commit.hash} ${firstLineOfMessage}`);
             }
         }
 
+        const sequenceText = sequenceLines.join('\n') + (sequenceLines.length > 0 ? '\n' : '');
         await gitActions.rebaseInteractive(baseCommit, sequenceText);
         
         onRefreshGraph();
