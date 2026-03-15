@@ -619,7 +619,7 @@ pub fn git_branch_create(path: &str, name: &str, hash: &str) -> Result<String, S
 }
 
 pub fn git_checkout_branch(path: &str, branch: &str) -> Result<String, String> {
-    run_git_cmd(path, &["checkout", branch])
+    run_git_cmd(path, &["checkout", "--", branch])
 }
 
 pub fn git_branch_rename(path: &str, old_name: &str, new_name: &str) -> Result<String, String> {
