@@ -47,10 +47,11 @@ export function RebaseModal({ repoPath, baseCommit, onClose, onRefreshGraph }: R
     const loadCommits = async () => {
       setLoading(true);
       try {
-        // Unfortunately standard git doesn't easily return a straight log of base..HEAD out of the box with our existing endpoints.
-        // But our `git_log` or `search_commits` returns commits from HEAD down to root.
-        // We will fetch up to 100 commits, and slice array from HEAD up until we find baseCommit.
-        // Then we REVERSE the array because rebase -i operates chronologically (oldest first).
+        /**
+         * Retrieves the commit history from HEAD down to root.
+         * The history is sliced up to the target baseCommit and reversed,
+         * as interactive rebase processes commits chronologically (oldest first).
+         */
         const history = await gitActions.searchCommits('', 'all'); 
         
         let targetIndex = -1;
