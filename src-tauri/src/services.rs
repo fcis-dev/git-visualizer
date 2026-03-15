@@ -6,7 +6,8 @@ use crate::models::{
 use git2::Repository;
 use std::fs;
 use std::path::Path;
-use walkdir::WalkDir;
+use jwalk::WalkDir;
+use rayon::prelude::*;
 // use crate::config::AppState; // config logic stays in config.rs
 
 pub fn get_git_graph(
@@ -166,13 +167,16 @@ pub fn get_commit_details(path: &str, hash: &str) -> Result<CommitDetails, Strin
 }
 
 pub fn get_repos_in_folder(path: &str) -> Result<Vec<RepoData>, String> {
-    let mut repos = Vec::new();
-    for entry in WalkDir::new(path)
+    let entries: Vec<_> = WalkDir::new(path)
         .max_depth(3)
         .into_iter()
         .filter_map(|e| e.ok())
-    {
-        if entry.file_name() == ".git" {
+        .filter(|e| e.file_name() == ".git")
+        .collect();
+
+    let repos: Vec<RepoData> = entries
+        .into_par_iter()
+        .filter_map(|entry| {
             if let Some(parent) = entry.path().parent() {
                 let repo_path = parent.to_string_lossy().replace("\\", "/");
                 let name = parent
@@ -190,15 +194,18 @@ pub fn get_repos_in_folder(path: &str) -> Result<Vec<RepoData>, String> {
                         }
                     }
                 }
-                repos.push(RepoData {
+                Some(RepoData {
                     path: repo_path,
                     name,
                     branch,
                     is_worktree,
-                });
+                })
+            } else {
+                None
             }
-        }
-    }
+        })
+        .collect();
+
     Ok(repos)
 }
 
@@ -681,7 +688,6 @@ pub fn git_get_pruned_branches(path: &str) -> Result<Vec<String>, String> {
         .filter_map(|l| {
             l.trim()
                 .trim_start_matches('*')
-                .trim()
                 .split_whitespace()
                 .next()
                 .map(|s| s.to_string())
