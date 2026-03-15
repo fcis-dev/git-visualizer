@@ -285,15 +285,7 @@ pub fn git_unstage(path: &str, files: Vec<String>) -> Result<(), String> {
     Ok(())
 }
 
-pub fn git_commit(path: &str, message: String) -> Result<String, String> {
-    let repo = Repository::open(path).map_err(|e| e.to_string())?;
-    let mut index = repo.index().map_err(|e| e.to_string())?;
-    let tree_id = index.write_tree().map_err(|e| e.to_string())?;
-    let tree = repo.find_tree(tree_id).map_err(|e| e.to_string())?;
-    let signature = repo
-        .signature()
-        .map_err(|_| "Failed to get signature".to_string())?;
-
+fn get_commit_parents<'repo>(repo: &'repo Repository, path: &str) -> Vec<git2::Commit<'repo>> {
     let mut parents_commits = Vec::new();
 
     // Always include HEAD as the first parent
@@ -316,10 +308,26 @@ pub fn git_commit(path: &str, message: String) -> Result<String, String> {
         }
     }
 
-    let mut parents: Vec<&git2::Commit> = Vec::new();
-    for commit in &parents_commits {
-        parents.push(commit);
-    }
+    parents_commits
+}
+
+fn cleanup_merge_state(path: &str) {
+    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_HEAD"));
+    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_MODE"));
+    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_MSG"));
+}
+
+pub fn git_commit(path: &str, message: String) -> Result<String, String> {
+    let repo = Repository::open(path).map_err(|e| e.to_string())?;
+    let mut index = repo.index().map_err(|e| e.to_string())?;
+    let tree_id = index.write_tree().map_err(|e| e.to_string())?;
+    let tree = repo.find_tree(tree_id).map_err(|e| e.to_string())?;
+    let signature = repo
+        .signature()
+        .map_err(|_| "Failed to get signature".to_string())?;
+
+    let parents_commits = get_commit_parents(&repo, path);
+    let parents: Vec<&git2::Commit> = parents_commits.iter().collect();
 
     let oid = repo
         .commit(
@@ -332,10 +340,7 @@ pub fn git_commit(path: &str, message: String) -> Result<String, String> {
         )
         .map_err(|e| e.to_string())?;
 
-    // Clean up merge state files
-    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_HEAD"));
-    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_MODE"));
-    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_MSG"));
+    cleanup_merge_state(path);
 
     Ok(oid.to_string())
 }
