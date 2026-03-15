@@ -295,29 +295,34 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
   };
 
   // Replace the old separate loadRemotes function — now integrated into loadBranchesAndRemotes
-  const handleAddRemote = () => {
+  const handleAddRemote = async () => {
       if (!repoPath) return;
-      showInput(
+
+      const getInput = (title: string, prompt: string): Promise<string | undefined> => {
+          return new Promise(resolve => {
+              showInput(title, prompt, resolve);
+          });
+      };
+
+      const name = await getInput(
           t('sidebar.branches.addRemoteTitle'),
-          t('sidebar.branches.addRemoteNamePrompt'),
-          (name) => {
-              if (!name) return;
-              showInput(
-                  t('sidebar.branches.addRemoteTitle'),
-                  t('sidebar.branches.addRemoteUrlPrompt'),
-                  async (url) => {
-                      if (!url) return;
-                      try {
-                        await invoke('git_remote_add', { path: repoPath, name, url });
-                        loadBranchesAndRemotes();
-                        showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successRemoteAdded'));
-                      } catch (e: any) {
-                        setError(t('sidebar.branches.errorAddRemoteFailed', { error: e.toString() }));
-                      }
-                  }
-              );
-          }
+          t('sidebar.branches.addRemoteNamePrompt')
       );
+      if (!name) return;
+
+      const url = await getInput(
+          t('sidebar.branches.addRemoteTitle'),
+          t('sidebar.branches.addRemoteUrlPrompt')
+      );
+      if (!url) return;
+
+      try {
+          await invoke('git_remote_add', { path: repoPath, name, url });
+          loadBranchesAndRemotes();
+          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successRemoteAdded'));
+      } catch (e: any) {
+          setError(t('sidebar.branches.errorAddRemoteFailed', { error: e.toString() }));
+      }
   };
 
   const handleRemoveRemote = (remoteLine: string) => {
