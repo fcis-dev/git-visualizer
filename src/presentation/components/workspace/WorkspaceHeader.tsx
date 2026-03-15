@@ -1,17 +1,7 @@
-import { useState } from "react";
-import {
-  GitBranch,
-  ArrowLeft,
-  RefreshCw,
-  ArrowDown,
-  ArrowUp,
-  TrendingUp,
-  ChevronDown,
-  ChevronRight,
-  Check
-} from "lucide-react";
-import { buildBranchTree, sortTreeNodes, BranchTreeNode } from "../../utils/branchTreeUtils";
+import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { WorkspaceHeaderBranchSwitcher } from "./WorkspaceHeaderBranchSwitcher";
+import { WorkspaceHeaderSyncActions } from "./WorkspaceHeaderSyncActions";
 
 interface WorkspaceHeaderProps {
   repoName: string;
@@ -87,45 +77,14 @@ export function WorkspaceHeader({
 
         <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2" />
 
-        {/* Branch Switcher Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
-            className="flex items-center space-x-2 bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1.5 rounded text-sm text-indigo-700 dark:text-indigo-300 font-medium border border-indigo-100 dark:border-indigo-500/20 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors"
-            title={t("workspace.header.switchBranch")}
-          >
-            <GitBranch className="w-4 h-4" />
-            <span>{branchName || "..."}</span>
-          </button>
-
-          {isBranchDropdownOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-30"
-                onClick={() => setIsBranchDropdownOpen(false)}
-              />
-              <div className="absolute left-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-40 overflow-hidden animate-in slide-in-from-top-2 duration-150">
-                <div className="px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
-                  {t("workspace.header.localBranches")}
-                </div>
-                <div className="max-h-64 overflow-y-auto custom-scrollbar">
-                  {availableBranches.length > 0 ? (
-                    <DropdownBranchNodeRenderer
-                      node={buildBranchTree(availableBranches, (b) => b)}
-                      branchName={branchName}
-                      checkoutingBranch={checkoutingBranch}
-                      onCheckout={onCheckoutBranch}
-                    />
-                  ) : (
-                    <div className="px-3 py-4 text-center text-xs text-slate-500">
-                      {t("workspace.header.noBranches")}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+        <WorkspaceHeaderBranchSwitcher
+          branchName={branchName}
+          isBranchDropdownOpen={isBranchDropdownOpen}
+          setIsBranchDropdownOpen={setIsBranchDropdownOpen}
+          availableBranches={availableBranches}
+          checkoutingBranch={checkoutingBranch}
+          onCheckoutBranch={onCheckoutBranch}
+        />
 
         {/* Scroll to HEAD button */}
         {commitsLength > 0 && (
@@ -175,207 +134,19 @@ export function WorkspaceHeader({
         )}
       </div>
 
-      <div className="flex items-center space-x-2">
-        {/* Insights Action */}
-        <button
-          onClick={() => setIsStatsModalOpen(true)}
-          className="flex flex-col items-center justify-center p-1.5 text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 rounded hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors"
-          title={t("workspace.header.repoStats")}
-        >
-          <TrendingUp className="w-4 h-4" />
-        </button>
-        
-        <div className="w-px h-5 bg-slate-200 dark:bg-slate-800 mx-1" />
-
-        {/* Sync Actions (Fetch, Pull, Push) */}
-        <button
-          onClick={() => onFetch(true)}
-          disabled={isFetchingManual || isAutoFetching || !hasRemote}
-          className="flex flex-col items-center justify-center p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title={!hasRemote ? t("workspace.header.noRemote") : t("workspace.header.fetchWithPrune")}
-        >
-          <RefreshCw
-            className={`w-4 h-4 ${isFetchingManual || isAutoFetching ? "animate-spin" : ""}`}
-          />
-        </button>
-
-        <button
-          onClick={onPull}
-          disabled={isPulling || !hasRemote}
-          className={`relative flex items-center space-x-1 px-2.5 py-1.5 rounded text-xs font-medium transition-colors border disabled:opacity-60 disabled:cursor-not-allowed ${
-            behindCount > 0 && hasRemote
-              ? "bg-amber-50 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20"
-              : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-transparent"
-          }`}
-          title={!hasRemote ? t("workspace.header.noRemote") : behindCount > 0 ? t("workspace.header.pullBehind", { count: behindCount }) : t("workspace.header.pull")}
-        >
-          {isPulling ? (
-            <svg
-              className="animate-spin w-3.5 h-3.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                strokeWidth="3"
-                strokeDasharray="31.4 31.4"
-              />
-            </svg>
-          ) : (
-            <ArrowDown className="w-3.5 h-3.5" />
-          )}
-          <span>{t("workspace.header.pull")}</span>
-          {behindCount > 0 && !isPulling && (
-            <span className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[1.2rem] text-[9px] font-bold rounded-full bg-amber-500 text-white leading-none shadow-sm text-center">
-              {behindCount}
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={onPush}
-          disabled={isPushing || !hasRemote}
-          className={`relative flex items-center space-x-1 px-2.5 py-1.5 rounded text-xs font-medium transition-colors border disabled:opacity-60 disabled:cursor-not-allowed ${
-            aheadCount > 0 && hasRemote
-              ? "bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20"
-              : "bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-transparent"
-          }`}
-          title={!hasRemote ? t("workspace.header.noRemote") : aheadCount > 0 ? t("workspace.header.pushAhead", { count: aheadCount }) : t("workspace.header.push")}
-        >
-          {isPushing ? (
-            <svg
-              className="animate-spin w-3.5 h-3.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-            >
-              <circle
-                cx="12"
-                cy="12"
-                r="10"
-                strokeWidth="3"
-                strokeDasharray="31.4 31.4"
-              />
-            </svg>
-          ) : (
-            <ArrowUp className="w-3.5 h-3.5" />
-          )}
-          <span>{t("workspace.header.push")}</span>
-          {aheadCount > 0 && !isPushing && (
-            <span className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[1.2rem] text-[9px] font-bold rounded-full bg-indigo-500 text-white leading-none shadow-sm text-center">
-              {aheadCount}
-            </span>
-          )}
-        </button>
-      </div>
+      <WorkspaceHeaderSyncActions
+        setIsStatsModalOpen={setIsStatsModalOpen}
+        isFetchingManual={isFetchingManual}
+        isAutoFetching={isAutoFetching}
+        onFetch={onFetch}
+        isPulling={isPulling}
+        behindCount={behindCount}
+        onPull={onPull}
+        isPushing={isPushing}
+        aheadCount={aheadCount}
+        onPush={onPush}
+        hasRemote={hasRemote}
+      />
     </header>
-  );
-}
-
-function DropdownBranchNodeRenderer({
-  node,
-  branchName,
-  checkoutingBranch,
-  onCheckout,
-  level = 0,
-}: {
-  node: BranchTreeNode<string>;
-  branchName: string;
-  checkoutingBranch: string | null;
-  onCheckout: (b: string) => void;
-  level?: number;
-}) {
-  const [expanded, setExpanded] = useState(true);
-  const children = sortTreeNodes(node);
-  const isFolder = !node.isLeaf && children.length > 0;
-
-  if (node.name === "root") {
-    return (
-      <>
-        {children.map((child) => (
-          <DropdownBranchNodeRenderer
-            key={child.path}
-            node={child}
-            branchName={branchName}
-            checkoutingBranch={checkoutingBranch}
-            onCheckout={onCheckout}
-            level={level}
-          />
-        ))}
-      </>
-    );
-  }
-
-  if (isFolder) {
-    return (
-      <div className="flex flex-col">
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            setExpanded(!expanded);
-          }}
-          className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center text-slate-600 dark:text-slate-300 font-medium"
-          style={{ paddingLeft: `${level * 12 + 12}px` }}
-          type="button"
-        >
-          {expanded ? (
-            <ChevronDown className="w-3.5 h-3.5 mr-1" />
-          ) : (
-            <ChevronRight className="w-3.5 h-3.5 mr-1" />
-          )}
-          <span className="truncate">{node.name}/</span>
-        </button>
-        {expanded && (
-          <div className="flex flex-col">
-            {children.map((child) => (
-              <DropdownBranchNodeRenderer
-                key={child.path}
-                node={child}
-                branchName={branchName}
-                checkoutingBranch={checkoutingBranch}
-                onCheckout={onCheckout}
-                level={level + 1}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  const branch = node.data!;
-  return (
-    <button
-      disabled={checkoutingBranch === branch}
-      onClick={() => onCheckout(branch)}
-      className={`w-full text-left pr-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between disabled:opacity-60 disabled:cursor-wait
-                ${branch === branchName ? "text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50/50 dark:bg-indigo-900/10" : "text-slate-700 dark:text-slate-300"}
-            `}
-      style={{ paddingLeft: `${level * 12 + 24}px` }}
-      type="button"
-    >
-      <span className="truncate">{node.name}</span>
-      {checkoutingBranch === branch ? (
-        <svg
-          className="animate-spin w-3.5 h-3.5 text-indigo-500"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-        >
-          <circle
-            cx="12"
-            cy="12"
-            r="10"
-            strokeWidth="3"
-            strokeDasharray="31.4 31.4"
-          />
-        </svg>
-      ) : branch === branchName ? (
-        <Check className="w-3.5 h-3.5" />
-      ) : null}
-    </button>
   );
 }
