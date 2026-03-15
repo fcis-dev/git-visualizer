@@ -681,7 +681,6 @@ pub fn git_get_pruned_branches(path: &str) -> Result<Vec<String>, String> {
         .filter_map(|l| {
             l.trim()
                 .trim_start_matches('*')
-                .trim()
                 .split_whitespace()
                 .next()
                 .map(|s| s.to_string())
@@ -1249,7 +1248,6 @@ pub fn get_git_reflog(path: &str) -> Result<Vec<ReflogEntry>, String> {
         // 9b6d61d HEAD@{0}: commit: my message here
         // 564177c HEAD@{1}: reset: moving to HEAD~1
 
-        // Handle variations gracefully
         // Handle variations gracefully
         let hash_index_part;
         let action_message_part;
