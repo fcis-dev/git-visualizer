@@ -629,7 +629,7 @@ pub fn git_branch_rename(path: &str, old_name: &str, new_name: &str) -> Result<S
 /// Delete a local branch. If `force` is true, uses -D (force-delete even if not merged).
 pub fn git_branch_delete(path: &str, name: &str, force: bool) -> Result<String, String> {
     let flag = if force { "-D" } else { "-d" };
-    run_git_cmd(path, &["branch", flag, name])
+    run_git_cmd(path, &["branch", flag, "--", name])
 }
 
 pub fn git_checkout_commit(path: &str, hash: &str) -> Result<String, String> {
@@ -681,7 +681,6 @@ pub fn git_get_pruned_branches(path: &str) -> Result<Vec<String>, String> {
         .filter_map(|l| {
             l.trim()
                 .trim_start_matches('*')
-                .trim()
                 .split_whitespace()
                 .next()
                 .map(|s| s.to_string())
