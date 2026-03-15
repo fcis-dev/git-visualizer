@@ -1448,7 +1448,7 @@ pub fn git_submodule_remove(path: &str, name: &str) -> Result<(), String> {
     }
 
     // 3. Remove the submodule from the working tree and index
-    run_git_cmd(path, &["rm", "-f", name])?;
+    run_git_cmd(path, &["rm", "-f", "--", name])?;
 
     Ok(())
 }
