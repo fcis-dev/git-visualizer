@@ -70,7 +70,10 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
       if (newCommits.length === 0 || newCommits.length < PAGE_SIZE) setHasMore(false);
       if (newCommits.length > 0) {
         setCommits((prev) => {
-          const existingHashes = new Set(prev.map(c => c.hash));
+          const existingHashes = new Set<string>();
+          for (let i = 0; i < prev.length; i++) {
+            existingHashes.add(prev[i].hash);
+          }
           const uniqueNewCommits = newCommits.filter(c => !existingHashes.has(c.hash));
           const updated = [...prev, ...uniqueNewCommits];
           commitCountRef.current = updated.length;
