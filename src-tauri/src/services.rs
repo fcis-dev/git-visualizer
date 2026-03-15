@@ -599,7 +599,7 @@ pub fn git_diff(
 }
 
 pub fn git_tag_create(path: &str, name: &str, hash: Option<String>) -> Result<String, String> {
-    let mut args = vec!["tag", name];
+    let mut args = vec!["tag", "--", name];
     if let Some(h) = &hash {
         args.push(h);
     }
