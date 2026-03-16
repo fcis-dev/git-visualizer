@@ -179,6 +179,10 @@ export class TauriGitRepository implements IGitRepository {
     await invoke("git_branch_delete", { path, name, force });
   }
 
+  async deleteBranchRemote(path: string, remote: string, name: string): Promise<void> {
+    await invoke("git_branch_delete_remote", { path, remote, name });
+  }
+
   async resolveConflict(
     path: string,
     file: string,

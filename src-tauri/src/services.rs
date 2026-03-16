@@ -632,6 +632,10 @@ pub fn git_branch_delete(path: &str, name: &str, force: bool) -> Result<String, 
     run_git_cmd(path, &["branch", flag, name])
 }
 
+pub fn git_branch_delete_remote(path: &str, remote: &str, name: &str) -> Result<String, String> {
+    run_git_cmd(path, &["push", remote, "--delete", name])
+}
+
 pub fn git_checkout_commit(path: &str, hash: &str) -> Result<String, String> {
     run_git_cmd(path, &["checkout", hash])
 }

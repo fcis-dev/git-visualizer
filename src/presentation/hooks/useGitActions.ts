@@ -115,6 +115,11 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         onSuccess?.();
     };
 
+    const deleteBranchRemote = async (remote: string, name: string) => {
+        if (!repoPath) return;
+        await repository.deleteBranchRemote(repoPath, remote, name);
+    };
+
     const getCommitDetails = async (hash: string) => {
         if (!repoPath) return null;
         return await repository.getCommitDetails(repoPath, hash);
@@ -183,6 +188,7 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
         createBranch,
         renameBranch,
         deleteBranch,
+        deleteBranchRemote,
         getCommitDetails,
         resolveConflict,
         getCommitTree,

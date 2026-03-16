@@ -51,6 +51,7 @@ pub fn run() {
             commands::git_branch_rename,
             commands::git_checkout_branch,
             commands::git_branch_delete,
+            commands::git_branch_delete_remote,
             commands::git_checkout_commit,
             commands::git_reset,
             commands::git_rebase,

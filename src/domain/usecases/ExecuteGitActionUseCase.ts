@@ -54,4 +54,8 @@ export class ExecuteGitActionUseCase {
   async deleteBranch(path: string, name: string, force: boolean = false): Promise<void> {
     return await this.gitRepository.deleteBranch(path, name, force);
   }
+
+  async deleteBranchRemote(path: string, remote: string, name: string): Promise<void> {
+    return await this.gitRepository.deleteBranchRemote(path, remote, name);
+  }
 }

@@ -133,12 +133,19 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
       t('sidebar.branches.deleteBranchMsg', { name: branch.name }),
       async () => {
         try {
-          await gitActions.deleteBranch(branch.name, false);
+          if (branch.is_remote) {
+            const parts = branch.name.split("/");
+            const remote = parts[0];
+            const name = parts.slice(1).join("/");
+            await gitActions.deleteBranchRemote(remote, name);
+          } else {
+            await gitActions.deleteBranch(branch.name, false);
+          }
           await loadBranchesAndRemotes();
           onRefreshGraph();
         } catch (e: any) {
           const msg = e.toString();
-          if (msg.includes("not fully merged")) {
+          if (!branch.is_remote && msg.includes("not fully merged")) {
             showConfirm(
               t('sidebar.branches.forceDeleteTitle'),
               t('sidebar.branches.forceDeleteMsg', { name: branch.name }),

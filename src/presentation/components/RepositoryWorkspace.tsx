@@ -189,7 +189,8 @@ export function RepositoryWorkspace({
   const repoName = repoPath.split(/[\/\\]/).pop() || t('common.repository');
 
   const handleGraphBranchCheckout = (refName: string) => {
-    const isRemote = refName.includes("/");
+    const branchData = graphBranches.find(b => b.name === refName);
+    const isRemote = branchData ? branchData.is_remote : refName.includes("/");
     if (isRemote) {
       const parts = refName.split("/");
       const localName = parts.slice(1).join("/");
@@ -250,11 +251,22 @@ export function RepositoryWorkspace({
   const handleGraphBranchDelete = (refName: string) => {
     showConfirm(t('repositoryWorkspace.deleteBranchTitle'), t('repositoryWorkspace.deleteBranchMsg', { refName }), async () => {
       try {
-        await gitActions.deleteBranch(refName, false);
+        const branchData = graphBranches.find(b => b.name === refName);
+        const isRemote = branchData ? branchData.is_remote : refName.includes("/");
+        if (isRemote) {
+          const parts = refName.split("/");
+          const remote = parts[0];
+          const name = parts.slice(1).join("/");
+          await gitActions.deleteBranchRemote(remote, name);
+        } else {
+          await gitActions.deleteBranch(refName, false);
+        }
         onActionSuccess();
       } catch (e: any) {
         const msg = e.toString();
-        if (msg.includes("not fully merged")) {
+        const branchData = graphBranches.find(b => b.name === refName);
+        const isRemote = branchData ? branchData.is_remote : refName.includes("/");
+        if (!isRemote && msg.includes("not fully merged")) {
           showConfirm(t('repositoryWorkspace.forceDeleteTitle'), t('repositoryWorkspace.forceDeleteMsg', { refName }), async () => {
             try {
               await gitActions.deleteBranch(refName, true);

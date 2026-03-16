@@ -218,6 +218,11 @@ pub async fn git_branch_delete(path: &str, name: &str, force: bool) -> Result<St
 }
 
 #[tauri::command]
+pub async fn git_branch_delete_remote(path: &str, remote: &str, name: &str) -> Result<String, String> {
+    services::git_branch_delete_remote(path, remote, name)
+}
+
+#[tauri::command]
 pub async fn git_checkout_commit(path: &str, hash: &str) -> Result<String, String> {
     services::git_checkout_commit(path, hash)
 }
