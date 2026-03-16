@@ -1,4 +1,4 @@
-import { GitCommit, Copy, GitPullRequest, RotateCcw, Tag, GitBranch, Check, ArrowUp, X, FileText, FolderTree, GitMerge, MoreVertical } from 'lucide-react';
+import { GitCommit, Copy, Tag, GitBranch, X, FileText, FolderTree } from 'lucide-react';
 import { Commit, CommitDetails as CommitDetailsType } from '../../domain/entities/GitEntities';
 import { useState, useEffect } from 'react';
 import { useGitActions } from '../hooks/useGitActions';
