@@ -1345,7 +1345,6 @@ pub fn get_git_reflog(path: &str) -> Result<Vec<ReflogEntry>, String> {
         // 564177c HEAD@{1}: reset: moving to HEAD~1
 
         // Handle variations gracefully
-        // Handle variations gracefully
         let hash_index_part;
         let action_message_part;
 
