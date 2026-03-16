@@ -30,8 +30,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
   const [appVersion, setAppVersion] = useState('...');
 
   useEffect(() => {
-    getVersion().then(v => setAppVersion(`v${v}`)).catch(console.error);
-  }, []);
+    getVersion()
+      .then(v => setAppVersion(`v${v}`))
+      .catch((e: any) => {
+        console.error(e);
+        showAlert(t('settings.errorTitle'), String(e));
+      });
+  }, [showAlert, t]);
 
   const handleCheckUpdate = async () => {
     try {
