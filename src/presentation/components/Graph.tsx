@@ -284,9 +284,16 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
         evt.preventDefault();
         evt.stopPropagation();
         if (onBranchContextMenu) {
-            // Pass the commit hash as the context reference. 
-            // We use a prefix 'commit:' so the handler knows it's a commit and not a branch name
-            onBranchContextMenu(`commit:${d.hash}`, evt.clientX, evt.clientY);
+            const target = evt.target as HTMLElement | null;
+            const refElement = target?.closest("[data-ref]");
+            if (refElement) {
+                const refName = refElement.getAttribute("data-ref") || "";
+                onBranchContextMenu(refName, evt.clientX, evt.clientY);
+            } else {
+                // Pass the commit hash as the context reference.
+                // We use a prefix 'commit:' so the handler knows it's a commit and not a branch name
+                onBranchContextMenu(`commit:${d.hash}`, evt.clientX, evt.clientY);
+            }
         }
       });
       // Find max lane among all nodes to determine common starting X
@@ -445,24 +452,6 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
         </div>
       `);
 
-      // Attach contextmenu listeners to ref badge divs after HTML is injected
-      if (onBranchContextMenu) {
-        const foNode = fo.node() as Element | null;
-        if (foNode) {
-          foNode.querySelectorAll<HTMLElement>("[data-ref]").forEach((el) => {
-            el.addEventListener("contextmenu", (evt) => {
-              evt.preventDefault();
-              evt.stopPropagation();
-              const refName = el.getAttribute("data-ref") || "";
-              onBranchContextMenu(
-                refName,
-                (evt as MouseEvent).clientX,
-                (evt as MouseEvent).clientY,
-              );
-            });
-          });
-        }
-      }
     });
 
     // Expand the SVG canvas width if the content overflowed the container
