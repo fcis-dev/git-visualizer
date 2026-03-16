@@ -6,7 +6,8 @@ use crate::models::{
 use git2::Repository;
 use std::fs;
 use std::path::Path;
-use walkdir::WalkDir;
+use jwalk::WalkDir;
+use rayon::prelude::*;
 // use crate::config::AppState; // config logic stays in config.rs
 
 pub fn get_git_graph(
@@ -166,13 +167,16 @@ pub fn get_commit_details(path: &str, hash: &str) -> Result<CommitDetails, Strin
 }
 
 pub fn get_repos_in_folder(path: &str) -> Result<Vec<RepoData>, String> {
-    let mut repos = Vec::new();
-    for entry in WalkDir::new(path)
+    let entries: Vec<_> = WalkDir::new(path)
         .max_depth(3)
         .into_iter()
         .filter_map(|e| e.ok())
-    {
-        if entry.file_name() == ".git" {
+        .filter(|e| e.file_name() == ".git")
+        .collect();
+
+    let repos: Vec<RepoData> = entries
+        .into_par_iter()
+        .filter_map(|entry| {
             if let Some(parent) = entry.path().parent() {
                 let repo_path = parent.to_string_lossy().replace("\\", "/");
                 let name = parent
@@ -190,15 +194,18 @@ pub fn get_repos_in_folder(path: &str) -> Result<Vec<RepoData>, String> {
                         }
                     }
                 }
-                repos.push(RepoData {
+                Some(RepoData {
                     path: repo_path,
                     name,
                     branch,
                     is_worktree,
-                });
+                })
+            } else {
+                None
             }
-        }
-    }
+        })
+        .collect();
+
     Ok(repos)
 }
 
@@ -285,15 +292,7 @@ pub fn git_unstage(path: &str, files: Vec<String>) -> Result<(), String> {
     Ok(())
 }
 
-pub fn git_commit(path: &str, message: String) -> Result<String, String> {
-    let repo = Repository::open(path).map_err(|e| e.to_string())?;
-    let mut index = repo.index().map_err(|e| e.to_string())?;
-    let tree_id = index.write_tree().map_err(|e| e.to_string())?;
-    let tree = repo.find_tree(tree_id).map_err(|e| e.to_string())?;
-    let signature = repo
-        .signature()
-        .map_err(|_| "Failed to get signature".to_string())?;
-
+fn get_commit_parents<'repo>(repo: &'repo Repository, path: &str) -> Vec<git2::Commit<'repo>> {
     let mut parents_commits = Vec::new();
 
     // Always include HEAD as the first parent
@@ -316,10 +315,26 @@ pub fn git_commit(path: &str, message: String) -> Result<String, String> {
         }
     }
 
-    let mut parents: Vec<&git2::Commit> = Vec::new();
-    for commit in &parents_commits {
-        parents.push(commit);
-    }
+    parents_commits
+}
+
+fn cleanup_merge_state(path: &str) {
+    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_HEAD"));
+    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_MODE"));
+    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_MSG"));
+}
+
+pub fn git_commit(path: &str, message: String) -> Result<String, String> {
+    let repo = Repository::open(path).map_err(|e| e.to_string())?;
+    let mut index = repo.index().map_err(|e| e.to_string())?;
+    let tree_id = index.write_tree().map_err(|e| e.to_string())?;
+    let tree = repo.find_tree(tree_id).map_err(|e| e.to_string())?;
+    let signature = repo
+        .signature()
+        .map_err(|_| "Failed to get signature".to_string())?;
+
+    let parents_commits = get_commit_parents(&repo, path);
+    let parents: Vec<&git2::Commit> = parents_commits.iter().collect();
 
     let oid = repo
         .commit(
@@ -332,10 +347,7 @@ pub fn git_commit(path: &str, message: String) -> Result<String, String> {
         )
         .map_err(|e| e.to_string())?;
 
-    // Clean up merge state files
-    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_HEAD"));
-    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_MODE"));
-    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_MSG"));
+    cleanup_merge_state(path);
 
     Ok(oid.to_string())
 }
@@ -454,11 +466,11 @@ pub fn git_stash_drop(path: &str, index: &str) -> Result<String, String> {
 }
 
 pub fn git_cherry_pick(path: &str, hash: &str) -> Result<String, String> {
-    run_git_cmd(path, &["cherry-pick", hash])
+    run_git_cmd(path, &["cherry-pick", "--", hash])
 }
 
 pub fn git_revert(path: &str, hash: &str) -> Result<String, String> {
-    run_git_cmd(path, &["revert", hash, "--no-edit"])
+    run_git_cmd(path, &["revert", "--no-edit", "--", hash])
 }
 
 pub fn git_get_rebase_state(path: &str) -> Result<bool, String> {
@@ -623,7 +635,7 @@ pub fn git_checkout_branch(path: &str, branch: &str) -> Result<String, String> {
     if branch.starts_with('-') {
         return Err("Invalid branch name".to_string());
     }
-    run_git_cmd(path, &["checkout", branch])
+    run_git_cmd(path, &["checkout", "--", branch])
 }
 
 pub fn git_branch_rename(path: &str, old_name: &str, new_name: &str) -> Result<String, String> {
@@ -661,7 +673,7 @@ pub fn git_remote_add(path: &str, name: &str, url: &str) -> Result<String, Strin
 }
 
 pub fn git_remote_remove(path: &str, name: &str) -> Result<String, String> {
-    run_git_cmd(path, &["remote", "remove", name])
+    run_git_cmd(path, &["remote", "remove", "--", name])
 }
 
 /// Returns the number of commits the current branch is behind its upstream (0 = up to date).
@@ -688,7 +700,6 @@ pub fn git_get_pruned_branches(path: &str) -> Result<Vec<String>, String> {
         .filter_map(|l| {
             l.trim()
                 .trim_start_matches('*')
-                .trim()
                 .split_whitespace()
                 .next()
                 .map(|s| s.to_string())
@@ -940,6 +951,46 @@ pub fn get_branches_and_remotes(path: &str) -> Result<crate::models::BranchesAnd
     Ok(crate::models::BranchesAndRemotes { branches, remotes })
 }
 
+fn fetch_git_status(path_arc: &std::sync::Arc<String>, files_r: &std::sync::Arc<std::sync::Mutex<Vec<crate::models::FileStatus>>>) {
+    if let Ok(files) = get_git_status(path_arc) {
+        if let Ok(mut lock) = files_r.lock() {
+            *lock = files;
+        }
+    }
+}
+
+fn fetch_rebase_state(path_arc: &std::sync::Arc<String>, rebasing_r: &std::sync::Arc<std::sync::Mutex<bool>>) {
+    if let Ok(mut lock) = rebasing_r.lock() {
+        *lock = git_get_rebase_state(path_arc).unwrap_or(false);
+    }
+}
+
+fn fetch_merge_msg(path_arc: &std::sync::Arc<String>, merge_msg_r: &std::sync::Arc<std::sync::Mutex<Option<String>>>) {
+    let merge_msg_path = std::path::Path::new(path_arc.as_str()).join(".git/MERGE_MSG");
+    if let Ok(msg) = std::fs::read_to_string(merge_msg_path) {
+        if !msg.trim().is_empty() {
+            if let Ok(mut lock) = merge_msg_r.lock() {
+                *lock = Some(msg.trim().to_string());
+            }
+        }
+    }
+}
+
+fn fetch_submodules(path_arc: &std::sync::Arc<String>, submodules_r: &std::sync::Arc<std::sync::Mutex<Vec<crate::models::SubmoduleInfo>>>) {
+    if let Ok(subs) = get_git_submodules(path_arc) {
+        if let Ok(mut lock) = submodules_r.lock() {
+            *lock = subs;
+        }
+    }
+}
+
+fn fetch_stash_count(path_arc: &std::sync::Arc<String>, stash_count_r: &std::sync::Arc<std::sync::Mutex<usize>>) {
+    let count = git_stash_list(path_arc).map(|v| v.len()).unwrap_or(0);
+    if let Ok(mut lock) = stash_count_r.lock() {
+        *lock = count;
+    }
+}
+
 /// Aggregated SourceControl status — replaces 4+ sequential IPC calls that poll every few seconds.
 /// Runs git_status, rebase check, MERGE_MSG read, submodule list, and stash count in parallel.
 pub fn get_source_control_status(path: &str) -> Result<crate::models::SourceControlStatus, String> {
@@ -959,51 +1010,31 @@ pub fn get_source_control_status(path: &str) -> Result<crate::models::SourceCont
         {
             let p = Arc::clone(&path_arc);
             let r = Arc::clone(&files_r);
-            s.spawn(move || {
-                if let Ok(files) = get_git_status(&p) {
-                    *r.lock().unwrap() = files;
-                }
-            });
+            s.spawn(move || fetch_git_status(&p, &r));
         }
         // rebase state (filesystem check — very fast)
         {
             let p = Arc::clone(&path_arc);
             let r = Arc::clone(&rebasing_r);
-            s.spawn(move || {
-                *r.lock().unwrap() = git_get_rebase_state(&p).unwrap_or(false);
-            });
+            s.spawn(move || fetch_rebase_state(&p, &r));
         }
         // MERGE_MSG
         {
             let p = Arc::clone(&path_arc);
             let r = Arc::clone(&merge_msg_r);
-            s.spawn(move || {
-                let merge_msg_path = Path::new(p.as_str()).join(".git/MERGE_MSG");
-                if let Ok(msg) = std::fs::read_to_string(merge_msg_path) {
-                    if !msg.trim().is_empty() {
-                        *r.lock().unwrap() = Some(msg.trim().to_string());
-                    }
-                }
-            });
+            s.spawn(move || fetch_merge_msg(&p, &r));
         }
         // submodules
         {
             let p = Arc::clone(&path_arc);
             let r = Arc::clone(&submodules_r);
-            s.spawn(move || {
-                if let Ok(subs) = get_git_submodules(&p) {
-                    *r.lock().unwrap() = subs;
-                }
-            });
+            s.spawn(move || fetch_submodules(&p, &r));
         }
         // stash count
         {
             let p = Arc::clone(&path_arc);
             let r = Arc::clone(&stash_count_r);
-            s.spawn(move || {
-                let count = git_stash_list(&p).map(|v| v.len()).unwrap_or(0);
-                *r.lock().unwrap() = count;
-            });
+            s.spawn(move || fetch_stash_count(&p, &r));
         }
     });
 
@@ -1058,17 +1089,37 @@ pub fn set_git_config_user(_path: &str, name: &str, email: &str) -> Result<(), S
 }
 
 pub fn git_discard_changes(path: &str, files: Vec<String>) -> Result<(), String> {
+    if files.is_empty() {
+        return Ok(());
+    }
+
     use std::path::Path;
     let repo = Repository::open(path).map_err(|e| e.to_string())?;
+
+    let mut status_opts = git2::StatusOptions::new();
+    status_opts.include_untracked(true);
+    for f in &files {
+        status_opts.pathspec(f);
+    }
+
+    let statuses = repo
+        .statuses(Some(&mut status_opts))
+        .map_err(|e| e.to_string())?;
+
+    let mut untracked_files = std::collections::HashSet::new();
+    for entry in statuses.iter() {
+        if entry.status().is_wt_new() {
+            if let Some(p) = entry.path() {
+                untracked_files.insert(p.to_string());
+            }
+        }
+    }
 
     let mut files_to_checkout = Vec::new();
 
     for file_path_str in files {
-        let path_obj = Path::new(&file_path_str);
-        // Check if file is untracked
-        let status = repo.status_file(path_obj).map_err(|e| e.to_string())?;
-
-        if status.is_wt_new() {
+        if untracked_files.contains(&file_path_str) {
+            let path_obj = Path::new(&file_path_str);
             // Untracked file: delete it
             let full_path = Path::new(path).join(path_obj);
             if full_path.exists() {
@@ -1120,15 +1171,52 @@ pub fn search_commits(
     if search_type == "all" {
         // Fetch enough from each sub-type to cover skip+limit after merge/dedup
         let fetch_n = skip + limit + 1;
-        let msg_commits =
-            search_commits_internal(path, query, "message", branches.clone(), 0, fetch_n)
-                .unwrap_or_default();
-        let author_commits =
-            search_commits_internal(path, query, "author", branches.clone(), 0, fetch_n)
-                .unwrap_or_default();
-        let file_commits =
-            search_commits_internal(path, query, "file", branches.clone(), 0, fetch_n)
-                .unwrap_or_default();
+
+        use std::sync::{Arc, Mutex};
+
+        let path_arc = Arc::new(path.to_string());
+        let query_arc = Arc::new(query.to_string());
+
+        let msg_r = Arc::new(Mutex::new(Vec::new()));
+        let author_r = Arc::new(Mutex::new(Vec::new()));
+        let file_r = Arc::new(Mutex::new(Vec::new()));
+
+        std::thread::scope(|s| {
+            {
+                let p = Arc::clone(&path_arc);
+                let q = Arc::clone(&query_arc);
+                let b = branches.clone();
+                let r = Arc::clone(&msg_r);
+                s.spawn(move || {
+                    let commits = search_commits_internal(&p, &q, "message", b, 0, fetch_n).unwrap_or_default();
+                    *r.lock().unwrap() = commits;
+                });
+            }
+            {
+                let p = Arc::clone(&path_arc);
+                let q = Arc::clone(&query_arc);
+                let b = branches.clone();
+                let r = Arc::clone(&author_r);
+                s.spawn(move || {
+                    let commits = search_commits_internal(&p, &q, "author", b, 0, fetch_n).unwrap_or_default();
+                    *r.lock().unwrap() = commits;
+                });
+            }
+            {
+                let p = Arc::clone(&path_arc);
+                let q = Arc::clone(&query_arc);
+                let b = branches.clone();
+                let r = Arc::clone(&file_r);
+                s.spawn(move || {
+                    let commits = search_commits_internal(&p, &q, "file", b, 0, fetch_n).unwrap_or_default();
+                    *r.lock().unwrap() = commits;
+                });
+            }
+        });
+
+        let msg_commits = Arc::try_unwrap(msg_r).unwrap().into_inner().unwrap();
+        let author_commits = Arc::try_unwrap(author_r).unwrap().into_inner().unwrap();
+        let file_commits = Arc::try_unwrap(file_r).unwrap().into_inner().unwrap();
 
         let mut seen = std::collections::HashSet::new();
         let mut merged = Vec::new();
