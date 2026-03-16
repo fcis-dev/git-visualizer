@@ -666,7 +666,7 @@ pub fn git_remote_add(path: &str, name: &str, url: &str) -> Result<String, Strin
 }
 
 pub fn git_remote_remove(path: &str, name: &str) -> Result<String, String> {
-    run_git_cmd(path, &["remote", "remove", name])
+    run_git_cmd(path, &["remote", "remove", "--", name])
 }
 
 /// Returns the number of commits the current branch is behind its upstream (0 = up to date).
