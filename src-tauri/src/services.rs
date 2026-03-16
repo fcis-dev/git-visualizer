@@ -421,7 +421,7 @@ pub fn git_fetch_prune(path: &str) -> Result<String, String> {
 }
 
 pub fn git_merge(path: &str, branch: &str) -> Result<String, String> {
-    run_git_cmd(path, &["merge", branch])
+    run_git_cmd(path, &["merge", "--", branch])
 }
 
 pub fn git_stash_save(path: &str, message: Option<String>) -> Result<String, String> {
@@ -466,11 +466,11 @@ pub fn git_stash_drop(path: &str, index: &str) -> Result<String, String> {
 }
 
 pub fn git_cherry_pick(path: &str, hash: &str) -> Result<String, String> {
-    run_git_cmd(path, &["cherry-pick", hash])
+    run_git_cmd(path, &["cherry-pick", "--", hash])
 }
 
 pub fn git_revert(path: &str, hash: &str) -> Result<String, String> {
-    run_git_cmd(path, &["revert", hash, "--no-edit"])
+    run_git_cmd(path, &["revert", "--no-edit", "--", hash])
 }
 
 pub fn git_get_rebase_state(path: &str) -> Result<bool, String> {
@@ -611,7 +611,7 @@ pub fn git_diff(
 }
 
 pub fn git_tag_create(path: &str, name: &str, hash: Option<String>) -> Result<String, String> {
-    let mut args = vec!["tag", name];
+    let mut args = vec!["tag", "--", name];
     if let Some(h) = &hash {
         args.push(h);
     }
@@ -619,7 +619,7 @@ pub fn git_tag_create(path: &str, name: &str, hash: Option<String>) -> Result<St
 }
 
 pub fn git_tag_delete(path: &str, name: &str) -> Result<String, String> {
-    run_git_cmd(path, &["tag", "-d", name])
+    run_git_cmd(path, &["tag", "-d", "--", name])
 }
 
 pub fn git_tag_delete_remote(path: &str, name: &str) -> Result<String, String> {
@@ -627,7 +627,7 @@ pub fn git_tag_delete_remote(path: &str, name: &str) -> Result<String, String> {
 }
 
 pub fn git_branch_create(path: &str, name: &str, hash: &str) -> Result<String, String> {
-    run_git_cmd(path, &["branch", name, hash])
+    run_git_cmd(path, &["branch", "--", name, hash])
 }
 
 pub fn git_checkout_branch(path: &str, branch: &str) -> Result<String, String> {
@@ -641,7 +641,7 @@ pub fn git_branch_rename(path: &str, old_name: &str, new_name: &str) -> Result<S
 /// Delete a local branch. If `force` is true, uses -D (force-delete even if not merged).
 pub fn git_branch_delete(path: &str, name: &str, force: bool) -> Result<String, String> {
     let flag = if force { "-D" } else { "-d" };
-    run_git_cmd(path, &["branch", flag, name])
+    run_git_cmd(path, &["branch", flag, "--", name])
 }
 
 pub fn git_checkout_commit(path: &str, hash: &str) -> Result<String, String> {
@@ -653,7 +653,7 @@ pub fn git_reset(path: &str, hash: &str, mode: &str) -> Result<String, String> {
 }
 
 pub fn git_rebase(path: &str, branch: &str) -> Result<String, String> {
-    run_git_cmd(path, &["rebase", branch])
+    run_git_cmd(path, &["rebase", "--", branch])
 }
 
 pub fn git_remote_list(path: &str) -> Result<Vec<String>, String> {
@@ -1658,9 +1658,9 @@ pub fn git_worktree_list(path: &str) -> Result<Vec<WorktreeData>, String> {
 
 pub fn git_worktree_add(path: &str, new_path: &str, branch: &str) -> Result<String, String> {
     if branch.is_empty() {
-        run_git_cmd(path, &["worktree", "add", "-d", new_path])
+        run_git_cmd(path, &["worktree", "add", "-d", "--", new_path])
     } else {
-        run_git_cmd(path, &["worktree", "add", new_path, branch])
+        run_git_cmd(path, &["worktree", "add", "--", new_path, branch])
     }
 }
 
