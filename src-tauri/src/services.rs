@@ -258,7 +258,7 @@ pub fn git_resolve_conflict(path: &str, file: &str, strategy: &str) -> Result<St
     };
 
     run_git_cmd(path, &["checkout", flag, "--", file])?;
-    run_git_cmd(path, &["add", file])
+    run_git_cmd(path, &["add", "--", file])
 }
 
 pub fn git_stage(path: &str, files: Vec<String>) -> Result<(), String> {
@@ -409,6 +409,9 @@ pub fn git_fetch_prune(path: &str) -> Result<String, String> {
 }
 
 pub fn git_merge(path: &str, branch: &str) -> Result<String, String> {
+    if branch.starts_with('-') {
+        return Err("Invalid branch name".to_string());
+    }
     run_git_cmd(path, &["merge", branch])
 }
 
@@ -650,11 +653,11 @@ pub fn git_remote_list(path: &str) -> Result<Vec<String>, String> {
 }
 
 pub fn git_remote_add(path: &str, name: &str, url: &str) -> Result<String, String> {
-    run_git_cmd(path, &["remote", "add", name, url])
+    run_git_cmd(path, &["remote", "add", "--", name, url])
 }
 
 pub fn git_remote_remove(path: &str, name: &str) -> Result<String, String> {
-    run_git_cmd(path, &["remote", "remove", name])
+    run_git_cmd(path, &["remote", "remove", "--", name])
 }
 
 /// Returns the number of commits the current branch is behind its upstream (0 = up to date).
