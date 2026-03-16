@@ -1528,7 +1528,7 @@ pub fn git_submodule_sync(path: &str) -> Result<(), String> {
 }
 
 pub fn git_submodule_add(path: &str, url: &str, name: &str) -> Result<(), String> {
-    run_git_cmd(path, &["submodule", "add", url, name])?;
+    run_git_cmd(path, &["submodule", "add", "--", url, name])?;
     Ok(())
 }
 
