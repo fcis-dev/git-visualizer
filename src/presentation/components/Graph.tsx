@@ -301,10 +301,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
         nodes.length > 0 ? Math.max(...nodes.map((n) => n.lane || 0)) : 0;
       const maxLaneX = maxLane * 20 + 20;
 
-      // We start drawing text/refs to the right of the furthest possible lane.
-      // d.x gives the current node's x coordinate in the group's transform
-      // So we need to offset it to reach maxLaneX + some padding.
-      // Wait, the group is translated to d.x. So an offset of (maxLaneX - d.x + padding) is needed.
+      // Calculate offset to position text and refs to the right of the maximum lane.
       const currentX = maxLaneX - d.x + 18;
 
       let tagsRowHtml = "";
