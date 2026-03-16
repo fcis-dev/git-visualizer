@@ -635,7 +635,7 @@ pub fn git_checkout_branch(path: &str, branch: &str) -> Result<String, String> {
 }
 
 pub fn git_branch_rename(path: &str, old_name: &str, new_name: &str) -> Result<String, String> {
-    run_git_cmd(path, &["branch", "-m", old_name, new_name])
+    run_git_cmd(path, &["branch", "-m", "--", old_name, new_name])
 }
 
 /// Delete a local branch. If `force` is true, uses -D (force-delete even if not merged).
