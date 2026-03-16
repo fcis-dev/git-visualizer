@@ -1138,15 +1138,52 @@ pub fn search_commits(
     if search_type == "all" {
         // Fetch enough from each sub-type to cover skip+limit after merge/dedup
         let fetch_n = skip + limit + 1;
-        let msg_commits =
-            search_commits_internal(path, query, "message", branches.clone(), 0, fetch_n)
-                .unwrap_or_default();
-        let author_commits =
-            search_commits_internal(path, query, "author", branches.clone(), 0, fetch_n)
-                .unwrap_or_default();
-        let file_commits =
-            search_commits_internal(path, query, "file", branches.clone(), 0, fetch_n)
-                .unwrap_or_default();
+
+        use std::sync::{Arc, Mutex};
+
+        let path_arc = Arc::new(path.to_string());
+        let query_arc = Arc::new(query.to_string());
+
+        let msg_r = Arc::new(Mutex::new(Vec::new()));
+        let author_r = Arc::new(Mutex::new(Vec::new()));
+        let file_r = Arc::new(Mutex::new(Vec::new()));
+
+        std::thread::scope(|s| {
+            {
+                let p = Arc::clone(&path_arc);
+                let q = Arc::clone(&query_arc);
+                let b = branches.clone();
+                let r = Arc::clone(&msg_r);
+                s.spawn(move || {
+                    let commits = search_commits_internal(&p, &q, "message", b, 0, fetch_n).unwrap_or_default();
+                    *r.lock().unwrap() = commits;
+                });
+            }
+            {
+                let p = Arc::clone(&path_arc);
+                let q = Arc::clone(&query_arc);
+                let b = branches.clone();
+                let r = Arc::clone(&author_r);
+                s.spawn(move || {
+                    let commits = search_commits_internal(&p, &q, "author", b, 0, fetch_n).unwrap_or_default();
+                    *r.lock().unwrap() = commits;
+                });
+            }
+            {
+                let p = Arc::clone(&path_arc);
+                let q = Arc::clone(&query_arc);
+                let b = branches.clone();
+                let r = Arc::clone(&file_r);
+                s.spawn(move || {
+                    let commits = search_commits_internal(&p, &q, "file", b, 0, fetch_n).unwrap_or_default();
+                    *r.lock().unwrap() = commits;
+                });
+            }
+        });
+
+        let msg_commits = Arc::try_unwrap(msg_r).unwrap().into_inner().unwrap();
+        let author_commits = Arc::try_unwrap(author_r).unwrap().into_inner().unwrap();
+        let file_commits = Arc::try_unwrap(file_r).unwrap().into_inner().unwrap();
 
         let mut seen = std::collections::HashSet::new();
         let mut merged = Vec::new();
