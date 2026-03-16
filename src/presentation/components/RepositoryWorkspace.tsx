@@ -1,6 +1,5 @@
 import { useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { ArrowLeft } from "lucide-react";
 import { SourceControl } from "./Sidebar/SourceControl";
 import { BranchesSidebar } from "./Sidebar/BranchesSidebar";
 import { TagsSidebar } from "./Sidebar/TagsSidebar";
