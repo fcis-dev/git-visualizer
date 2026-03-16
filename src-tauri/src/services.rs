@@ -623,7 +623,8 @@ pub fn git_tag_delete(path: &str, name: &str) -> Result<String, String> {
 }
 
 pub fn git_tag_delete_remote(path: &str, name: &str) -> Result<String, String> {
-    run_git_cmd(path, &["push", "origin", "--delete", name])
+    let refspec = format!(":refs/tags/{}", name);
+    run_git_cmd(path, &["push", "origin", &refspec])
 }
 
 pub fn git_branch_create(path: &str, name: &str, hash: &str) -> Result<String, String> {
@@ -631,6 +632,9 @@ pub fn git_branch_create(path: &str, name: &str, hash: &str) -> Result<String, S
 }
 
 pub fn git_checkout_branch(path: &str, branch: &str) -> Result<String, String> {
+    if branch.starts_with('-') {
+        return Err("Invalid branch name".to_string());
+    }
     run_git_cmd(path, &["checkout", "--", branch])
 }
 
@@ -645,6 +649,9 @@ pub fn git_branch_delete(path: &str, name: &str, force: bool) -> Result<String, 
 }
 
 pub fn git_checkout_commit(path: &str, hash: &str) -> Result<String, String> {
+    if hash.starts_with('-') {
+        return Err("Invalid commit hash".to_string());
+    }
     run_git_cmd(path, &["checkout", hash])
 }
 
@@ -1665,7 +1672,7 @@ pub fn git_worktree_add(path: &str, new_path: &str, branch: &str) -> Result<Stri
 }
 
 pub fn git_worktree_remove(path: &str, worktree_path: &str) -> Result<String, String> {
-    run_git_cmd(path, &["worktree", "remove", "--force", worktree_path])
+    run_git_cmd(path, &["worktree", "remove", "--force", "--", worktree_path])
 }
 
 pub fn git_worktree_prune(path: &str) -> Result<String, String> {
