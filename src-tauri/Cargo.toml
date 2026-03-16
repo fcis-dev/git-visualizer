@@ -38,3 +38,7 @@ harness = false
 
 [dev-dependencies]
 criterion = "0.5.1"
+
+[[bin]]
+name = "benchmark"
+path = "benches/benchmark.rs"
