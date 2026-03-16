@@ -1082,17 +1082,37 @@ pub fn set_git_config_user(_path: &str, name: &str, email: &str) -> Result<(), S
 }
 
 pub fn git_discard_changes(path: &str, files: Vec<String>) -> Result<(), String> {
+    if files.is_empty() {
+        return Ok(());
+    }
+
     use std::path::Path;
     let repo = Repository::open(path).map_err(|e| e.to_string())?;
+
+    let mut status_opts = git2::StatusOptions::new();
+    status_opts.include_untracked(true);
+    for f in &files {
+        status_opts.pathspec(f);
+    }
+
+    let statuses = repo
+        .statuses(Some(&mut status_opts))
+        .map_err(|e| e.to_string())?;
+
+    let mut untracked_files = std::collections::HashSet::new();
+    for entry in statuses.iter() {
+        if entry.status().is_wt_new() {
+            if let Some(p) = entry.path() {
+                untracked_files.insert(p.to_string());
+            }
+        }
+    }
 
     let mut files_to_checkout = Vec::new();
 
     for file_path_str in files {
-        let path_obj = Path::new(&file_path_str);
-        // Check if file is untracked
-        let status = repo.status_file(path_obj).map_err(|e| e.to_string())?;
-
-        if status.is_wt_new() {
+        if untracked_files.contains(&file_path_str) {
+            let path_obj = Path::new(&file_path_str);
             // Untracked file: delete it
             let full_path = Path::new(path).join(path_obj);
             if full_path.exists() {
