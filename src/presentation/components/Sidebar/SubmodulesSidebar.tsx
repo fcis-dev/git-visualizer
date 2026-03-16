@@ -1,8 +1,6 @@
 import { Box, Plus, RefreshCw, Play, Trash2, ExternalLink, Loader2 } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 import { useSourceControlController } from '../../controllers/useSourceControlController';
-import { useDialog } from '../../context/DialogContext';
-import { useGitActions } from '../../hooks/useGitActions';
 
 interface SubmodulesSidebarProps {
   repoPath: string | null;
