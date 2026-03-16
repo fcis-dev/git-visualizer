@@ -87,8 +87,6 @@ export function HistoricalFileContentView({
         return () => observer.disconnect();
     }, []);
 
-
-
     useEffect(() => {
         let mounted = true;
         const loadContent = async () => {
