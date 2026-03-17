@@ -276,7 +276,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
     let maxContentWidth = containerWidth;
 
     // Commit Message and Refs
-    nodeGroup.each(function (d) {
+    nodeGroup.each(function (d, i) {
       const group = d3.select(this);
       
       // Add right-click listener to the whole row
@@ -341,7 +341,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
               .replace(/"/g, "&quot;")
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;");
-            return `<div data-ref="${safeRef}" style="background-color: ${chipBg}; color: ${chipText}; border: 1px solid ${chipBorder}; border-radius: 9999px; padding: 1px 8px; font-size: 10px; font-weight: 500; line-height: 14px; white-space: nowrap; pointer-events: auto; max-width: 130px; overflow: hidden; text-overflow: ellipsis; display: inline-block; cursor: context-menu; backdrop-filter: blur(4px); box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: transform 0.15s ease, filter 0.15s ease;" onmouseover="this.style.transform='scale(1.05)'; this.style.filter='brightness(1.1)'" onmouseout="this.style.transform='scale(1)'; this.style.filter='brightness(1)'">${safeDisplayName}</div>`;
+            return `<div data-ref="${safeRef}" style="background-color: ${chipBg}; color: ${chipText}; border: 1px solid ${chipBorder}; border-radius: 9999px; padding: 1px 8px; font-size: 10px; font-weight: 500; line-height: 14px; white-space: nowrap; pointer-events: auto; max-width: 130px; overflow: hidden; text-overflow: ellipsis; display: inline-block; cursor: context-menu; transition: opacity 0.15s ease;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">${safeDisplayName}</div>`;
           })
           .join("");
       }
@@ -377,6 +377,11 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       const hoverBg = isDark
         ? "rgba(30, 41, 59, 0.5)"
         : "rgba(241, 245, 249, 0.7)";
+      const baseBg = i % 2 === 0
+        ? "transparent"
+        : isDark
+          ? "rgba(30, 41, 59, 0.25)"
+          : "rgba(241, 245, 249, 0.5)";
 
       const fo = group
         .append("foreignObject")
@@ -403,16 +408,17 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       // Use display:block + explicit row heights to avoid WebKit foreignObject column-flex bug
       const contentDiv = fo
         .append("xhtml:div")
+        .attr("xmlns", "http://www.w3.org/1999/xhtml")
         .style("display", "block")
         .style("width", "100%")
         .style("height", "56px")
-        .style("-webkit-box-sizing", "border-box")
         .style("box-sizing", "border-box")
         .style("padding", "2px 12px 2px 8px")
         .style("border-radius", "8px")
         .style("font-family", "'Inter', 'Roboto', 'Segoe UI', sans-serif")
         .style("font-size", "13px")
         .style("pointer-events", "auto")
+        .style("background-color", baseBg)
         .style(
           "transition",
           "background-color 0.15s ease",
@@ -421,27 +427,29 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
           d3.select(this).style("background-color", hoverBg);
         })
         .on("mouseout", function () {
-          d3.select(this).style("background-color", "transparent");
+          d3.select(this).style("background-color", baseBg);
         })
         .on("click", (_event) => onSelectCommit(d));
 
-      // Row 1 (top): branch chips + time
-      // Row 2 (bottom): commit message + author avatar + author name + date (no time)
-      // Note: All flex containers use full webkit prefixes to fix Safari/WKWebView foreignObject rendering
+      // Row 1 (top): commit message + author avatar + author name + date (no time)
+      // Row 2 (bottom): branch chips + time
+      // Note: Removed box-shadow, added explicit widths and xmlns to fully stabilize Safari foreignObject rendering
       contentDiv.html(`
-        <div style="height: 24px; overflow: hidden; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-orient: horizontal; -webkit-flex-direction: row; flex-direction: row; -webkit-box-align: center; -webkit-align-items: center; align-items: center; gap: 6px;">
-          <div style="-webkit-box-flex: 1; -webkit-flex: 1; flex: 1; min-width: 0; overflow: hidden; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-orient: horizontal; -webkit-flex-direction: row; flex-direction: row; -webkit-box-align: center; -webkit-align-items: center; align-items: center; gap: 5px;">
-            ${tagsRowHtml}
+        <div xmlns="http://www.w3.org/1999/xhtml" style="width: 100%; height: 100%;">
+          <div style="width: 100%; height: 28px; overflow: hidden; display: flex; align-items: center; gap: 8px;">
+            <div class="commit-message" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: ${msgColor}; font-weight: ${msgWeight}; font-size: 13px; line-height: 1.4; pointer-events: none; transition: color 0.15s;">${safeMsg}</div>
+            <div style="width: 150px; flex-shrink: 0; display: flex; align-items: center; gap: 6px; overflow: hidden; color: ${authorColor}; pointer-events: none;" title="${safeAuthor}">
+              <div style="width: 20px; height: 20px; flex-shrink: 0; border-radius: 50%; background-color: ${avatarColor}; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; border: 1px solid rgba(255,255,255,0.15);">${authorInitial}</div>
+              <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; font-size: 12px;">${safeAuthor}</span>
+            </div>
+            <div style="width: 78px; flex-shrink: 0; text-align: right; color: ${dateColor}; white-space: nowrap; font-size: 11px; font-weight: 500; pointer-events: none;" title="${datePart}">${datePart}</div>
           </div>
-          <div style="-webkit-flex-shrink: 0; flex-shrink: 0; font-size: 11px; color: ${dateColor}; white-space: nowrap; opacity: 0.8; pointer-events: none;">${timePart}</div>
-        </div>
-        <div style="height: 28px; overflow: hidden; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-orient: horizontal; -webkit-flex-direction: row; flex-direction: row; -webkit-box-align: center; -webkit-align-items: center; align-items: center; gap: 8px;">
-          <div class="commit-message" style="-webkit-box-flex: 1; -webkit-flex: 1; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: ${msgColor}; font-weight: ${msgWeight}; font-size: 13px; line-height: 1.4; pointer-events: none; transition: color 0.15s;">${safeMsg}</div>
-          <div style="width: 150px; -webkit-flex-shrink: 0; flex-shrink: 0; overflow: hidden; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-orient: horizontal; -webkit-flex-direction: row; flex-direction: row; -webkit-box-align: center; -webkit-align-items: center; align-items: center; gap: 6px; color: ${authorColor}; pointer-events: none;" title="${safeAuthor}">
-            <div style="width: 20px; height: 20px; -webkit-flex-shrink: 0; flex-shrink: 0; border-radius: 50%; background-color: ${avatarColor}; color: white; display: -webkit-box; display: -webkit-flex; display: flex; -webkit-box-align: center; -webkit-align-items: center; align-items: center; -webkit-box-pack: center; -webkit-justify-content: center; justify-content: center; font-size: 10px; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.15);">${authorInitial}</div>
-            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; font-size: 12px;">${safeAuthor}</span>
+          <div style="width: 100%; height: 24px; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 5px; overflow: hidden;">
+              ${tagsRowHtml}
+            </div>
+            <div style="flex-shrink: 0; font-size: 11px; color: ${dateColor}; white-space: nowrap; opacity: 0.8; pointer-events: none;">${timePart}</div>
           </div>
-          <div style="width: 78px; -webkit-flex-shrink: 0; flex-shrink: 0; text-align: right; color: ${dateColor}; white-space: nowrap; font-size: 11px; font-weight: 500; pointer-events: none;" title="${datePart} ${timePart}">${datePart}</div>
         </div>
       `);
 

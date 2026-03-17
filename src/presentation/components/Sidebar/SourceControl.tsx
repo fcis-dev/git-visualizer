@@ -196,7 +196,12 @@ export function SourceControl({
             </div>
           </div>
           <div className="pl-1">
-            {state.stagedFiles.map((file) => (
+            {state.stagedFiles.map((file) => {
+              const parts = file.path.split(/[/\\]/);
+              const fileName = parts.pop();
+              const dirPath = parts.join("/");
+              
+              return (
               <div
                 key={file.path}
                 className="group flex items-center justify-between p-1.5 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/10 rounded-md cursor-pointer transition-colors border border-transparent hover:border-indigo-100 dark:hover:border-indigo-800/50"
@@ -205,12 +210,10 @@ export function SourceControl({
               >
                 <div className="flex items-center space-x-2 min-w-0 flex-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
-                  <span
-                    className="text-xs text-slate-700 dark:text-slate-300 truncate"
-                    title={file.path}
-                  >
-                    {file.path}
-                  </span>
+                  <div className="flex items-baseline min-w-0 flex-1 overflow-hidden" title={file.path}>
+                    <span className="text-xs text-slate-700 dark:text-slate-300 truncate shrink-0 max-w-[70%]">{fileName}</span>
+                    {dirPath && <span className="ml-1.5 text-[10px] text-slate-400 dark:text-slate-500 truncate min-w-0">{dirPath}</span>}
+                  </div>
                 </div>
                 <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
@@ -222,7 +225,8 @@ export function SourceControl({
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -255,7 +259,18 @@ export function SourceControl({
             </div>
           </div>
           <div className="pl-1">
-            {state.changes.map((file) => (
+            {state.changes.map((file) => {
+              const parts = file.path.split(/[/\\]/);
+              const fileName = parts.pop();
+              const dirPath = parts.join("/");
+              
+              const statusColorClass = file.status === "deleted"
+                ? "text-red-500/80 dark:text-red-400/80 line-through"
+                : file.status === "conflicted"
+                  ? "text-amber-600 dark:text-amber-400 font-bold"
+                  : "text-slate-700 dark:text-slate-300";
+
+              return (
               <div
                 key={file.path}
                 className="group flex items-center justify-between p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-md cursor-pointer transition-colors"
@@ -274,18 +289,16 @@ export function SourceControl({
                   ) : (
                     <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${file.status === "deleted" ? "bg-red-500" : file.status === "new" ? "bg-green-500" : "bg-amber-500"}`} />
                   )}
-                  <span
-                    className={`text-xs truncate ${
-                      file.status === "deleted"
-                        ? "text-red-500/80 dark:text-red-400/80 line-through"
-                        : file.status === "conflicted"
-                          ? "text-amber-600 dark:text-amber-400 font-bold"
-                          : "text-slate-700 dark:text-slate-300"
-                    }`}
-                    title={file.path}
-                  >
-                    {file.path}
-                  </span>
+                  <div className="flex items-baseline min-w-0 flex-1 overflow-hidden" title={file.path}>
+                    <span className={`text-xs truncate shrink-0 max-w-[70%] ${statusColorClass}`}>
+                      {fileName}
+                    </span>
+                    {dirPath && (
+                      <span className={`ml-1.5 text-[10px] truncate min-w-0 ${file.status === "deleted" ? "text-red-400/60 line-through" : "text-slate-400 dark:text-slate-500"}`}>
+                        {dirPath}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex opacity-0 group-hover:opacity-100 space-x-1 shrink-0 transition-opacity">
                   {file.status === "conflicted" ? (
@@ -325,7 +338,8 @@ export function SourceControl({
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

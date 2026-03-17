@@ -220,28 +220,45 @@ pub fn get_git_status(path: &str) -> Result<Vec<FileStatus>, String> {
     for entry in repo_statuses.iter() {
         let status = entry.status();
         let path = entry.path().unwrap_or("").to_string();
-        let status_str = if status.is_conflicted() {
-            "conflicted"
-        } else if status.is_index_new()
+
+        if status.is_conflicted() {
+            statuses.push(FileStatus {
+                path: path.clone(),
+                status: "conflicted".to_string(),
+            });
+            continue;
+        }
+
+        // Check staged status
+        if status.is_index_new()
             || status.is_index_modified()
             || status.is_index_deleted()
             || status.is_index_renamed()
             || status.is_index_typechange()
         {
-            "staged"
-        } else if status.is_wt_new() {
-            "new"
+            statuses.push(FileStatus {
+                path: path.clone(),
+                status: "staged".to_string(),
+            });
+        }
+
+        // Check unstaged/working tree status
+        if status.is_wt_new() {
+            statuses.push(FileStatus {
+                path: path.clone(),
+                status: "new".to_string(),
+            });
         } else if status.is_wt_modified() || status.is_wt_renamed() || status.is_wt_typechange() {
-            "modified"
+            statuses.push(FileStatus {
+                path: path.clone(),
+                status: "modified".to_string(),
+            });
         } else if status.is_wt_deleted() {
-            "deleted"
-        } else {
-            "unknown"
-        };
-        statuses.push(FileStatus {
-            path,
-            status: status_str.to_string(),
-        });
+            statuses.push(FileStatus {
+                path: path.clone(),
+                status: "deleted".to_string(),
+            });
+        }
     }
     Ok(statuses)
 }
