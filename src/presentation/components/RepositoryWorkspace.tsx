@@ -179,7 +179,6 @@ export function RepositoryWorkspace({
     showConfirm(t('repositoryWorkspace.checkoutCommitTitle'), t('repositoryWorkspace.checkoutCommitMsg', { hash: hash.substring(0, 7) }), async () => {
       try {
         await gitActions.checkoutCommit(hash);
-        showAlert(t('repositoryWorkspace.checkedOutTitle'), t('repositoryWorkspace.checkedOutMsg', { hash: hash.substring(0, 7) }));
       } catch (e: any) {
         showAlert(t('repositoryWorkspace.errorTitle'), e.toString());
       }
@@ -197,7 +196,6 @@ export function RepositoryWorkspace({
         try {
           await gitActions.createBranch(localName, refName);
           await gitActions.checkoutBranch(localName);
-          showAlert(t('repositoryWorkspace.successTitle'), t('repositoryWorkspace.checkoutRemoteSuccess', { localName }));
           onActionSuccess();
         } catch (e: any) { showAlert(t('repositoryWorkspace.errorTitle'), e.toString()); }
       });
@@ -205,7 +203,6 @@ export function RepositoryWorkspace({
       showConfirm(t('repositoryWorkspace.checkoutBranchTitle'), t('repositoryWorkspace.checkoutBranchMsg', { refName }), async () => {
         try {
           await gitActions.checkoutBranch(refName);
-          showAlert(t('repositoryWorkspace.successTitle'), t('repositoryWorkspace.checkoutBranchSuccess', { refName }));
           onActionSuccess();
         } catch (e: any) { showAlert(t('repositoryWorkspace.errorTitle'), e.toString()); }
       });
@@ -221,7 +218,6 @@ export function RepositoryWorkspace({
       if (!newName) return;
       try {
         await gitActions.createBranch(newName, refName);
-        showAlert(t('repositoryWorkspace.successTitle'), t('repositoryWorkspace.createBranchSuccess', { newName, refName }));
         onActionSuccess();
       } catch (e: any) { showAlert(t('repositoryWorkspace.errorTitle'), e.toString()); }
     });
@@ -297,7 +293,6 @@ export function RepositoryWorkspace({
             setCheckoutingBranch(branch);
             await checkoutBranch(branch);
             setIsBranchDropdownOpen(false);
-            showAlert(t('repositoryWorkspace.branchSwitchedTitle'), t('repositoryWorkspace.branchSwitchedMsg', { branch }));
           } catch (e: any) {
             setIsBranchDropdownOpen(false);
             showAlert(t('repositoryWorkspace.checkoutFailedTitle'), e.toString());
@@ -541,9 +536,6 @@ export function RepositoryWorkspace({
             await gitActions.createBranch(name, createBranchTarget);
             if (checkout) {
               await gitActions.checkoutBranch(name);
-              showAlert(t('repositoryWorkspace.successTitle'), t('repositoryWorkspace.branchCreatedAndCheckedOut', { name }));
-            } else {
-              showAlert(t('repositoryWorkspace.successTitle'), t('repositoryWorkspace.branchCreated', { name }));
             }
             onActionSuccess();
           }}

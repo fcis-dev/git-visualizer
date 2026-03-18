@@ -87,7 +87,6 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
             async () => {
               try {
                 await gitActions.checkoutBranch(localName);
-                showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successCheckedOut', { name: localName }));
                 onRefreshGraph();
                 loadBranchesAndRemotes();
               } catch (err: any) {
@@ -105,7 +104,6 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
             try {
               await gitActions.createBranch(localName, branch.hash);
               await gitActions.checkoutBranch(localName);
-              showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successCreatedAndCheckedOut', { name: localName }));
               onRefreshGraph();
               loadBranchesAndRemotes();
             } catch (err: any) {
@@ -116,7 +114,6 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
         return;
       } else {
         await gitActions.checkoutBranch(branch.name);
-        showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successCheckedOut', { name: branch.name }));
       }
       
       onRefreshGraph();
@@ -174,7 +171,6 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
       async () => {
         try {
           await gitActions.merge(branch.name);
-          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successMerged', { name: branch.name }));
           onRefreshGraph();
           loadBranchesAndRemotes();
         } catch (e: any) {
@@ -192,7 +188,6 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
         if (!newName || newName === branch.name) return;
         try {
           await gitActions.renameBranch(branch.name, newName);
-          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successRenamed', { name: newName }));
           onRefreshGraph();
           loadBranchesAndRemotes();
         } catch (e: any) {
@@ -211,7 +206,6 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
         if (!newName) return;
         try {
           await gitActions.createBranch(newName, branch.hash);
-          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successCreatedBranchFrom', { newName, name: branch.name }));
           onRefreshGraph();
           loadBranchesAndRemotes();
         } catch (e: any) {
@@ -229,7 +223,6 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
         if (!tagName) return;
         try {
           await gitActions.createTag(tagName, branch.hash);
-          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successCreatedTagAt', { tagName, name: branch.name }));
           onRefreshGraph();
         } catch (e: any) {
           setError(e.toString());
@@ -245,7 +238,6 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
       async () => {
         try {
           await gitActions.cherryPick(branch.hash);
-          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successCherryPicked', { name: branch.name }));
           onRefreshGraph();
         } catch (e: any) {
           setError(e.toString());
@@ -261,7 +253,6 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
       async () => {
         try {
           await gitActions.rebase(branch.name);
-          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successRebasedOnto', { name: branch.name }));
           onRefreshGraph();
         } catch (e: any) {
           setError(e.toString());
@@ -282,7 +273,6 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
       async () => {
         try {
           await gitActions.reset(branch.hash, mode);
-          showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successReset', { name: branch.name, mode }));
           onRefreshGraph();
         } catch (e: any) {
           setError(e.toString());
@@ -397,7 +387,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
                 </span>
             </div>
             
-            {isLocalExpanded && !loadingBranches && (
+            {isLocalExpanded && (
                 <div className="space-y-0.5">
                     {localBranches.length > 0 ? (
                         <BranchNodeRenderer 
@@ -428,7 +418,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
                 </span>
             </div>
             
-            {isRemoteExpanded && !loadingBranches && (
+            {isRemoteExpanded && (
                 <div className="space-y-0.5 pt-1">
                     {remoteBranches.length > 0 ? (
                         <BranchNodeRenderer 

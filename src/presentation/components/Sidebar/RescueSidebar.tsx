@@ -49,7 +49,6 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
       async () => {
         try {
           await gitActions.reset(entry.hash, "hard");
-          showAlert(t('rescueSidebar.stateRestoredTitle'), t('rescueSidebar.stateRestoredMsg', { hash: entry.hash }));
           onRestore();
           loadReflog();
         } catch (e: any) {

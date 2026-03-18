@@ -79,7 +79,6 @@ export function useGraphActionsController(
       async () => {
         try {
           await executeGitActionUseCase.rebase(repoPath, hash);
-          showAlert(t('graphActions.rebaseCompleteTitle'), t('graphActions.rebaseCompleteMsg'));
           onActionSuccess();
         } catch (e: any) {
           showAlert(t('graphActions.errorTitle'), e.toString());
@@ -95,7 +94,6 @@ export function useGraphActionsController(
       async () => {
         try {
           await executeGitActionUseCase.reset(repoPath, hash, mode);
-          showAlert(t('graphActions.resetCompleteTitle'), t('graphActions.resetCompleteMsg'));
           onActionSuccess();
         } catch (e: any) {
           showAlert(t('graphActions.errorTitle'), e.toString());

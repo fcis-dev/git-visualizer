@@ -62,7 +62,6 @@ export function WorktreesSidebar({
       setNewPath("");
       setNewBranch("");
       loadWorktrees();
-      showAlert(t('worktreesSidebar.successTitle', 'Success'), t('worktreesSidebar.addSuccess'));
     } catch (e: any) {
       setError(e.toString());
     } finally {
@@ -78,7 +77,6 @@ export function WorktreesSidebar({
         try {
           await gitActions.removeWorktree(worktreePath);
           loadWorktrees();
-          showAlert(t('worktreesSidebar.successTitle', 'Success'), t('worktreesSidebar.removeSuccess'));
         } catch (e: any) {
           setError(e.toString());
         }
@@ -94,7 +92,6 @@ export function WorktreesSidebar({
         try {
           await gitActions.pruneWorktrees();
           loadWorktrees();
-          showAlert(t('worktreesSidebar.successTitle', 'Success'), t('worktreesSidebar.pruneSuccess'));
         } catch (e: any) {
           setError(e.toString());
         }

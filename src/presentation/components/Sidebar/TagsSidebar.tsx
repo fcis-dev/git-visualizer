@@ -54,7 +54,6 @@ export function TagsSidebar({ repoPath, onRefreshGraph, hasRemote, refreshTrigge
       async () => {
         try {
           await gitActions.deleteTag(tag.name);
-          showAlert(t('tagsSidebar.successTitle'), t('tagsSidebar.tagDeleted', { tagName: tag.name }));
           onRefreshGraph();
           await loadTags();
 
@@ -67,7 +66,6 @@ export function TagsSidebar({ repoPath, onRefreshGraph, hasRemote, refreshTrigge
                   try {
                     setLoadingTags(true);
                     await gitActions.deleteTagRemote(tag.name);
-                    showAlert(t('tagsSidebar.successTitle'), t('tagsSidebar.tagDeletedRemote', { tagName: tag.name }));
                   } catch (e: any) {
                     setError(e.toString());
                   } finally {
@@ -161,7 +159,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph, hasRemote, refreshTrigge
                 </div>
             </div>
             
-            {isTagsExpanded && !loadingTags && (
+            {isTagsExpanded && (
                 <div className="pl-2 pr-1 py-1 space-y-0.5">
                     {filteredTags.map((tag, idx) => (
                         <div 

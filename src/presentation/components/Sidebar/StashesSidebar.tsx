@@ -62,7 +62,6 @@ export function StashesSidebar({ repoPath, onRefreshGraph }: StashesSidebarProps
         try {
           await gitActions.applyStash(index);
           await gitActions.dropStash(index);
-          showAlert(t("stashes.popSuccessTitle"), t("stashes.popSuccessDesc", { index }));
           loadStashes();
           onRefreshGraph();
         } catch (e: any) {
