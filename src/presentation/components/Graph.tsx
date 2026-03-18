@@ -414,7 +414,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
         .style("height", "56px")
         .style("box-sizing", "border-box")
         .style("padding", "2px 12px 2px 8px")
-        .style("border-radius", "8px")
+        .style("border-radius", "0 8px 8px 0")
         .style("font-family", "'Inter', 'Roboto', 'Segoe UI', sans-serif")
         .style("font-size", "13px")
         .style("pointer-events", "auto")
