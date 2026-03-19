@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProjectSelectionView } from "../components/ProjectSelectionView";
 import { RepositoryWorkspace } from "../components/RepositoryWorkspace";
 import { SettingsModal } from "../components/SettingsModal";
@@ -8,12 +8,32 @@ import { ChevronRight, Home } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export function Dashboard() {
-  const [pathHistory, setPathHistory] = useState<string[]>([]);
+  const [pathHistory, setPathHistory] = useState<string[]>(() => {
+    // this logic should be in data folder and accessed with an usecase
+    const savedPath = localStorage.getItem("lastOpenedProject");
+    if (savedPath) {
+      try {
+        const parsed = JSON.parse(savedPath);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {
+        console.error("Error parsing lastOpenedProject from localStorage", e);
+      }
+    }
+    return [];
+  });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { t } = useTranslation();
 
   // Dialog context is used by sub-components but we might need it here too
   const {} = useDialog();
+
+  useEffect(() => {
+    if (pathHistory.length > 0) {
+      localStorage.setItem("lastOpenedProject", JSON.stringify(pathHistory));
+    } else {
+      localStorage.removeItem("lastOpenedProject");
+    }
+  }, [pathHistory]);
 
   const currentPath = pathHistory.length > 0 ? pathHistory[pathHistory.length - 1] : "";
 
