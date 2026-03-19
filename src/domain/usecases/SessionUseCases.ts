@@ -3,38 +3,6 @@ import { ISessionRepository } from "../repositories/ISessionRepository";
 export class SessionUseCases {
   constructor(private sessionRepository: ISessionRepository) {}
 
-  /**
-   * Synchronizes the Dashboard by restoring windows from the backend session
-   * and closing the main window if necessary.
-   */
-  async syncDashboardWindows(): Promise<void> {
-    const session = await this.sessionRepository.getSessions();
-    const existingWindows = await this.sessionRepository.getAllWindows();
-    const existingLabels = existingWindows.map((w) => w.label);
-
-    let shouldShowMain = false;
-
-    // 1. Re-open windows from session
-    for (const { label, path } of session) {
-      if (label === "main") {
-        shouldShowMain = true;
-      } else if (!existingLabels.includes(label)) {
-        const title = `GitVi - ${path.split(/[/\\]/).pop()}`;
-        await this.sessionRepository.openProjectWindow(label, title, path);
-      }
-    }
-
-    // 2. Decide whether to show or close the main Dashboard window
-    const searchParams = new URLSearchParams(window.location.search);
-    const isExplicit = searchParams.get("explicit") === "true";
-
-    if (shouldShowMain || session.length === 0 || isExplicit) {
-      await this.sessionRepository.registerWindow("main", "main");
-      await this.sessionRepository.focusWindow("main");
-    } else {
-      await this.sessionRepository.closeCurrentWindow();
-    }
-  }
 
   /**
    * Registers a project window.

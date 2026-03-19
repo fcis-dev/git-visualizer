@@ -5,9 +5,6 @@ export function useSessionController() {
   const repository = new TauriSessionRepository();
   const useCases = new SessionUseCases(repository);
 
-  const syncDashboardWindows = async () => {
-    await useCases.syncDashboardWindows();
-  };
 
   const registerCurrentWindow = async (path: string) => {
     const label = repository.getCurrentWindowLabel();
@@ -37,7 +34,6 @@ export function useSessionController() {
   };
 
   return {
-    syncDashboardWindows,
     registerCurrentWindow,
     launchProject,
     isMainWindow,

@@ -9,10 +9,6 @@ export function Dashboard() {
   const { t } = useTranslation();
   const controller = useSessionController();
 
-  useEffect(() => {
-    controller.syncDashboardWindows();
-  }, []);
-
   return (
     <div
       className="flex flex-col h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-200 font-sans overflow-hidden"

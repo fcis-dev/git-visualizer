@@ -24,6 +24,41 @@ pub fn run() {
                 )
                 .build(),
         )
+        .setup(|app| {
+            let state = app.state::<config::AppState>();
+            let sessions = state.active_sessions.lock().map_err(|e| e.to_string())?;
+            
+            let projects: Vec<_> = sessions.iter()
+                .filter(|(label, _)| *label != "main")
+                .map(|(l, p)| (l.clone(), p.clone()))
+                .collect();
+            
+            if !projects.is_empty() {
+                for (label, path) in projects {
+                    let url = format!("index.html?project={}", urlencoding::encode(&path));
+                    let title = format!("GitVi - {}", std::path::Path::new(&path).file_name().unwrap_or_default().to_string_lossy());
+                    
+                    let _ = tauri::WebviewWindowBuilder::new(app, &label, tauri::WebviewUrl::App(url.into()))
+                        .title(title)
+                        .inner_size(1024.0, 768.0)
+                        .build()
+                        .map_err(|e| e.to_string())?;
+                }
+                // The main window is hidden by default in tauri.conf.json.
+                // We close it if we restored actual project windows.
+                if let Some(main_win) = app.get_webview_window("main") {
+                    let _ = main_win.close();
+                }
+            } else {
+                // Show dashboard if no session
+                if let Some(main_win) = app.get_webview_window("main") {
+                    let _ = main_win.show();
+                    let _ = main_win.unminimize();
+                    let _ = main_win.set_focus();
+                }
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             commands::get_commit_details,
             commands::get_git_graph,
