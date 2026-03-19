@@ -78,9 +78,6 @@ export function useSourceControlController(
   useEffect(() => {
     if (repoPath) {
       loadStatus();
-      setStagedFiles([]);
-      setChanges([]);
-      setSubmodules([]);
 
       const intervalId = setInterval(() => {
         loadStatus();

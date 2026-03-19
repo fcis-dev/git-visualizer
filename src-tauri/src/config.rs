@@ -4,20 +4,34 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use tauri::State;
 
+use std::collections::HashMap;
+
+use crate::models::WindowSession;
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct AppConfig {
     pub folders: Vec<String>,
+    pub session: Vec<WindowSession>,
 }
 
 pub struct AppState {
     pub config: Mutex<AppConfig>,
+    pub active_sessions: Mutex<HashMap<String, String>>,
 }
 
 impl AppState {
     pub fn new() -> Self {
         let config = load_config().unwrap_or_default();
+        let mut active_sessions = HashMap::new();
+        
+        // Populate active_sessions from loaded config on startup
+        for s in &config.session {
+            active_sessions.insert(s.label.clone(), s.path.clone());
+        }
+
         Self {
             config: Mutex::new(config),
+            active_sessions: Mutex::new(active_sessions),
         }
     }
 }
@@ -89,4 +103,15 @@ pub fn remove_folder(state: State<AppState>, path: String) -> Result<Vec<String>
 pub fn list_folders(state: State<AppState>) -> Result<Vec<String>, String> {
     let config = state.config.lock().map_err(|e| e.to_string())?;
     Ok(config.folders.clone())
+}
+
+pub fn persist_session(state: &AppState) -> Result<(), String> {
+    let mut config = state.config.lock().map_err(|e| e.to_string())?;
+    let sessions = state.active_sessions.lock().map_err(|e| e.to_string())?;
+    
+    config.session = sessions.iter()
+        .map(|(label, path)| WindowSession { label: label.clone(), path: path.clone() })
+        .collect();
+        
+    save_config(&config)
 }

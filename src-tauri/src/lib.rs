@@ -4,18 +4,26 @@ mod models;
 mod services;
 
 use config::AppState;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app_state = AppState::new();
 
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .manage(app_state)
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                .with_state_flags(
+                    tauri_plugin_window_state::StateFlags::all()
+                        & !tauri_plugin_window_state::StateFlags::VISIBLE,
+                )
+                .build(),
+        )
         .invoke_handler(tauri::generate_handler![
             commands::get_commit_details,
             commands::get_git_graph,
@@ -92,8 +100,35 @@ pub fn run() {
             commands::is_worktree,
             commands::get_initial_repo_data,
             commands::get_branches_and_remotes,
-            commands::get_source_control_status
+            commands::get_source_control_status,
+            commands::register_window,
+            commands::unregister_window,
+            commands::get_session
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                let app = window.app_handle();
+                let windows = app.webview_windows();
+                let label = window.label().to_string();
+                let state = app.state::<config::AppState>();
+
+                // If it's NOT the last window, it's safe to forget about it for the next session.
+                // If it IS the last window (len <= 1), we leave it tracked so the next session restores it.
+                if windows.len() > 1 {
+                    let _ = services::unregister_window(state.clone(), label);
+                }
+
+                // Always persist aggressively before the OS kills the process.
+                let _ = config::persist_session(&state);
+            }
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|_app_handle: &tauri::AppHandle, event: tauri::RunEvent| {
+        if let tauri::RunEvent::Exit = event {
+            let state = _app_handle.state::<config::AppState>();
+            let _ = config::persist_session(&state);
+        }
+    });
 }

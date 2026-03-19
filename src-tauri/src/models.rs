@@ -140,3 +140,9 @@ pub struct SourceControlStatus {
     pub submodules: Vec<SubmoduleInfo>,
     pub stash_count: usize,
 }
+
+#[derive(Debug, Serialize, serde::Deserialize, Clone)]
+pub struct WindowSession {
+    pub label: String,
+    pub path: String,
+}

@@ -463,3 +463,21 @@ pub async fn git_worktree_remove(path: &str, worktree_path: &str) -> Result<Stri
 pub async fn git_worktree_prune(path: &str) -> Result<String, String> {
     services::git_worktree_prune(path)
 }
+#[tauri::command]
+pub async fn register_window(
+    state: State<'_, AppState>,
+    label: String,
+    path: String,
+) -> Result<(), String> {
+    services::register_window(state, label, path)
+}
+
+#[tauri::command]
+pub async fn unregister_window(state: State<'_, AppState>, label: String) -> Result<(), String> {
+    services::unregister_window(state, label)
+}
+
+#[tauri::command]
+pub async fn get_session(state: State<'_, AppState>) -> Result<Vec<crate::models::WindowSession>, String> {
+    services::get_session(state)
+}

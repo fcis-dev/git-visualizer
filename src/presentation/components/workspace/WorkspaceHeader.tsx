@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   GitBranch,
-  ArrowLeft,
+  LayoutGrid,
   RefreshCw,
   ArrowDown,
   ArrowUp,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { buildBranchTree, sortTreeNodes, BranchTreeNode } from "../../utils/branchTreeUtils";
 import { useTranslation } from "react-i18next";
+import { useSessionController } from "../../controllers/useSessionController";
 
 interface WorkspaceHeaderProps {
   repoName: string;
@@ -65,24 +66,106 @@ export function WorkspaceHeader({
   hasRemote,
 }: WorkspaceHeaderProps) {
   const { t } = useTranslation();
+  const controller = useSessionController();
+  const [isProjectSelectorOpen, setIsProjectSelectorOpen] = useState(false);
+  const [addedProjects, setAddedProjects] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isProjectSelectorOpen) {
+      controller.getAddedFolders().then(setAddedProjects);
+    }
+  }, [isProjectSelectorOpen]);
+
+  const handleOpenDashboard = async () => {
+    await controller.openDashboard();
+  };
+
+  const handleSwitchProject = async (path: string) => {
+    setIsProjectSelectorOpen(false);
+    if (path === repoPath) return;
+    await controller.switchProject(path);
+  };
+
   return (
     <header className="relative h-14 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 bg-white dark:bg-slate-950 z-20">
       <div className="flex items-center space-x-4">
         <button
-          onClick={onBack}
+          onClick={handleOpenDashboard}
           className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
-          title={t("workspace.header.backToProjects")}
+          title={t("workspace.header.backToProjects", "Open Projects")}
         >
-          <ArrowLeft className="w-5 h-5" />
+          <LayoutGrid className="w-5 h-5" />
         </button>
 
-        <div className="flex flex-col">
-          <h1 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-            {repoName}
-          </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[300px]">
-            {repoPath}
-          </p>
+        <div className="relative">
+          <button
+            onClick={() => setIsProjectSelectorOpen(!isProjectSelectorOpen)}
+            className="flex flex-col text-left hover:bg-slate-100 dark:hover:bg-slate-800/80 px-2 py-1 rounded-md transition-all group border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+          >
+            <div className="flex items-center space-x-1">
+              <h1 className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                {repoName}
+              </h1>
+              <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isProjectSelectorOpen ? 'rotate-180' : ''}`} />
+            </div>
+            <p 
+              className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[250px]" 
+              style={{ direction: 'rtl', textAlign: 'left' }}
+              title={repoPath}
+            >
+              {repoPath}
+            </p>
+          </button>
+
+          {isProjectSelectorOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-30"
+                onClick={() => setIsProjectSelectorOpen(false)}
+              />
+              <div className="absolute left-0 mt-2 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-40 overflow-hidden animate-in slide-in-from-top-2 duration-150">
+                <div className="px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+                  {t("dashboard.projects.title", "My Projects")}
+                </div>
+                <div className="max-h-64 overflow-y-auto custom-scrollbar p-1">
+                  {addedProjects.length > 0 ? (
+                    addedProjects.map((path) => {
+                      const name = path.split(/[/\\]/).pop() || path;
+                      const isActive = path === repoPath;
+                      return (
+                        <button
+                          key={path}
+                          onClick={() => handleSwitchProject(path)}
+                          className={`w-full text-left px-3 py-2 rounded-md transition-colors flex flex-col group/item
+                            ${isActive 
+                              ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400" 
+                              : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                            }
+                          `}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium truncate">{name}</span>
+                            {isActive && <Check className="w-3.5 h-3.5" />}
+                          </div>
+                          <span 
+                            className="text-[10px] opacity-60 truncate w-full" 
+                            style={{ direction: 'rtl', textAlign: 'left' }}
+                            title={path}
+                          >
+                            {path}
+                          </span>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="px-3 py-4 text-center text-xs text-slate-500 italic">
+                      {t("dashboard.projects.empty", "No projects found")}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2" />

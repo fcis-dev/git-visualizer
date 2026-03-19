@@ -3,7 +3,7 @@
   "identifier": "default",
   "description": "Capability for the main window",
   "windows": [
-    "main"
+    "*"
   ],
   "permissions": [
     "core:default",
@@ -11,6 +11,12 @@
     "dialog:default",
     "window-state:default",
     "updater:default",
-    "process:default"
+    "process:default",
+    "core:window:allow-create",
+    "core:window:allow-close",
+    "core:window:allow-show",
+    "core:window:allow-unminimize",
+    "core:window:allow-set-focus",
+    "core:webview:allow-create-webview-window"
   ]
 }

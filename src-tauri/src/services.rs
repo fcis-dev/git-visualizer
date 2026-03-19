@@ -1604,3 +1604,22 @@ pub fn git_worktree_remove(path: &str, worktree_path: &str) -> Result<String, St
 pub fn git_worktree_prune(path: &str) -> Result<String, String> {
     run_git_cmd(path, &["worktree", "prune"])
 }
+
+pub fn register_window(state: tauri::State<crate::config::AppState>, label: String, path: String) -> Result<(), String> {
+    let mut sessions = state.active_sessions.lock().map_err(|e| e.to_string())?;
+    sessions.insert(label, path);
+    Ok(())
+}
+
+pub fn unregister_window(state: tauri::State<crate::config::AppState>, label: String) -> Result<(), String> {
+    let mut sessions = state.active_sessions.lock().map_err(|e| e.to_string())?;
+    sessions.remove(&label);
+    Ok(())
+}
+
+pub fn get_session(state: tauri::State<crate::config::AppState>) -> Result<Vec<crate::models::WindowSession>, String> {
+    let sessions = state.active_sessions.lock().map_err(|e| e.to_string())?;
+    Ok(sessions.iter()
+        .map(|(label, path)| crate::models::WindowSession { label: label.clone(), path: path.clone() })
+        .collect())
+}
