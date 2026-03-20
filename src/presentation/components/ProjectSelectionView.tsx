@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
 import { useTranslation } from "react-i18next";
+import { truncatePath } from "../utils/pathUtils";
 
 interface RepoData {
   path: string;
@@ -251,7 +252,7 @@ export function ProjectSelectionView({
                   className="text-sm text-slate-500 dark:text-slate-400 truncate mb-4"
                   title={repo.path}
                 >
-                  {repo.path}
+                  {truncatePath(repo.path)}
                 </p>
 
                 <div className="flex items-center space-x-2 flex-wrap gap-y-1.5">
@@ -313,7 +314,7 @@ export function ProjectSelectionView({
                     className="text-sm text-slate-600 dark:text-slate-400 truncate mb-4"
                     title={folder}
                   >
-                    {folder}
+                    {truncatePath(folder)}
                   </p>
 
                   <div className="flex items-center space-x-2">

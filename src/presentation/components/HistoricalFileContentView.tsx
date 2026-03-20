@@ -4,6 +4,7 @@ import { useGitActions } from "../hooks/useGitActions";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useTranslation } from 'react-i18next';
+import { truncatePath } from '../utils/pathUtils';
 
 interface HistoricalFileContentViewProps {
     repoPath: string;
@@ -213,9 +214,8 @@ export function HistoricalFileContentView({
                          <span 
                             className="font-medium text-sm text-slate-700 dark:text-slate-200 truncate pr-2 block w-full" 
                             title={filePath}
-                            style={{ direction: 'rtl', textAlign: 'left' }}
                          >
-                             &lrm;{filePath}&lrm;
+                             {truncatePath(filePath)}
                          </span>
                          <span className="text-[10px] text-slate-500 font-mono truncate">
                              @ {commitHash.substring(0, 7)}

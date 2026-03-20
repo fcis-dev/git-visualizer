@@ -1,8 +1,9 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Folder, FolderPlus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { truncatePath } from '../../utils/pathUtils';
 
 interface RepoData {
   path: string;
@@ -153,7 +154,7 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
                              </span>
                         )}
                     </div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-600 truncate">{repo.path}</div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-600 truncate">{truncatePath(repo.path, 30)}</div>
                 </div>
                 
                 <button 
@@ -179,7 +180,7 @@ export function ProjectExplorer({ onSelectRepo, activeRepoPath, onClearActiveRep
                         <div className="flex items-center justify-between opacity-70">
                             <span className="text-sm font-medium truncate italic">{folderName}</span>
                         </div>
-                        <div className="text-[10px] truncate">{folder}</div>
+                        <div className="text-[10px] truncate">{truncatePath(folder, 30)}</div>
                     </div>
                     
                     <button 

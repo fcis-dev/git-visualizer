@@ -5,6 +5,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useGitActions } from "../hooks/useGitActions";
 import { useTranslation } from "react-i18next";
+import { truncatePath } from "../utils/pathUtils";
 
 interface DiffViewProps {
   repoPath: string;
@@ -426,9 +427,8 @@ export function DiffView({
             <span 
                 className="font-mono text-sm text-slate-700 dark:text-slate-300 font-semibold truncate block w-full"
                 title={filePath}
-                style={{ direction: 'rtl', textAlign: 'left' }}
             >
-              &lrm;{filePath}&lrm;
+              {truncatePath(filePath)}
             </span>
           </div>
           <div className="flex items-center space-x-3 shrink-0">

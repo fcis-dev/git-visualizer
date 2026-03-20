@@ -13,6 +13,7 @@ import {
 import { buildBranchTree, sortTreeNodes, BranchTreeNode } from "../../utils/branchTreeUtils";
 import { useTranslation } from "react-i18next";
 import { useSessionController } from "../../controllers/useSessionController";
+import { truncatePath } from "../../utils/pathUtils";
 
 interface WorkspaceHeaderProps {
   repoName: string;
@@ -110,10 +111,9 @@ export function WorkspaceHeader({
             </div>
             <p 
               className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[250px]" 
-              style={{ direction: 'rtl', textAlign: 'left' }}
               title={repoPath}
             >
-              {repoPath}
+              {truncatePath(repoPath)}
             </p>
           </button>
 
@@ -149,10 +149,9 @@ export function WorkspaceHeader({
                           </div>
                           <span 
                             className="text-[10px] opacity-60 truncate w-full" 
-                            style={{ direction: 'rtl', textAlign: 'left' }}
                             title={path}
                           >
-                            {path}
+                            {truncatePath(path, 50)}
                           </span>
                         </button>
                       );
