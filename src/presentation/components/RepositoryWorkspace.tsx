@@ -53,6 +53,9 @@ export function RepositoryWorkspace({
     contentTarget,
     conflictTarget,
     activeSidebarTab,
+    leftSidebarWidth,
+    rightSidebarWidth,
+    isLeftSidebarVisible,
     createBranchTarget,
     graphBranchContextMenu,
     refreshDate,
@@ -91,6 +94,9 @@ export function RepositoryWorkspace({
     setContentTarget,
     setConflictTarget,
     setActiveSidebarTab,
+    setLeftSidebarWidth,
+    setRightSidebarWidth,
+    setIsLeftSidebarVisible,
     setCreateBranchTarget,
     setGraphBranchContextMenu,
     setSearchType,
@@ -322,12 +328,18 @@ export function RepositoryWorkspace({
         <WorkspaceActivityBar
           activeSidebarTab={activeSidebarTab}
           setActiveSidebarTab={setActiveSidebarTab}
+          isLeftSidebarVisible={isLeftSidebarVisible}
+          setIsLeftSidebarVisible={setIsLeftSidebarVisible}
           isWorktree={isWorktree}
           worktreeCount={worktreeCount}
         />
 
         {/* Dynamic Sidebar (Changes / Branches / Rescue) */}
-        <div className="w-80 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col z-10 transition-all">
+        {isLeftSidebarVisible && (
+        <div 
+          style={{ width: leftSidebarWidth }} 
+          className="shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col z-10 transition-all relative"
+        >
           {activeSidebarTab === "changes" && (
             <SourceControl
               repoPath={repoPath}
@@ -400,7 +412,28 @@ export function RepositoryWorkspace({
               onRefreshGraph={loadCommits}
             />
           )}
+
+          {/* Resize Handle */}
+          <div
+            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 z-50 transition-colors"
+            onDoubleClick={() => setLeftSidebarWidth(320)}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              const startX = e.clientX;
+              const startWidth = leftSidebarWidth;
+              const onMouseMove = (moveEvent: globalThis.MouseEvent) => {
+                setLeftSidebarWidth(Math.max(200, Math.min(800, startWidth + moveEvent.clientX - startX)));
+              };
+              const onMouseUp = () => {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+              };
+              document.addEventListener('mousemove', onMouseMove);
+              document.addEventListener('mouseup', onMouseUp);
+            }}
+          />
         </div>
+        )}
 
         {/* Middle Column: History Graph & Search (and Overlay Diff) */}
         <div className="flex-1 flex flex-col relative overflow-hidden bg-white dark:bg-slate-950">
@@ -496,7 +529,29 @@ export function RepositoryWorkspace({
 
         {/* Right Column: Commit Details */}
         {selectedCommit && (
-          <div className="w-96 shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 animate-in slide-in-from-right duration-200 z-10 shadow-xl overflow-y-auto">
+          <div 
+            style={{ width: rightSidebarWidth }} 
+            className="shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 animate-in slide-in-from-right duration-200 z-10 shadow-xl overflow-y-auto relative"
+          >
+            {/* Resize Handle */}
+            <div
+              className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 z-50 transition-colors"
+              onDoubleClick={() => setRightSidebarWidth(384)}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                const startX = e.clientX;
+                const startWidth = rightSidebarWidth;
+                const onMouseMove = (moveEvent: globalThis.MouseEvent) => {
+                  setRightSidebarWidth(Math.max(250, Math.min(800, startWidth - (moveEvent.clientX - startX))));
+                };
+                const onMouseUp = () => {
+                  document.removeEventListener('mousemove', onMouseMove);
+                  document.removeEventListener('mouseup', onMouseUp);
+                };
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+              }}
+            />
             <CommitDetails
               repoPath={repoPath}
               commit={selectedCommit}

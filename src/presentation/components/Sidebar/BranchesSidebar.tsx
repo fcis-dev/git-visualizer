@@ -469,7 +469,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
                             key={remote} 
                             className="group flex items-center justify-between p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded transition-colors"
                         >
-                            <div className="flex items-center space-x-2 truncate flex-1 md:max-w-[200px]">
+                            <div className="flex items-center space-x-2 truncate flex-1 min-w-0">
                                 <Globe className="w-3.5 h-3.5 shrink-0 text-slate-500" />
                                 <span className="text-sm text-slate-600 dark:text-slate-300 truncate" title={remote}>
                                     {remote}
@@ -611,7 +611,7 @@ function BranchNodeRenderer({
             className={`group flex items-center justify-between py-1.5 pr-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded cursor-pointer transition-colors ${isActive ? 'bg-indigo-50 dark:bg-indigo-500/10' : ''}`}
             style={{ paddingLeft: `${level * 12 + (node.isLeaf && level === 0 ? 8 : 22)}px` }}
         >
-            <div className="flex items-center space-x-2 truncate flex-1 md:max-w-[200px]">
+            <div className="flex items-center space-x-2 truncate flex-1 min-w-0">
                 {isActive && <div className="absolute left-0 w-0.5 h-4 bg-indigo-500 rounded-r"></div>}
                 <GitBranch className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'}`} />
                 <span className={`text-sm truncate ${isActive ? 'text-indigo-700 dark:text-indigo-300 font-medium' : 'text-slate-600 dark:text-slate-300'}`} title={branch.name}>

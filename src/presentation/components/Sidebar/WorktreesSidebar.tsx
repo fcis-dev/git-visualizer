@@ -187,7 +187,7 @@ export function WorktreesSidebar({
                   className="group flex flex-col p-2 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700/50"
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-2 truncate flex-1 md:max-w-[200px]">
+                    <div className="flex items-center space-x-2 truncate flex-1 min-w-0">
                       <FolderTree className="w-3.5 h-3.5 shrink-0 text-slate-500 group-hover:text-indigo-500" />
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center space-x-2">

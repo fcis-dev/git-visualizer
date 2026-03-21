@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 interface WorkspaceActivityBarProps {
   activeSidebarTab: string;
   setActiveSidebarTab: (tab: any) => void;
+  isLeftSidebarVisible: boolean;
+  setIsLeftSidebarVisible: (visible: boolean) => void;
   isWorktree: boolean;
   worktreeCount: number;
 }
@@ -11,15 +13,27 @@ interface WorkspaceActivityBarProps {
 export function WorkspaceActivityBar({
   activeSidebarTab,
   setActiveSidebarTab,
+  isLeftSidebarVisible,
+  setIsLeftSidebarVisible,
   isWorktree,
   worktreeCount,
 }: WorkspaceActivityBarProps) {
   const { t } = useTranslation();
+
+  const handleTabClick = (tab: string) => {
+    if (activeSidebarTab === tab) {
+      setIsLeftSidebarVisible(!isLeftSidebarVisible);
+    } else {
+      setActiveSidebarTab(tab);
+      setIsLeftSidebarVisible(true);
+    }
+  };
+
   return (
     <div className="w-14 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col items-center py-4 z-20 space-y-4">
       <div className="flex-1 w-full flex flex-col items-center space-y-4">
         <button
-          onClick={() => setActiveSidebarTab("changes")}
+          onClick={() => handleTabClick("changes")}
           className={`p-3 rounded-xl transition-all relative ${
             activeSidebarTab === "changes"
               ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 shadow-sm"
@@ -34,7 +48,7 @@ export function WorkspaceActivityBar({
         </button>
 
         <button
-          onClick={() => setActiveSidebarTab("branches")}
+          onClick={() => handleTabClick("branches")}
           className={`p-3 rounded-xl transition-all relative ${
             activeSidebarTab === "branches"
               ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 shadow-sm"
@@ -49,7 +63,7 @@ export function WorkspaceActivityBar({
         </button>
 
         <button
-          onClick={() => setActiveSidebarTab("tags")}
+          onClick={() => handleTabClick("tags")}
           className={`p-3 rounded-xl transition-all relative ${
             activeSidebarTab === "tags"
               ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 shadow-sm"
@@ -67,7 +81,7 @@ export function WorkspaceActivityBar({
       <div className="w-full flex flex-col items-center pb-2 space-y-4">
         {!isWorktree && (
           <button
-            onClick={() => setActiveSidebarTab("worktrees")}
+            onClick={() => handleTabClick("worktrees")}
             className={`p-3 rounded-xl transition-all relative ${
               activeSidebarTab === "worktrees"
                 ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 shadow-sm"
@@ -88,7 +102,7 @@ export function WorkspaceActivityBar({
         )}
 
         <button
-          onClick={() => setActiveSidebarTab("stashes")}
+          onClick={() => handleTabClick("stashes")}
           className={`p-3 rounded-xl transition-all relative ${
             activeSidebarTab === "stashes"
               ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 shadow-sm"
@@ -103,7 +117,7 @@ export function WorkspaceActivityBar({
         </button>
 
         <button
-          onClick={() => setActiveSidebarTab("submodules")}
+          onClick={() => handleTabClick("submodules")}
           className={`p-3 rounded-xl transition-all relative ${
             activeSidebarTab === "submodules"
               ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 shadow-sm"
@@ -118,7 +132,7 @@ export function WorkspaceActivityBar({
         </button>
 
         <button
-          onClick={() => setActiveSidebarTab("rescue")}
+          onClick={() => handleTabClick("rescue")}
           className={`p-3 rounded-xl transition-all relative ${
             activeSidebarTab === "rescue"
               ? "text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-500/10 shadow-sm"

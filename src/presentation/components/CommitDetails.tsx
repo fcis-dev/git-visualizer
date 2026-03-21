@@ -255,8 +255,13 @@ export function CommitDetails({
                                         `}>
                                             {file.status}
                                         </span>
-                                        <span className="text-xs text-slate-700 dark:text-slate-300 truncate" title={file.path}>
-                                            {file.path}
+                                        <span 
+                                            className="text-xs text-slate-700 dark:text-slate-300 truncate" 
+                                            title={file.path}
+                                            dir="rtl"
+                                            style={{ textAlign: "left" }}
+                                        >
+                                            &lrm;{file.path}
                                         </span>
                                     </div>
                                 ))}

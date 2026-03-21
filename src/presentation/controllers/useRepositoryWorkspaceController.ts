@@ -32,6 +32,9 @@ export function useRepositoryWorkspaceController(
   const [conflictTarget, setConflictTarget] = useState<string | null>(null);
   
   const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>("changes");
+  const [leftSidebarWidth, setLeftSidebarWidth] = useState(320); // default 320px
+  const [rightSidebarWidth, setRightSidebarWidth] = useState(384); // default 384px
+  const [isLeftSidebarVisible, setIsLeftSidebarVisible] = useState(true);
   const [createBranchTarget, setCreateBranchTarget] = useState<string | null>(null);
 
   const [graphBranchContextMenu, setGraphBranchContextMenu] = useState<{ visible: boolean; x: number; y: number; refName: string; }>({ visible: false, x: 0, y: 0, refName: "" });
@@ -290,6 +293,9 @@ export function useRepositoryWorkspaceController(
       contentTarget,
       conflictTarget,
       activeSidebarTab,
+      leftSidebarWidth,
+      rightSidebarWidth,
+      isLeftSidebarVisible,
       createBranchTarget,
       graphBranchContextMenu,
       refreshDate,
@@ -329,6 +335,9 @@ export function useRepositoryWorkspaceController(
       setContentTarget,
       setConflictTarget,
       setActiveSidebarTab,
+      setLeftSidebarWidth,
+      setRightSidebarWidth,
+      setIsLeftSidebarVisible,
       setCreateBranchTarget,
       setGraphBranchContextMenu,
       setSearchType,
