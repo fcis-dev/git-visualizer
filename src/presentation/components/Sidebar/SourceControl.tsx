@@ -17,6 +17,7 @@ import {
 import { Commit } from "../../../domain/entities/GitEntities";
 import { useSourceControlController } from "../../controllers/useSourceControlController";
 import { useTranslation } from "react-i18next";
+import { truncatePath } from "../../utils/pathUtils";
 
 interface SourceControlProps {
   repoPath: string | null;
@@ -200,6 +201,7 @@ export function SourceControl({
               const parts = file.path.split(/[/\\]/);
               const fileName = parts.pop();
               const dirPath = parts.join("/");
+              const displayPath = dirPath ? truncatePath(dirPath, 25) : "";
               
               return (
               <div
@@ -211,8 +213,8 @@ export function SourceControl({
                 <div className="flex items-center space-x-2 min-w-0 flex-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
                   <div className="flex items-baseline min-w-0 flex-1 overflow-hidden" title={file.path}>
-                    <span className="text-xs text-slate-700 dark:text-slate-300 truncate shrink-0 max-w-[70%]">{fileName}</span>
-                    {dirPath && <span className="ml-1.5 text-[10px] text-slate-400 dark:text-slate-500 truncate min-w-0">{dirPath}</span>}
+                    <span className="text-xs text-slate-700 dark:text-slate-300 truncate min-w-0">{fileName}</span>
+                    {displayPath && <span className="ml-1.5 text-[10px] text-slate-400 dark:text-slate-500 truncate min-w-0 [direction:rtl] text-left">&lrm;{displayPath}</span>}
                   </div>
                 </div>
                 <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
@@ -263,6 +265,7 @@ export function SourceControl({
               const parts = file.path.split(/[/\\]/);
               const fileName = parts.pop();
               const dirPath = parts.join("/");
+              const displayPath = dirPath ? truncatePath(dirPath, 25) : "";
               
               const statusColorClass = file.status === "deleted"
                 ? "text-red-500/80 dark:text-red-400/80 line-through"
@@ -290,12 +293,12 @@ export function SourceControl({
                     <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${file.status === "deleted" ? "bg-red-500" : file.status === "new" ? "bg-green-500" : "bg-amber-500"}`} />
                   )}
                   <div className="flex items-baseline min-w-0 flex-1 overflow-hidden" title={file.path}>
-                    <span className={`text-xs truncate shrink-0 max-w-[70%] ${statusColorClass}`}>
+                    <span className={`text-xs truncate min-w-0 ${statusColorClass}`}>
                       {fileName}
                     </span>
-                    {dirPath && (
-                      <span className={`ml-1.5 text-[10px] truncate min-w-0 ${file.status === "deleted" ? "text-red-400/60 line-through" : "text-slate-400 dark:text-slate-500"}`}>
-                        {dirPath}
+                    {displayPath && (
+                      <span className={`ml-1.5 text-[10px] truncate min-w-0 [direction:rtl] text-left ${file.status === "deleted" ? "text-red-400/60 line-through" : "text-slate-400 dark:text-slate-500"}`}>
+                        &lrm;{displayPath}
                       </span>
                     )}
                   </div>
