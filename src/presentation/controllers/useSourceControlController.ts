@@ -1,12 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
+import { sourceControlUseCases, repository } from "../../domain/di/Container";
 import { SubmoduleInfo } from "../../domain/entities/GitEntities";
 import { useDialog } from "../context/DialogContext";
 import { useGitActions } from "../hooks/useGitActions";
 import { useTranslation } from "react-i18next";
-
-const repository = new TauriGitRepository();
 
 export interface FileStatus {
   path: string;
@@ -90,7 +87,7 @@ export function useSourceControlController(
   const handleStage = async (file: string) => {
     if (!repoPath) return;
     try {
-      await invoke("git_stage", { path: repoPath, files: [file] });
+      await sourceControlUseCases.stageFiles(repoPath, [file]);
       loadStatus();
     } catch (err) {
       console.error("Failed to stage", err);
@@ -101,7 +98,7 @@ export function useSourceControlController(
     if (!repoPath || changes.length === 0) return;
     try {
       const files = changes.map((c) => c.path);
-      await invoke("git_stage", { path: repoPath, files });
+      await sourceControlUseCases.stageFiles(repoPath, files);
       loadStatus();
     } catch (err) {
       console.error("Failed to stage all", err);
@@ -111,7 +108,7 @@ export function useSourceControlController(
   const handleUnstage = async (file: string) => {
     if (!repoPath) return;
     try {
-      await invoke("git_unstage", { path: repoPath, files: [file] });
+      await sourceControlUseCases.unstageFiles(repoPath, [file]);
       loadStatus();
     } catch (err) {
       console.error("Failed to unstage", err);
@@ -122,7 +119,7 @@ export function useSourceControlController(
     if (!repoPath || stagedFiles.length === 0) return;
     try {
       const files = stagedFiles.map((c) => c.path);
-      await invoke("git_unstage", { path: repoPath, files });
+      await sourceControlUseCases.unstageFiles(repoPath, files);
       loadStatus();
     } catch (err: any) {
       setError(err.toString());
@@ -135,7 +132,7 @@ export function useSourceControlController(
   ) => {
     if (!repoPath) return;
     try {
-      await invoke("git_resolve_conflict", { path: repoPath, file, strategy });
+      await sourceControlUseCases.resolveConflict(repoPath, file, strategy);
       loadStatus();
     } catch (err: any) {
       console.error("Failed to resolve conflict", err);
@@ -150,10 +147,7 @@ export function useSourceControlController(
       t('sidebar.sourceControl.discardMsg', { file }),
       async () => {
         try {
-          await invoke("git_discard_changes", {
-            path: repoPath,
-            files: [file],
-          });
+          await sourceControlUseCases.discardChanges(repoPath, [file]);
           loadStatus();
         } catch (err: any) {
           console.error("Failed to discard", err);
@@ -171,7 +165,7 @@ export function useSourceControlController(
       async () => {
         try {
           const files = changes.map((c) => c.path);
-          await invoke("git_discard_changes", { path: repoPath, files });
+          await sourceControlUseCases.discardChanges(repoPath, files);
           loadStatus();
         } catch (err: any) {
           setError(err.toString());
@@ -184,13 +178,10 @@ export function useSourceControlController(
     if (!repoPath || !commitMessage) return;
     try {
       if (isAmend) {
-        await invoke("git_commit_amend", {
-          path: repoPath,
-          message: commitMessage,
-        });
+        await sourceControlUseCases.commitAmend(repoPath, commitMessage);
         setIsAmend(false);
       } else {
-        await invoke("git_commit", { path: repoPath, message: commitMessage });
+        await sourceControlUseCases.commit(repoPath, commitMessage);
       }
       setCommitMessage("");
       loadStatus();
@@ -213,10 +204,7 @@ export function useSourceControlController(
     showInput(t('sidebar.sourceControl.stashTitle'), t('sidebar.sourceControl.stashMsg'), async (msg) => {
       setStashLoading(true);
       try {
-        await invoke("git_stash_save", {
-          path: repoPath,
-          message: msg || null,
-        });
+        await sourceControlUseCases.stashSave(repoPath, msg || undefined);
         loadStatus();
       } catch (err: any) {
         console.error("Failed to stash", err);
@@ -231,7 +219,7 @@ export function useSourceControlController(
     if (!repoPath) return;
     try {
       setRebaseLoading(true);
-      await invoke("git_rebase_abort", { path: repoPath });
+      await sourceControlUseCases.rebaseAbort(repoPath);
       setCommitMessage("");
       loadStatus();
       if (onCommit) onCommit();
@@ -246,7 +234,7 @@ export function useSourceControlController(
     if (!repoPath) return;
     try {
       setRebaseLoading(true);
-      await invoke("git_rebase_continue", { path: repoPath });
+      await sourceControlUseCases.rebaseContinue(repoPath);
       loadStatus();
       if (onCommit) onCommit();
     } catch (e: any) {

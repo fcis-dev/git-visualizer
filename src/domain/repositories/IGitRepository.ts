@@ -36,6 +36,11 @@ export interface IGitRepository {
   revert(path: string, hash: string): Promise<void>;
   merge(path: string, branch: string): Promise<void>;
   
+  stageFiles(path: string, files: string[]): Promise<void>;
+  unstageFiles(path: string, files: string[]): Promise<void>;
+  discardChanges(path: string, files: string[]): Promise<void>;
+  commit(path: string, message: string): Promise<void>;
+
   stashSave(path: string, message?: string): Promise<void>;
   stashPop(path: string): Promise<void>;
   getStashes(path: string): Promise<import("../entities/GitEntities").StashEntry[]>;
@@ -44,10 +49,17 @@ export interface IGitRepository {
 
   createTag(path: string, name: string, hash?: string): Promise<void>;
   deleteTag(path: string, name: string): Promise<void>;
+  deleteTagRemote(path: string, name: string): Promise<string>;
   createBranch(path: string, name: string, hash: string): Promise<void>;
   renameBranch(path: string, oldName: string, newName: string): Promise<void>;
   deleteBranch(path: string, name: string, force?: boolean): Promise<void>;
   deleteBranchRemote(path: string, remote: string, name: string): Promise<void>;
+
+  resolveConflict(
+    path: string,
+    file: string,
+    strategy: "ours" | "theirs",
+  ): Promise<void>;
 
   getCommitTree(path: string, hash: string): Promise<string[]>;
   getFileContentAtCommit(

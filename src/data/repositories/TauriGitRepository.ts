@@ -69,6 +69,22 @@ export class TauriGitRepository implements IGitRepository {
     await invoke("git_pull", { path });
   }
 
+  async stageFiles(path: string, files: string[]): Promise<void> {
+    await invoke("git_stage", { path, files });
+  }
+
+  async unstageFiles(path: string, files: string[]): Promise<void> {
+    await invoke("git_unstage", { path, files });
+  }
+
+  async discardChanges(path: string, files: string[]): Promise<void> {
+    await invoke("git_discard_changes", { path, files });
+  }
+
+  async commit(path: string, message: string): Promise<void> {
+    await invoke("git_commit", { path, message });
+  }
+
   async applyPatch(path: string, patch: string, reverse: boolean = false): Promise<void> {
     await invoke("git_apply_patch", { path, patch, reverse });
   }
