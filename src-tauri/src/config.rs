@@ -23,7 +23,7 @@ impl AppState {
     pub fn new() -> Self {
         let config = load_config().unwrap_or_default();
         let mut active_sessions = HashMap::new();
-        
+
         // Populate active_sessions from loaded config on startup
         for s in &config.session {
             active_sessions.insert(s.label.clone(), s.path.clone());
@@ -108,10 +108,55 @@ pub fn list_folders(state: State<AppState>) -> Result<Vec<String>, String> {
 pub fn persist_session(state: &AppState) -> Result<(), String> {
     let mut config = state.config.lock().map_err(|e| e.to_string())?;
     let sessions = state.active_sessions.lock().map_err(|e| e.to_string())?;
-    
-    config.session = sessions.iter()
-        .map(|(label, path)| WindowSession { label: label.clone(), path: path.clone() })
+
+    config.session = sessions
+        .iter()
+        .map(|(label, path)| WindowSession {
+            label: label.clone(),
+            path: path.clone(),
+        })
         .collect();
-        
+
     save_config(&config)
+}
+
+pub fn validate_path_in_workspace(state: &State<'_, AppState>, path: &str) -> Result<(), String> {
+    let path_obj = std::path::Path::new(path);
+
+    // Canonicalize parent directory to resolve any ".." traversals
+    let parent = path_obj.parent().ok_or("Invalid path: no parent")?;
+    let canonical_parent =
+        std::fs::canonicalize(parent).map_err(|e| format!("Invalid path: {}", e))?;
+
+    let mut is_allowed = false;
+
+    if let Ok(config) = state.config.lock() {
+        for folder in &config.folders {
+            if let Ok(canonical_folder) = std::fs::canonicalize(folder) {
+                if canonical_parent.starts_with(canonical_folder) {
+                    is_allowed = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if !is_allowed {
+        if let Ok(sessions) = state.active_sessions.lock() {
+            for session_path in sessions.values() {
+                if let Ok(canonical_session) = std::fs::canonicalize(session_path) {
+                    if canonical_parent.starts_with(canonical_session) {
+                        is_allowed = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if !is_allowed {
+        return Err("Permission denied: Path is outside of allowed workspaces".to_string());
+    }
+
+    Ok(())
 }

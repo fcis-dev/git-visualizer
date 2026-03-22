@@ -27,22 +27,33 @@ pub fn run() {
         .setup(|app| {
             let state = app.state::<config::AppState>();
             let sessions = state.active_sessions.lock().map_err(|e| e.to_string())?;
-            
-            let projects: Vec<_> = sessions.iter()
+
+            let projects: Vec<_> = sessions
+                .iter()
                 .filter(|(label, _)| *label != "main")
                 .map(|(l, p)| (l.clone(), p.clone()))
                 .collect();
-            
+
             if !projects.is_empty() {
                 for (label, path) in projects {
                     let url = format!("index.html?project={}", urlencoding::encode(&path));
-                    let title = format!("GitVi - {}", std::path::Path::new(&path).file_name().unwrap_or_default().to_string_lossy());
-                    
-                    let _ = tauri::WebviewWindowBuilder::new(app, &label, tauri::WebviewUrl::App(url.into()))
-                        .title(title)
-                        .inner_size(1024.0, 768.0)
-                        .build()
-                        .map_err(|e| e.to_string())?;
+                    let title = format!(
+                        "GitVi - {}",
+                        std::path::Path::new(&path)
+                            .file_name()
+                            .unwrap_or_default()
+                            .to_string_lossy()
+                    );
+
+                    let _ = tauri::WebviewWindowBuilder::new(
+                        app,
+                        &label,
+                        tauri::WebviewUrl::App(url.into()),
+                    )
+                    .title(title)
+                    .inner_size(1024.0, 768.0)
+                    .build()
+                    .map_err(|e| e.to_string())?;
                 }
                 // The main window is hidden by default in tauri.conf.json.
                 // We close it if we restored actual project windows.
