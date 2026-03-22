@@ -4,7 +4,7 @@ import { useGitActions } from "../hooks/useGitActions";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useTranslation } from 'react-i18next';
-import { truncatePath } from '../utils/pathUtils';
+import { truncatePath, getLanguage } from '../utils/pathUtils';
 
 interface HistoricalFileContentViewProps {
     repoPath: string;
@@ -119,82 +119,6 @@ export function HistoricalFileContentView({
             navigator.clipboard.writeText(content);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        }
-    };
-
-    const getLanguage = (path: string) => {
-        const ext = path.split('.').pop()?.toLowerCase();
-        switch (ext) {
-            case 'js':
-            case 'jsx': return 'javascript';
-            case 'ts':
-            case 'tsx': return 'typescript';
-            case 'rs': return 'rust';
-            case 'py': return 'python';
-            case 'json': return 'json';
-            case 'html': return 'html';
-            case 'css': return 'css';
-            case 'md': return 'markdown';
-            case 'yml':
-            case 'yaml': return 'yaml';
-            case 'go': return 'go';
-            case 'java': return 'java';
-            case 'cpp':
-            case 'c':
-            case 'h':
-            case 'hpp': return 'cpp';
-            case 'cs': return 'csharp';
-            case 'sh': return 'bash';
-            case 'toml': return 'toml';
-            case 'dart': return 'dart';
-            case 'rb': return 'ruby';
-            case 'php': return 'php';
-            case 'sql': return 'sql';
-            case 'swift': return 'swift';
-            case 'kt':
-            case 'kts': return 'kotlin';
-            case 'xml': return 'xml';
-            case 'vue': return 'vue';
-            case 'svelte': return 'svelte';
-            case 'graphql':
-            case 'gql': return 'graphql';
-            case 'dockerfile': return 'docker';
-            case 'makefile':
-            case 'mk': return 'makefile';
-            case 'pl':
-            case 'pm': return 'perl';
-            case 'scala': return 'scala';
-            case 'hs': return 'haskell';
-            case 'lua': return 'lua';
-            case 'r': return 'r';
-            case 'm': return 'objectivec';
-            case 'ps1':
-            case 'psm1':
-            case 'psd1': return 'powershell';
-            case 'bat':
-            case 'cmd': return 'batch';
-            case 'ini': return 'ini';
-            case 'properties': return 'properties';
-            case 'diff':
-            case 'patch': return 'diff';
-            case 'less': return 'less';
-            case 'scss':
-            case 'sass': return 'sass';
-            case 'styl': return 'stylus';
-            case 'wasm': return 'wasm';
-            case 'zig': return 'zig';
-            case 'ex':
-            case 'exs': return 'elixir';
-            case 'erl':
-            case 'hrl': return 'erlang';
-            case 'clj':
-            case 'cljs':
-            case 'cljc': return 'clojure';
-            case 'fs':
-            case 'fsi':
-            case 'fsx':
-            case 'fsscript': return 'fsharp';
-            default: return 'text';
         }
     };
 
