@@ -529,21 +529,19 @@ pub async fn get_source_control_status(
 
 #[tauri::command]
 pub async fn get_git_config_user(
-    state: tauri::State<'_, AppState>,
+    _state: tauri::State<'_, AppState>,
     path: &str,
 ) -> Result<(String, String), String> {
-    validate_path_in_workspace(&state, path)?;
     services::get_git_config_user(path)
 }
 
 #[tauri::command]
 pub async fn set_git_config_user(
-    state: tauri::State<'_, AppState>,
+    _state: tauri::State<'_, AppState>,
     path: &str,
     name: &str,
     email: &str,
 ) -> Result<(), String> {
-    validate_path_in_workspace(&state, path)?;
     services::set_git_config_user(path, name, email)
 }
 

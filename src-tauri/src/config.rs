@@ -123,17 +123,22 @@ pub fn persist_session(state: &AppState) -> Result<(), String> {
 pub fn validate_path_in_workspace(state: &State<'_, AppState>, path: &str) -> Result<(), String> {
     let path_obj = std::path::Path::new(path);
 
-    // Canonicalize parent directory to resolve any ".." traversals
-    let parent = path_obj.parent().ok_or("Invalid path: no parent")?;
-    let canonical_parent =
-        std::fs::canonicalize(parent).map_err(|e| format!("Invalid path: {}", e))?;
+    // If the path exists, canonicalize it directly. 
+    // If it doesn't (e.g. creating a new file), canonicalize its parent.
+    let canonical_target = match std::fs::canonicalize(path_obj) {
+        Ok(canon) => canon,
+        Err(_) => {
+            let parent = path_obj.parent().ok_or("Invalid path: no parent")?;
+            std::fs::canonicalize(parent).map_err(|e| format!("Invalid path: {}", e))?
+        }
+    };
 
     let mut is_allowed = false;
 
     if let Ok(config) = state.config.lock() {
         for folder in &config.folders {
             if let Ok(canonical_folder) = std::fs::canonicalize(folder) {
-                if canonical_parent.starts_with(canonical_folder) {
+                if canonical_target.starts_with(canonical_folder) {
                     is_allowed = true;
                     break;
                 }
@@ -145,7 +150,7 @@ pub fn validate_path_in_workspace(state: &State<'_, AppState>, path: &str) -> Re
         if let Ok(sessions) = state.active_sessions.lock() {
             for session_path in sessions.values() {
                 if let Ok(canonical_session) = std::fs::canonicalize(session_path) {
-                    if canonical_parent.starts_with(canonical_session) {
+                    if canonical_target.starts_with(canonical_session) {
                         is_allowed = true;
                         break;
                     }
