@@ -29,7 +29,7 @@ class ErrorBoundaryComponent extends Component<Props & WithTranslation, State> {
 
     if (this.state.hasError) {
       return (
-        <div className="p-8 bg-slate-50 dark:bg-slate-900 h-screen w-full flex flex-col justify-center items-center text-center">
+        <div className="p-8 bg-slate-50 dark:bg-slate-900 h-dvh w-full flex flex-col justify-center items-center text-center">
             <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-lg border border-red-200 dark:border-red-900/30 max-w-2xl w-full">
                 <h1 className="text-xl font-bold mb-4 text-red-600 dark:text-red-400">{t('errorBoundary.title')}</h1>
                 <p className="text-slate-600 dark:text-slate-300 mb-4">{t('errorBoundary.message')}</p>

@@ -285,7 +285,7 @@ export function RepositoryWorkspace({
   };
 
   return (
-    <div className="flex-1 w-full flex flex-col h-screen min-w-0 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 overflow-hidden">
+    <div className="flex-1 w-full flex flex-col h-dvh min-w-0 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 overflow-hidden">
       {/* Header */}
       <WorkspaceHeader
         repoName={repoName}
