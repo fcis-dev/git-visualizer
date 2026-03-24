@@ -137,6 +137,8 @@ export function RepositoryWorkspace({
   const gitActions = useGitActions(repoPath, onActionSuccess);
   const { showConfirm, showInput, showAlert } = useDialog();
   const graphRef = useRef<GraphHandle>(null);
+  const leftSidebarRef = useRef<HTMLDivElement>(null);
+  const rightSidebarRef = useRef<HTMLDivElement>(null);
 
   // Scroll the graph to the HEAD commit of the current branch.
   const handleScrollToHead = async () => {
@@ -337,8 +339,9 @@ export function RepositoryWorkspace({
         {/* Dynamic Sidebar (Changes / Branches / Rescue) */}
         {isLeftSidebarVisible && (
         <div 
+          ref={leftSidebarRef}
           style={{ width: leftSidebarWidth }} 
-          className="shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col z-10 transition-all relative"
+          className="shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col z-10 relative"
         >
           {activeSidebarTab === "changes" && (
             <SourceControl
@@ -420,13 +423,32 @@ export function RepositoryWorkspace({
             onMouseDown={(e) => {
               e.preventDefault();
               const startX = e.clientX;
-              const startWidth = leftSidebarWidth;
+              const startWidth = leftSidebarRef.current ? leftSidebarRef.current.getBoundingClientRect().width : leftSidebarWidth;
+              let currentWidth = startWidth;
+              let animationFrameId: number | null = null;
+              
+              if (leftSidebarRef.current) {
+                leftSidebarRef.current.style.transition = 'none';
+              }
+              
               const onMouseMove = (moveEvent: globalThis.MouseEvent) => {
-                setLeftSidebarWidth(Math.max(200, Math.min(800, startWidth + moveEvent.clientX - startX)));
+                if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+                animationFrameId = requestAnimationFrame(() => {
+                  currentWidth = Math.max(200, Math.min(800, startWidth + moveEvent.clientX - startX));
+                  if (leftSidebarRef.current) {
+                    leftSidebarRef.current.style.width = `${currentWidth}px`;
+                  }
+                  animationFrameId = null;
+                });
               };
               const onMouseUp = () => {
+                if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
+                if (leftSidebarRef.current) {
+                  leftSidebarRef.current.style.transition = '';
+                }
+                setLeftSidebarWidth(currentWidth);
               };
               document.addEventListener('mousemove', onMouseMove);
               document.addEventListener('mouseup', onMouseUp);
@@ -530,6 +552,7 @@ export function RepositoryWorkspace({
         {/* Right Column: Commit Details */}
         {selectedCommit && (
           <div 
+            ref={rightSidebarRef}
             style={{ width: rightSidebarWidth }} 
             className="shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 animate-in slide-in-from-right duration-200 z-10 shadow-xl overflow-y-auto relative"
           >
@@ -540,13 +563,32 @@ export function RepositoryWorkspace({
               onMouseDown={(e) => {
                 e.preventDefault();
                 const startX = e.clientX;
-                const startWidth = rightSidebarWidth;
+                const startWidth = rightSidebarRef.current ? rightSidebarRef.current.getBoundingClientRect().width : rightSidebarWidth;
+                let currentWidth = startWidth;
+                let animationFrameId: number | null = null;
+                
+                if (rightSidebarRef.current) {
+                  rightSidebarRef.current.style.transition = 'none';
+                }
+                
                 const onMouseMove = (moveEvent: globalThis.MouseEvent) => {
-                  setRightSidebarWidth(Math.max(250, Math.min(800, startWidth - (moveEvent.clientX - startX))));
+                  if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
+                  animationFrameId = requestAnimationFrame(() => {
+                    currentWidth = Math.max(250, Math.min(800, startWidth - (moveEvent.clientX - startX)));
+                    if (rightSidebarRef.current) {
+                      rightSidebarRef.current.style.width = `${currentWidth}px`;
+                    }
+                    animationFrameId = null;
+                  });
                 };
                 const onMouseUp = () => {
+                  if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
                   document.removeEventListener('mousemove', onMouseMove);
                   document.removeEventListener('mouseup', onMouseUp);
+                  if (rightSidebarRef.current) {
+                    rightSidebarRef.current.style.transition = '';
+                  }
+                  setRightSidebarWidth(currentWidth);
                 };
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', onMouseUp);

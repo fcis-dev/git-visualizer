@@ -341,7 +341,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
               .replace(/"/g, "&quot;")
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;");
-            return `<div data-ref="${safeRef}" style="background-color: ${chipBg}; color: ${chipText}; border: 1px solid ${chipBorder}; border-radius: 9999px; padding: 1px 8px; font-size: 10px; font-weight: 500; line-height: 14px; white-space: nowrap; pointer-events: auto; max-width: 130px; overflow: hidden; text-overflow: ellipsis; display: inline-block; cursor: context-menu; transition: opacity 0.15s ease;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">${safeDisplayName}</div>`;
+            return `<div data-ref="${safeRef}" style="background-color: ${chipBg}; color: ${chipText}; border: 1px solid ${chipBorder}; border-radius: 9999px; padding: 1px 8px; font-size: 10px; font-weight: 500; line-height: 14px; white-space: nowrap; pointer-events: auto; max-width: 130px; overflow: hidden; text-overflow: ellipsis; display: inline-block; cursor: context-menu;">${safeDisplayName}</div>`;
           })
           .join("");
       }
@@ -448,7 +448,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
             <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 5px; overflow: hidden;">
               ${tagsRowHtml}
             </div>
-            <div style="flex-shrink: 0; font-size: 11px; color: ${dateColor}; white-space: nowrap; opacity: 0.8; pointer-events: none;">${timePart}</div>
+            <div style="flex-shrink: 0; font-size: 11px; color: ${dateColor}; white-space: nowrap; pointer-events: none;">${timePart}</div>
           </div>
         </div>
       `);
