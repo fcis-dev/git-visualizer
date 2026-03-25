@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { X, TrendingUp, Users, GitCommit, Loader2 } from 'lucide-react';
+import { X, TrendingUp, Users, GitCommit, Loader2, GripHorizontal } from 'lucide-react';
 import { useGitActions } from '../hooks/useGitActions';
 import { RepositoryStats } from '../../domain/entities/GitEntities';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useTranslation } from 'react-i18next';
+import { motion, useDragControls } from 'framer-motion';
 
 interface RepositoryStatsModalProps {
     repoPath: string;
@@ -16,6 +17,7 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { t } = useTranslation();
+    const dragControls = useDragControls();
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -55,18 +57,32 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
     }, [onClose]);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 w-full max-w-5xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col border border-slate-200 dark:border-slate-800 transform transition-all animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-in fade-in duration-200">
+            <motion.div 
+                drag
+                dragControls={dragControls}
+                dragListener={false}
+                dragMomentum={false}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white dark:bg-slate-900 w-full max-w-5xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col border border-slate-200 dark:border-slate-800"
+            >
                 {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-800">
-                    <div>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
-                            <TrendingUp className="w-5 h-5 text-indigo-500" />
-                            <span>{t('repoStats.title')}</span>
-                        </h2>
-                        <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 truncate max-w-xl">
-                            {repoPath}
-                        </p>
+                <div 
+                    className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-800 cursor-move select-none group/header"
+                    onPointerDown={(e) => dragControls.start(e)}
+                >
+                    <div className="flex items-center gap-3">
+                        <GripHorizontal className="w-5 h-5 text-slate-400 opacity-0 group-hover/header:opacity-100 transition-opacity" />
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
+                                <TrendingUp className="w-5 h-5 text-indigo-500" />
+                                <span>{t('repoStats.title')}</span>
+                            </h2>
+                            <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 truncate max-w-xl">
+                                {repoPath}
+                            </p>
+                        </div>
                     </div>
                     <button 
                         onClick={onClose}
@@ -191,7 +207,7 @@ export const RepositoryStatsModal: React.FC<RepositoryStatsModalProps> = ({ repo
                         </div>
                     ) : null}
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };

@@ -1,6 +1,7 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
-import { X, Check } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { X, Check, GripHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { motion, useDragControls } from 'framer-motion';
 
 export type DialogType = 'confirm' | 'input' | 'alert';
 
@@ -32,6 +33,7 @@ export const Dialog: React.FC<DialogProps> = ({
     const { t } = useTranslation();
     const [inputValue, setInputValue] = useState(defaultValue);
     const inputRef = useRef<HTMLInputElement>(null);
+    const dragControls = useDragControls();
 
     useEffect(() => {
         if (isOpen) {
@@ -59,16 +61,28 @@ export const Dialog: React.FC<DialogProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div 
-                className="w-full max-w-md bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 transform transition-all animate-in zoom-in-95 duration-200 p-6"
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 animate-in fade-in duration-200">
+            <motion.div 
+                drag
+                dragControls={dragControls}
+                dragListener={false}
+                dragMomentum={false}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="w-full max-w-md bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6"
                 role="dialog"
                 aria-modal="true"
             >
-                <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                        {title}
-                    </h3>
+                <div 
+                    className="flex justify-between items-start mb-4 cursor-move select-none group/header"
+                    onPointerDown={(e) => dragControls.start(e)}
+                >
+                    <div className="flex items-center gap-2">
+                        <GripHorizontal className="w-4 h-4 text-slate-400 opacity-0 group-hover/header:opacity-100 transition-opacity" />
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                            {title}
+                        </h3>
+                    </div>
                     <button 
                         onClick={onClose}
                         className="text-slate-500 hover:text-slate-500 dark:hover:text-slate-300 transition-colors"
@@ -114,7 +128,7 @@ export const Dialog: React.FC<DialogProps> = ({
                         <span>{confirmText === 'Confirm' ? t('dialog.confirm') : confirmText}</span>
                     </button>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };

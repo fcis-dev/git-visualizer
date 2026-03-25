@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { X, Moon, Sun, User, Mail, Save, Download, Palette, GitBranch, Info } from 'lucide-react';
+import { X, Moon, Sun, User, Mail, Save, Download, Palette, GitBranch, Info, GripHorizontal } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { useDialog } from '../context/DialogContext';
 import { useTranslation } from 'react-i18next';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { getVersion } from '@tauri-apps/api/app';
+import { motion, useDragControls } from 'framer-motion';
 
 
 interface SettingsModalProps {
@@ -28,6 +29,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
   const [loadingConfig, setLoadingConfig] = useState(false);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [appVersion, setAppVersion] = useState('...');
+  const dragControls = useDragControls();
 
   useEffect(() => {
     getVersion().then(v => setAppVersion(`v${v}`)).catch(console.error);
@@ -94,12 +96,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-      <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transform transition-all animate-in zoom-in-95 duration-200 flex flex-col h-[480px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-in fade-in duration-200 p-4">
+      <motion.div 
+        drag
+        dragControls={dragControls}
+        dragListener={false}
+        dragMomentum={false}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-[480px]"
+      >
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 shrink-0">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('settings.title')}</h2>
+        <div 
+          className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 shrink-0 cursor-move select-none group/header"
+          onPointerDown={(e) => dragControls.start(e)}
+        >
+          <div className="flex items-center gap-3">
+             <GripHorizontal className="w-4 h-4 text-slate-400 opacity-0 group-hover/header:opacity-100 transition-opacity" />
+             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{t('settings.title')}</h2>
+          </div>
           <button
             onClick={onClose}
             className="p-1 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
@@ -252,7 +268,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
           </div>
         </div>
 
-      </div>
+      </motion.div>
     </div>
   );
 };

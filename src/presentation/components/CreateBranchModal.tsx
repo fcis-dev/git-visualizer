@@ -1,6 +1,7 @@
-﻿import { useState, useRef, useEffect } from "react";
-import { GitBranch, X, Check } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { GitBranch, X, Check, GripHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { motion, useDragControls } from "framer-motion";
 
 interface CreateBranchModalProps {
   baseCommit: string;
@@ -20,6 +21,7 @@ export function CreateBranchModal({
   const { t } = useTranslation();
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const dragControls = useDragControls();
 
   useEffect(() => {
     // Auto-focus input on mount
@@ -46,13 +48,23 @@ export function CreateBranchModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div
-        className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-in fade-in duration-200">
+      <motion.div
+        drag
+        dragControls={dragControls}
+        dragListener={false}
+        dragMomentum={false}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-5 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50">
+        <div 
+          className="px-5 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50 cursor-move select-none group/header"
+          onPointerDown={(e) => dragControls.start(e)}
+        >
           <div className="flex items-center space-x-2.5">
+            <GripHorizontal className="w-4 h-4 text-slate-400 opacity-0 group-hover/header:opacity-100 transition-opacity absolute -left-1" />
             <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center">
               <GitBranch className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             </div>
@@ -151,7 +163,7 @@ export function CreateBranchModal({
             </button>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 }

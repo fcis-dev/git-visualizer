@@ -6,6 +6,7 @@ import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { useGitActions } from "../hooks/useGitActions";
 import { useTranslation } from "react-i18next";
 import { truncatePath, getLanguage } from "../utils/pathUtils";
+import { motion, useDragControls } from "framer-motion";
 
 interface DiffViewProps {
   repoPath: string;
@@ -183,6 +184,7 @@ export function DiffView({
   const [diffHeaders, setDiffHeaders] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const gitActions = useGitActions(repoPath, onRefresh);
+  const dragControls = useDragControls();
 
   const { searchMatchesDiff, totalDiffLines } = useMemo(() => {
       if (!parsedHunks.length || !searchQuery) return { searchMatchesDiff: [], totalDiffLines: 1 };
@@ -344,9 +346,21 @@ export function DiffView({
   }, [generatePatchForHunk, cached]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-[90vw] h-[90vh] bg-white dark:bg-slate-950 rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-x-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-in fade-in duration-200">
+      <motion.div 
+        drag
+        dragControls={dragControls}
+        dragListener={false}
+        dragMomentum={false}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-[90vw] h-[90vh] bg-white dark:bg-slate-950 rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800"
+      >
+        <div 
+          className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-x-4 cursor-move select-none group/header"
+          onPointerDown={(e) => dragControls.start(e)}
+        >
+          <GripHorizontal className="w-4 h-4 text-slate-400 opacity-0 group-hover/header:opacity-100 transition-opacity absolute -left-0.5" />
           <div className="flex-1 min-w-0 flex items-center">
             <span 
                 className="font-mono text-sm text-slate-700 dark:text-slate-300 font-semibold truncate block w-full"
@@ -605,7 +619,7 @@ export function DiffView({
               </div>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
