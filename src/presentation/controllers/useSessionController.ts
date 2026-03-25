@@ -32,13 +32,9 @@ export function useSessionController() {
   };
 
   const launchProject = async (path: string) => {
-    if (isMainWindow()) {
-        // For the main window, we can just switch the project in-place for a smoother experience
-        await switchProject(path);
-    } else {
-        await useCases.launchProject(path);
-    }
+    await useCases.launchProject(path);
   };
+
 
   return {
     registerCurrentWindow,

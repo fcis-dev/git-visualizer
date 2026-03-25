@@ -79,12 +79,9 @@ export function WorkspaceHeader({
   }, [isProjectSelectorOpen]);
 
   const handleOpenDashboard = async () => {
-    if (controller.isMainWindow()) {
-        onBack();
-    } else {
-        await controller.openDashboard();
-    }
+    await controller.openDashboard();
   };
+
 
 
   const handleSwitchProject = async (path: string) => {
