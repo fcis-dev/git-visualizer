@@ -1,13 +1,11 @@
 import { useEffect, useState, useMemo, memo, useCallback, startTransition } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { X, Play, RotateCcw, Search } from "lucide-react";
+import { X, Play, RotateCcw, Search, ArrowLeft } from "lucide-react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { oneLight, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useGitActions } from "../hooks/useGitActions";
 import { useTranslation } from "react-i18next";
 import { truncatePath, getLanguage } from "../utils/pathUtils";
-import { motion, useDragControls } from "framer-motion";
-
 interface DiffViewProps {
   repoPath: string;
   filePath: string;
@@ -99,10 +97,10 @@ const DiffLine = memo(function DiffLine({
       <td className="w-10 px-2 text-right text-slate-600 dark:text-slate-400 select-none border-r border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
         {line.newLine || ""}
       </td>
-      <td className={`px-4 whitespace-pre pt-0.5 pb-0.5 ${colorClass} w-full relative`}>
+      <td className={`px-4 whitespace-pre-wrap break-all pt-0.5 pb-0.5 ${colorClass} w-full relative`}>
         <SyntaxHighlighter
           language={language}
-          style={isDarkMode ? vscDarkPlus : vs}
+          style={isDarkMode ? oneDark : oneLight}
           customStyle={{
             margin: 0,
             padding: 0,
@@ -110,8 +108,14 @@ const DiffLine = memo(function DiffLine({
             fontSize: "inherit",
             lineHeight: "inherit",
             fontFamily: "inherit",
+            wordBreak: "break-all",
+            whiteSpace: "pre-wrap",
+            overflowX: "hidden"
           }}
           PreTag="div"
+          wrapLines={true}
+          wrapLongLines={true}
+          codeTagProps={{ style: { whiteSpace: 'pre-wrap', wordBreak: 'break-all' } }}
         >
           {line.content || " "}
         </SyntaxHighlighter>
@@ -184,7 +188,6 @@ export function DiffView({
   const [diffHeaders, setDiffHeaders] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const gitActions = useGitActions(repoPath, onRefresh);
-  const dragControls = useDragControls();
 
   const { searchMatchesDiff, totalDiffLines } = useMemo(() => {
       if (!parsedHunks.length || !searchQuery) return { searchMatchesDiff: [], totalDiffLines: 1 };
@@ -205,17 +208,17 @@ export function DiffView({
       return { searchMatchesDiff: matches, totalDiffLines: totalLines || 1 };
   }, [parsedHunks, searchQuery]);
 
-  const { searchMatchesBlame, totalBlameLines } = useMemo(() => {
-      if (!blame || !searchQuery) return { searchMatchesBlame: [], totalBlameLines: 1 };
-      const lines = blame.split('\n');
-      const matches: number[] = [];
-      const query = searchQuery.toLowerCase();
-      for (let i = 0; i < lines.length; i++) {
-          if (lines[i].toLowerCase().includes(query)) {
-              matches.push(i);
-          }
-      }
-      return { searchMatchesBlame: matches, totalBlameLines: lines.length || 1 };
+  const { blameLines, searchMatchesBlame, totalBlameLines } = useMemo(() => {
+    if (!blame) return { blameLines: [], searchMatchesBlame: [], totalBlameLines: 1 };
+    const lines = blame.split('\n');
+    const matches: number[] = [];
+    const query = searchQuery.toLowerCase();
+    for (let i = 0; i < lines.length; i++) {
+        if (query && lines[i].toLowerCase().includes(query)) {
+            matches.push(i);
+        }
+    }
+    return { blameLines: lines, searchMatchesBlame: matches, totalBlameLines: lines.length || 1 };
   }, [blame, searchQuery]);
 
   // Memoize the language to avoid recomputing it on every line render
@@ -346,30 +349,34 @@ export function DiffView({
   }, [generatePatchForHunk, cached]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-in fade-in duration-200">
-      <motion.div 
-        drag
-        dragControls={dragControls}
-        dragListener={false}
-        dragMomentum={false}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-[90vw] h-[90vh] bg-white dark:bg-slate-950 rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800"
-      >
-        <div 
-          className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-x-4 cursor-move select-none group/header"
-          onPointerDown={(e) => dragControls.start(e)}
-        >
-          <GripHorizontal className="w-4 h-4 text-slate-400 opacity-0 group-hover/header:opacity-100 transition-opacity absolute -left-0.5" />
-          <div className="flex-1 min-w-0 flex items-center">
-            <span 
-                className="font-mono text-sm text-slate-700 dark:text-slate-300 font-semibold truncate block w-full"
-                title={filePath}
+    <div className="absolute inset-0 z-30 bg-white dark:bg-slate-950 flex flex-col animate-in fade-in duration-200">
+      <div className="flex items-center justify-between h-12 px-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-x-4 cursor-default select-none">
+        
+        <div className="flex items-center space-x-2 overflow-hidden">
+            <button
+                onClick={onClose}
+                className="flex items-center space-x-1 p-1 -ml-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
             >
-              {truncatePath(filePath)}
-            </span>
-          </div>
-          <div className="flex items-center space-x-3 shrink-0">
+                <ArrowLeft className="w-4 h-4" />
+                <span className="text-sm font-medium">{t('historicalFile.back', 'Back')}</span>
+            </button>
+            <span className="text-slate-300 dark:text-slate-700 shrink-0">|</span>
+            <div className="flex flex-col min-w-0 flex-1">
+                 <span 
+                    className="font-medium text-sm text-slate-700 dark:text-slate-200 truncate pr-2 block w-full" 
+                    title={filePath}
+                 >
+                     {truncatePath(filePath)}
+                 </span>
+                 {commitHash && (
+                   <span className="text-[10px] text-slate-500 font-mono truncate">
+                       @ {commitHash.substring(0, 7)}
+                   </span>
+                 )}
+            </div>
+        </div>
+
+        <div className="flex items-center space-x-3 shrink-0">
             {/* Search Input */}
             <DebouncedSearchInput onSearch={setSearchQuery} className="w-48" />
             <div className="flex bg-slate-200 dark:bg-slate-800 rounded-lg p-0.5 shrink-0">
@@ -386,17 +393,11 @@ export function DiffView({
                 {t("diffView.blameTab")}
               </button>
             </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 transition-colors shrink-0 ml-2"
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
         </div>
 
         <div className="flex-1 relative flex overflow-hidden bg-white dark:bg-slate-950">
-          <div className="flex-1 overflow-auto custom-scrollbar">
+          <div className={`flex-1 overflow-auto custom-scrollbar ${viewMode === "diff" ? "p-4" : ""}`}>
             {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
@@ -429,7 +430,7 @@ export function DiffView({
               )}
             </div>
           ) : viewMode === "diff" && parsedHunks.length > 0 ? (
-            <div className="w-full font-mono text-[13px] flex flex-col pb-10">
+            <div className="w-full font-mono text-xs flex flex-col pb-10">
               {parsedHunks.map((hunk, hIdx) => (
                 <div key={hIdx} className="w-full flex flex-col mb-4 border border-slate-200 dark:border-slate-800 rounded-md overflow-hidden shadow-sm">
                   {/* Hunk Header */}
@@ -451,7 +452,7 @@ export function DiffView({
                     )}
                   </div>
                   {/* Hunk Lines — each row is memoized to avoid re-rendering unchanged lines */}
-                  <table className="w-full border-collapse">
+                  <table className="w-full border-collapse table-fixed">
                     <tbody>
                       {hunk.lines.map((line, lIdx) => (
                         <DiffLine
@@ -473,12 +474,10 @@ export function DiffView({
               ))}
             </div>
           ) : viewMode === "blame" && blame ? (
-            <table className="w-full border-collapse text-xs font-mono">
+            <table className="w-full border-collapse text-xs font-mono table-fixed">
               <thead className="bg-slate-50 dark:bg-slate-900 sticky top-0 z-10 text-left">
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-                  <th className="py-2 px-4 font-medium w-24">{t("diffView.headerCommit")}</th>
-                  <th className="py-2 px-4 font-medium w-32">{t("diffView.headerAuthor")}</th>
-                  <th className="py-2 px-4 font-medium w-24">{t("diffView.headerDate")}</th>
+                  <th className="py-2 px-4 font-medium w-48">{t("diffView.headerDate")} / {t("diffView.headerAuthor")}</th>
                   <th className="py-2 px-4 font-medium w-12 text-right">
                     {t("diffView.headerLine")}
                   </th>
@@ -487,102 +486,103 @@ export function DiffView({
               </thead>
               <tbody>
                 {(() => {
-                  let prevHash = "";
-                  return blame.split("\n").map((line, i) => {
-                    if (!line) return null;
-                    // Regex: optional ^, hash, optional filepath, (author date line) content
-                    const match =
-                      /^[\^]?([a-f0-9]+)\s+(?:[^(]+\s+)?\((.*?)\s+(\d{4}-\d{2}-\d{2})\s+(\d+)\)\s(.*)$/.exec(
-                        line,
-                      );
+                    let prevHash = "";
+                    return blameLines.map((line, i) => {
+                      if (!line) return null;
+                      // Regex: optional ^, hash, optional filepath, (author date line) content
+                      const match =
+                        /^[\^]?([a-f0-9]+)\s+(?:[^(]+\s+)?\((.*?)\s+(\d{4}-\d{2}-\d{2})\s+(\d+)\)\s(.*)$/.exec(
+                          line,
+                        );
 
-                    if (match) {
-                      const [, hash, author, date, lineNum, content] = match;
-                      const shortHash = hash.substring(0, 7);
-                      const isSameCommit = shortHash === prevHash;
-                      prevHash = shortHash;
+                      if (match) {
+                        const [, hash, author, date, lineNum, content] = match;
+                        const shortHash = hash.substring(0, 7);
+                        const isSameCommit = shortHash === prevHash;
+                        prevHash = shortHash;
 
-                      // Generate a color from the hash
-                      const getColor = (str: string) => {
-                        let hash = 0;
-                        for (let i = 0; i < str.length; i++) {
-                          hash = str.charCodeAt(i) + ((hash << 5) - hash);
+                        // Generate a color from the hash
+                        const getColor = (str: string) => {
+                          let hash = 0;
+                          for (let i = 0; i < str.length; i++) {
+                            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+                          }
+                          const hue = Math.abs(hash % 360);
+                          return `hsl(${hue}, 70%, 50%)`;
+                        };
+                        const commitColor = getColor(shortHash);
+
+                        let isMatch = false;
+                        if (searchQuery && content.toLowerCase().includes(searchQuery.toLowerCase())) {
+                            isMatch = true;
                         }
-                        const hue = Math.abs(hash % 360);
-                        return `hsl(${hue}, 70%, 50%)`;
-                      };
-                      const commitColor = getColor(shortHash);
+                        const rowClass = isMatch ? "bg-yellow-200/50 dark:bg-yellow-900/30" : "hover:bg-indigo-50 dark:hover:bg-indigo-900/10";
 
-                      let isMatch = false;
-                      if (searchQuery && content.toLowerCase().includes(searchQuery.toLowerCase())) {
-                          isMatch = true;
-                      }
-                      const rowClass = isMatch ? "bg-yellow-200/50 dark:bg-yellow-900/30" : "hover:bg-indigo-50 dark:hover:bg-indigo-900/10";
-
-                      return (
-                        <tr
-                          key={i}
-                          className={`${rowClass} transition-colors border-b border-transparent`}
-                        >
-                          <td className="py-0.5 px-4 font-mono select-none relative">
-                            {!isSameCommit && (
-                              <span
-                                style={{ color: commitColor }}
-                                className="font-bold"
-                              >
-                                {shortHash}
-                              </span>
-                            )}
-                            {/* Vertical line for improved visual grouping */}
-                            <div
-                              className="absolute right-0 top-0 bottom-0 w-1 opacity-30"
-                              style={{ backgroundColor: commitColor }}
-                            />
-                          </td>
-                          <td
-                            className="py-0.5 px-4 font-medium truncate max-w-[150px]"
-                            title={author}
+                        return (
+                          <tr
+                            key={i}
+                            className={`${rowClass} transition-colors border-b border-transparent`}
                           >
-                            {!isSameCommit && (
-                              <span className="text-slate-700 dark:text-slate-200">
-                                {author}
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-0.5 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap text-[10px]">
-                            {!isSameCommit && date}
-                          </td>
-                          <td className="py-0.5 px-4 text-slate-600 dark:text-slate-400 text-right font-mono text-xs select-none">
-                            {lineNum}
-                          </td>
-                          <td className="py-0.5 px-0 text-slate-700 dark:text-slate-300 whitespace-pre w-full font-mono text-xs leading-tight border-l border-slate-100 dark:border-slate-800">
-                            <SyntaxHighlighter
-                              language={getLanguage(filePath)}
-                              style={isDarkMode ? vscDarkPlus : vs}
-                              customStyle={{
-                                margin: 0,
-                                padding: '2px 16px',
-                                background: 'transparent',
-                                fontSize: 'inherit',
-                                lineHeight: 'inherit',
-                                fontFamily: 'inherit'
-                              }}
-                              PreTag="div"
-                            >
-                              {content || ' '}
-                            </SyntaxHighlighter>
+                            <td className="py-0.5 px-4 relative align-top min-w-0" style={{ maxWidth: '16rem' }}>
+                              {/* Vertical line for improved visual grouping */}
+                              <div
+                                className="absolute right-0 top-0 bottom-0 w-1 opacity-30"
+                                style={{ backgroundColor: commitColor }}
+                              />
+                              {!isSameCommit && (
+                                <div className="flex items-center gap-2 whitespace-nowrap overflow-hidden pr-2">
+                                  <span className="text-slate-500 text-[10px] shrink-0">
+                                    {date}
+                                  </span>
+                                  <span className="text-slate-700 dark:text-slate-300 font-medium text-xs truncate" title={author}>
+                                    {author}
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-0.5 px-4 text-slate-600 dark:text-slate-400 text-right font-mono text-xs select-none">
+                              {lineNum}
+                            </td>
+                            <td className="py-0.5 px-0 text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-all w-full font-mono text-xs leading-tight border-l border-slate-100 dark:border-slate-800 uppercase-first">
+                              {totalBlameLines > 500 ? (
+                                <div className="px-4 py-0.5 whitespace-pre-wrap break-all">
+                                  {content || ' '}
+                                </div>
+                              ) : (
+                                <SyntaxHighlighter
+                                  language={language}
+                                  style={isDarkMode ? oneDark : oneLight}
+                                  customStyle={{
+                                    margin: 0,
+                                    padding: '2px 16px',
+                                    background: 'transparent',
+                                    fontSize: 'inherit',
+                                    lineHeight: 'inherit',
+                                    fontFamily: 'inherit',
+                                    wordBreak: 'break-all',
+                                    whiteSpace: 'pre-wrap',
+                                    overflowX: 'hidden'
+                                  }}
+                                  PreTag="div"
+                                  wrapLines={true}
+                                  wrapLongLines={content.length < 5000}
+                                  codeTagProps={{ style: { whiteSpace: 'pre-wrap', wordBreak: 'break-all' } }}
+                                >
+                                  {content || ' '}
+                                </SyntaxHighlighter>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      }
+                      return (
+                        <tr key={i}>
+                          <td colSpan={3} className="py-1 px-4 text-slate-500">
+                            {line}
                           </td>
                         </tr>
                       );
-                    }
-                    return (
-                      <tr key={i}>
-                        <td colSpan={5} className="py-1 px-4 text-slate-500">
-                          {line}
-                        </td>
-                      </tr>
-                    );
-                  });
+                    });
                 })()}
               </tbody>
             </table>
@@ -619,7 +619,6 @@ export function DiffView({
               </div>
           )}
         </div>
-      </motion.div>
     </div>
   );
 }

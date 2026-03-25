@@ -2,7 +2,7 @@ import { useState, useEffect, startTransition, useMemo } from "react";
 import { ArrowLeft, Copy, Check, Search, X } from "lucide-react";
 import { useGitActions } from "../hooks/useGitActions";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vs, vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { oneLight, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useTranslation } from 'react-i18next';
 import { truncatePath, getLanguage } from '../utils/pathUtils';
 
@@ -61,20 +61,18 @@ export function HistoricalFileContentView({
 
     const { getFileContentAtCommit } = useGitActions(repoPath);
 
-    const searchMatches = useMemo(() => {
-        if (!content || !searchQuery) return [];
-        const lines = content.split('\n');
+    const { lines, searchMatches, totalLines } = useMemo(() => {
+        if (!content) return { lines: [], searchMatches: [], totalLines: 1 };
+        const splitLines = content.split('\n');
         const matches: number[] = [];
         const query = searchQuery.toLowerCase();
-        for (let i = 0; i < lines.length; i++) {
-            if (lines[i].toLowerCase().includes(query)) {
+        for (let i = 0; i < splitLines.length; i++) {
+            if (query && splitLines[i].toLowerCase().includes(query)) {
                 matches.push(i);
             }
         }
-        return matches;
+        return { lines: splitLines, searchMatches: matches, totalLines: splitLines.length || 1 };
     }, [content, searchQuery]);
-
-    const totalLines = content ? content.split('\n').length : 1;
 
     useEffect(() => {
         // Detect dark mode based on the document class (Tailwind 'dark' strategy)
@@ -161,8 +159,8 @@ export function HistoricalFileContentView({
                 </div>
             </header>
 
-            <div className="flex-1 relative flex overflow-hidden bg-slate-50 dark:bg-slate-950">
-                <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+            <div className="flex-1 relative flex overflow-hidden bg-white dark:bg-slate-950">
+                <div className="flex-1 overflow-auto custom-scrollbar">
                     {isLoading ? (
                         <div className="flex justify-center items-center h-full">
                             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
@@ -172,35 +170,49 @@ export function HistoricalFileContentView({
                             {t('historicalFile.failedToLoad')} {error}
                         </div>
                     ) : (
-                        <div className="text-sm">
-                            <SyntaxHighlighter
-                                language={getLanguage(filePath)}
-                                style={isDarkMode ? vscDarkPlus : vs}
-                                customStyle={{
-                                    margin: 0,
-                                    padding: 0,
-                                    background: 'transparent',
-                                    fontSize: '13px',
-                                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
-                                }}
-                                showLineNumbers={true}
-                                wrapLines={true}
-                                lineProps={(lineNumber: number) => {
-                                    if (!content || !searchQuery) return {};
-                                    const line = (content || "").split('\n')[lineNumber - 1];
-                                    if (line && line.toLowerCase().includes(searchQuery.toLowerCase())) {
-                                        return {
-                                            style: {
-                                                display: "block",
-                                                backgroundColor: isDarkMode ? "rgba(234, 179, 8, 0.4)" : "rgba(254, 240, 138, 0.5)"
-                                            }
-                                        };
-                                    }
-                                    return {};
-                                }}
-                            >
-                                {content || ''}
-                            </SyntaxHighlighter>
+                        <div className="text-xs font-mono">
+                            {totalLines > 1500 ? (
+                                <div className="p-4">
+                                    <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/30 rounded-md text-amber-800 dark:text-amber-200 flex items-center justify-between">
+                                        <p className="text-sm">{t('historicalFile.performanceMode', 'Performance mode active (large file)')}</p>
+                                    </div>
+                                    <pre className="whitespace-pre overflow-visible text-slate-800 dark:text-slate-200 selection:bg-indigo-500/30">
+                                        {content || ''}
+                                    </pre>
+                                </div>
+                            ) : (
+                                <SyntaxHighlighter
+                                    language={getLanguage(filePath)}
+                                    style={isDarkMode ? oneDark : oneLight}
+                                    customStyle={{
+                                        margin: 0,
+                                        padding: 0,
+                                        background: 'transparent',
+                                        fontSize: 'inherit',
+                                        lineHeight: 'inherit',
+                                        fontFamily: 'inherit',
+                                        wordBreak: 'break-all',
+                                        whiteSpace: 'pre-wrap',
+                                        overflowX: 'hidden'
+                                    }}
+                                    showLineNumbers={true}
+                                    lineNumberStyle={{ 
+                                        minWidth: "3.25em", 
+                                        paddingRight: "0.75em", 
+                                        marginRight: "0.75em",
+                                        borderRight: isDarkMode ? "1px solid #1e293b" : "1px solid #e2e8f0",
+                                        color: isDarkMode ? "#64748b" : "#94a3b8", 
+                                        textAlign: "right", 
+                                        userSelect: "none" 
+                                    }}
+                                    wrapLines={true}
+                                    wrapLongLines={totalLines < 1000}
+                                    codeTagProps={{ style: { whiteSpace: 'pre-wrap', wordBreak: 'break-all' } }}
+                                    lineProps={() => ({})}
+                                >
+                                    {content || ''}
+                                </SyntaxHighlighter>
+                            )}
                         </div>
                     )}
                 </div>

@@ -542,6 +542,18 @@ export function RepositoryWorkspace({
             />
           )}
 
+          {/* Diff View Overlay */}
+          {diffTarget && (
+            <DiffView
+                repoPath={repoPath}
+                filePath={diffTarget.path}
+                commitHash={diffTarget.commitHash}
+                cached={diffTarget.cached}
+                onClose={() => setDiffTarget(null)}
+                onRefresh={onActionSuccess}
+            />
+          )}
+
           {/* Merge Conflict Editor Overlay */}
           {conflictTarget && (
              <MergeConflictEditor
@@ -654,17 +666,6 @@ export function RepositoryWorkspace({
         />
       )}
 
-      {/* Full Screen Overlays */}
-      {diffTarget && (
-        <DiffView
-            repoPath={repoPath}
-            filePath={diffTarget.path}
-            commitHash={diffTarget.commitHash}
-            cached={diffTarget.cached}
-            onClose={() => setDiffTarget(null)}
-            onRefresh={onActionSuccess}
-        />
-      )}
     </div>
   );
 }
