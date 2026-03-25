@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   GitBranch,
   LayoutGrid,
@@ -78,8 +79,13 @@ export function WorkspaceHeader({
   }, [isProjectSelectorOpen]);
 
   const handleOpenDashboard = async () => {
-    await controller.openDashboard();
+    if (controller.isMainWindow()) {
+        onBack();
+    } else {
+        await controller.openDashboard();
+    }
   };
+
 
   const handleSwitchProject = async (path: string) => {
     setIsProjectSelectorOpen(false);
@@ -101,20 +107,30 @@ export function WorkspaceHeader({
         <div className="relative">
           <button
             onClick={() => setIsProjectSelectorOpen(!isProjectSelectorOpen)}
-            className="flex flex-col text-left hover:bg-slate-100 dark:hover:bg-slate-800/80 px-2 py-1 rounded-md transition-all group border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+            className="flex flex-col text-left hover:bg-slate-100 dark:hover:bg-slate-800/80 px-2 py-1 rounded-md transition-all group border border-transparent hover:border-slate-200 dark:hover:border-slate-700 h-full justify-center"
           >
-            <div className="flex items-center space-x-1">
-              <h1 className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                {repoName}
-              </h1>
-              <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isProjectSelectorOpen ? 'rotate-180' : ''}`} />
-            </div>
-            <p 
-              className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[250px]" 
-              title={repoPath}
-            >
-              {truncatePath(repoPath)}
-            </p>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={repoPath}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center space-x-1">
+                  <h1 className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                    {repoName}
+                  </h1>
+                  <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isProjectSelectorOpen ? 'rotate-180' : ''}`} />
+                </div>
+                <p 
+                  className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[250px]" 
+                  title={repoPath}
+                >
+                  {truncatePath(repoPath)}
+                </p>
+              </motion.div>
+            </AnimatePresence>
           </button>
 
           {isProjectSelectorOpen && (

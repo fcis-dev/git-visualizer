@@ -104,11 +104,37 @@ export function useRepositoryWorkspaceController(
   );
 
   useEffect(() => {
+    // Reset state when repoPath changes
+    setCommitSearchQuery("");
+    setSelectedCommit(null);
+    setCommitDetails(null);
+    setDetailsLoading(false);
+    setDiffTarget(null);
+    setContentTarget(null);
+    setConflictTarget(null);
+    setCreateBranchTarget(null);
+    setGlobalSearchResults(null);
+    setIsSearching(false);
+    setHasMoreSearch(false);
+    setIsLoadingMoreSearch(false);
+    setGraphBranches([]);
+    setIsBranchDropdownOpen(false);
+    setIsBranchFilterOpen(false);
+    setIsPulling(false);
+    setIsPushing(false);
+    setIsFetchingManual(false);
+    setCheckoutingBranch(null);
+    setError(null);
+    setRefreshDate(new Date());
+  }, [repoPath, setError]);
+
+  useEffect(() => {
     if (error && (error.includes("No such file or directory") || error.includes("not a git repository"))) {
         console.warn("- Repository context lost (likely deleted submodule). Navigating back.", error);
         onBack();
     }
   }, [error, onBack]);
+
 
   const handleViewFileHistory = (path: string) => {
     setSearchType("file");

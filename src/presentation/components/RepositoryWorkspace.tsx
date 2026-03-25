@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
 import { ArrowLeft } from "lucide-react";
 import { SourceControl } from "./Sidebar/SourceControl";
@@ -475,31 +476,43 @@ export function RepositoryWorkspace({
 
           {/* Graph */}
           <div className="flex-1 overflow-hidden flex flex-col relative">
-            <Graph
-              ref={graphRef}
-              commits={displayCommits}
-              selectedCommit={selectedCommit}
-              onSelectCommit={setSelectedCommit}
-              onLoadMore={
-                commitSearchQuery.trim().length > 0
-                  ? hasMoreSearch
-                    ? loadMoreSearchResults
-                    : undefined
-                  : loadMoreCommits
-              }
-              isLoadingMore={
-                commitSearchQuery.trim().length > 0
-                  ? isLoadingMoreSearch
-                  : isLoadingMore
-              }
-              hasMore={
-                commitSearchQuery.trim().length > 0 ? hasMoreSearch : hasMore
-              }
-              isSearchResult={commitSearchQuery.trim().length > 0}
-              onBranchContextMenu={(refName, x, y) => {
-                setGraphBranchContextMenu({ visible: true, x, y, refName });
-              }}
-            />
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={repoPath}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex-1 overflow-hidden flex flex-col"
+              >
+                <Graph
+                  ref={graphRef}
+                  commits={displayCommits}
+                  selectedCommit={selectedCommit}
+                  onSelectCommit={setSelectedCommit}
+                  onLoadMore={
+                    commitSearchQuery.trim().length > 0
+                      ? hasMoreSearch
+                        ? loadMoreSearchResults
+                        : undefined
+                      : loadMoreCommits
+                  }
+                  isLoadingMore={
+                    commitSearchQuery.trim().length > 0
+                      ? isLoadingMoreSearch
+                      : isLoadingMore
+                  }
+                  hasMore={
+                    commitSearchQuery.trim().length > 0 ? hasMoreSearch : hasMore
+                  }
+                  isSearchResult={commitSearchQuery.trim().length > 0}
+                  onBranchContextMenu={(refName, x, y) => {
+                    setGraphBranchContextMenu({ visible: true, x, y, refName });
+                  }}
+                />
+              </motion.div>
+            </AnimatePresence>
+
 
             <GraphBranchContextMenu
               contextMenu={graphBranchContextMenu}

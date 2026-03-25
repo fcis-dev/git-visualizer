@@ -5,14 +5,9 @@ export function useSessionController() {
   const repository = new TauriSessionRepository();
   const useCases = new SessionUseCases(repository);
 
-
   const registerCurrentWindow = async (path: string) => {
     const label = repository.getCurrentWindowLabel();
     await useCases.registerProjectWindow(label, path);
-  };
-
-  const launchProject = async (path: string) => {
-    await useCases.launchProject(path);
   };
 
   const isMainWindow = () => {
@@ -30,7 +25,19 @@ export function useSessionController() {
   const switchProject = async (path: string) => {
     const label = repository.getCurrentWindowLabel();
     await useCases.switchProject(label, path);
-    window.location.search = `?project=${encodeURIComponent(path)}`;
+    // Use pushState to update URL without reload
+    window.history.pushState(null, '', `?project=${encodeURIComponent(path)}`);
+    // Notify App.tsx to update its state
+    window.dispatchEvent(new CustomEvent('project-change'));
+  };
+
+  const launchProject = async (path: string) => {
+    if (isMainWindow()) {
+        // For the main window, we can just switch the project in-place for a smoother experience
+        await switchProject(path);
+    } else {
+        await useCases.launchProject(path);
+    }
   };
 
   return {
