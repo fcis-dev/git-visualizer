@@ -302,7 +302,42 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
 
       let tagsRowHtml = "";
       if (d.refs && d.refs.length > 0) {
-        tagsRowHtml = d.refs
+        const sortedRefs = [...d.refs].sort((a, b) => {
+          const getWeight = (r: string) => {
+            if (r.includes("HEAD")) return 0;
+            const isTag = r.startsWith("tag: ");
+            if (isTag) return 100; // Tags last
+            const isRemote = r.includes("/"); // Simplistic check for remote or hierarchical
+            const isHierarchical = r.includes("/") && !r.includes("origin"); // Hierarchical local
+            const isRealRemote = r.includes("/") && (r.includes("origin") || r.split("/").length > 1); // This is fuzzy
+            
+            // Refined weight:
+            // 0: HEAD
+            // 1: Local branch (no /)
+            // 2: Local hierarchical branch (e.g. feature/...)
+            // 3: Remote branch (e.g. origin/...)
+            // 4: Tag
+            
+            if (r.includes("HEAD")) return 0;
+            if (isTag) return 4;
+            if (r.includes("/")) {
+                if (r.startsWith("origin/") || r.includes("/")) {
+                    // Let's check if it's a known remote or just hierarchical
+                    // For now, let's say if it has a slash it's "after" plain ones
+                    return r.startsWith("origin/") ? 3 : 2;
+                }
+            }
+            return 1;
+          };
+
+          const weightA = getWeight(a);
+          const weightB = getWeight(b);
+
+          if (weightA !== weightB) return weightA - weightB;
+          return a.localeCompare(b);
+        });
+
+        tagsRowHtml = sortedRefs
           .map((ref) => {
             let chipBg = isDark
               ? "rgba(79, 70, 229, 0.15)"

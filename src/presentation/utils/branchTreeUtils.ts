@@ -53,12 +53,12 @@ export function buildBranchTree<T>(
 export function sortTreeNodes<T>(node: BranchTreeNode<T>): BranchTreeNode<T>[] {
   const children = Object.values(node.children);
   children.sort((a, b) => {
-    // Directories first, then leaves
+    // Leaves first, then directories
     const aIsFolder = Object.keys(a.children).length > 0;
     const bIsFolder = Object.keys(b.children).length > 0;
 
-    if (aIsFolder && !bIsFolder) return -1;
-    if (!aIsFolder && bIsFolder) return 1;
+    if (aIsFolder && !bIsFolder) return 1;
+    if (!aIsFolder && bIsFolder) return -1;
 
     // Alphabetical within same type
     return a.name.localeCompare(b.name);
