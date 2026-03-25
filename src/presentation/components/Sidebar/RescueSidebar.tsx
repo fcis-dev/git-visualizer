@@ -13,7 +13,7 @@ interface RescueSidebarProps {
 
 export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarProps) {
   const [entries, setEntries] = useState<ReflogEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!!repoPath);
   const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation();
 
@@ -25,6 +25,7 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
         loadReflog();
     } else {
         setEntries([]);
+        setLoading(false);
     }
   }, [repoPath]);
 
@@ -165,11 +166,7 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
             </div>
         </div>
 
-        {loading ? (
-             <div className="flex justify-center p-8">
-               <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-indigo-500"></div>
-             </div>
-        ) : entries.length === 0 && !error ? (
+        {loading ? null : entries.length === 0 && !error ? (
              <div className="p-4 text-center text-xs text-slate-500">
                {t('rescueSidebar.noEntries')}
              </div>
