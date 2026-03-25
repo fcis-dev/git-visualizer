@@ -15,7 +15,10 @@ export function CreateBranchModal({
   onSubmit,
 }: CreateBranchModalProps) {
   const [branchName, setBranchName] = useState("");
-  const [checkout, setCheckout] = useState(true);
+  const [checkout, setCheckout] = useState(() => {
+    const saved = localStorage.getItem("git-visualizer-checkout-on-create");
+    return saved !== null ? saved === "true" : true;
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { t } = useTranslation();
@@ -29,6 +32,10 @@ export function CreateBranchModal({
       inputRef.current.focus();
     }
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("git-visualizer-checkout-on-create", String(checkout));
+  }, [checkout]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,8 +79,8 @@ export function CreateBranchModal({
               <h3 className="font-semibold text-slate-900 dark:text-slate-100">
                 {t("createBranch.title")}
               </h3>
-              <p className="text-[10px] text-slate-500 font-mono mt-0.5">
-                {t("createBranch.from")} {baseCommit.substring(0, 7)}
+              <p className="text-[10px] text-slate-500 font-mono mt-0.5 truncate max-w-[200px]" title={baseCommit}>
+                {t("createBranch.from")} {baseCommit.length === 40 ? baseCommit.substring(0, 7) : (baseCommit.length > 20 ? baseCommit.substring(0, 17) + "..." : baseCommit)}
               </p>
             </div>
           </div>

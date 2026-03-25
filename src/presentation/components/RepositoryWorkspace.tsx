@@ -222,13 +222,7 @@ export function RepositoryWorkspace({
   };
 
   const handleGraphBranchCreateFrom = (refName: string) => {
-    showInput(t('repositoryWorkspace.createBranchTitle'), t('repositoryWorkspace.createBranchMsg', { refName }), async (newName) => {
-      if (!newName) return;
-      try {
-        await gitActions.createBranch(newName, refName);
-        onActionSuccess();
-      } catch (e: any) { showAlert(t('repositoryWorkspace.errorTitle'), e.toString()); }
-    });
+    actions.setCreateBranchTarget(refName);
   };
 
   const handleGraphBranchCreateTag = (refName: string) => {
@@ -366,6 +360,7 @@ export function RepositoryWorkspace({
               currentBranch={branchName}
               onRefreshGraph={loadCommits}
               refreshTrigger={refreshDate}
+              onCreateBranch={actions.setCreateBranchTarget}
             />
           )}
 

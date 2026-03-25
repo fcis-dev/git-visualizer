@@ -17,9 +17,10 @@ interface BranchesSidebarProps {
   currentBranch: string;
   onRefreshGraph: () => void;
   refreshTrigger?: Date;
+  onCreateBranch?: (hash: string) => void;
 }
 
-export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refreshTrigger }: BranchesSidebarProps) {
+export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refreshTrigger, onCreateBranch }: BranchesSidebarProps) {
   const { t } = useTranslation();
   const [branches, setBranches] = useState<BranchData[]>([]);
   const [loadingBranches, setLoadingBranches] = useState(false);
@@ -199,20 +200,24 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
   };
 
   const handleCreateBranchFrom = (branch: BranchData) => {
-    showInput(
-      t('sidebar.branches.createBranchTitle'),
-      t('sidebar.branches.createBranchPrompt', { name: branch.name }),
-      async (newName) => {
-        if (!newName) return;
-        try {
-          await gitActions.createBranch(newName, branch.hash);
-          onRefreshGraph();
-          loadBranchesAndRemotes();
-        } catch (e: any) {
-          setError(e.toString());
+    if (onCreateBranch) {
+      onCreateBranch(branch.name);
+    } else {
+      showInput(
+        t('sidebar.branches.createBranchTitle'),
+        t('sidebar.branches.createBranchPrompt', { name: branch.name }),
+        async (newName) => {
+          if (!newName) return;
+          try {
+            await gitActions.createBranch(newName, branch.name);
+            onRefreshGraph();
+            loadBranchesAndRemotes();
+          } catch (e: any) {
+            setError(e.toString());
+          }
         }
-      }
-    );
+      );
+    }
   };
 
   const handleCreateTagFrom = (branch: BranchData) => {
