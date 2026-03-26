@@ -297,7 +297,6 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       // We start drawing text/refs to the right of the furthest possible lane.
       // d.x gives the current node's x coordinate in the group's transform
       // So we need to offset it to reach maxLaneX + some padding.
-      // Wait, the group is translated to d.x. So an offset of (maxLaneX - d.x + padding) is needed.
       const currentX = maxLaneX - d.x + 18;
 
       let tagsRowHtml = "";
@@ -306,33 +305,14 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
           const getWeight = (r: string) => {
             if (r.includes("HEAD")) return 0;
             const isTag = r.startsWith("tag: ");
-            if (isTag) return 100; // Tags last
-            const isRemote = r.includes("/"); // Simplistic check for remote or hierarchical
-            const isHierarchical = r.includes("/") && !r.includes("origin"); // Hierarchical local
-            const isRealRemote = r.includes("/") && (r.includes("origin") || r.split("/").length > 1); // This is fuzzy
-            
-            // Refined weight:
-            // 0: HEAD
-            // 1: Local branch (no /)
-            // 2: Local hierarchical branch (e.g. feature/...)
-            // 3: Remote branch (e.g. origin/...)
-            // 4: Tag
-            
-            if (r.includes("HEAD")) return 0;
             if (isTag) return 4;
             if (r.includes("/")) {
-                if (r.startsWith("origin/") || r.includes("/")) {
-                    // Let's check if it's a known remote or just hierarchical
-                    // For now, let's say if it has a slash it's "after" plain ones
-                    return r.startsWith("origin/") ? 3 : 2;
-                }
+                return r.startsWith("origin/") ? 3 : 2;
             }
             return 1;
           };
-
           const weightA = getWeight(a);
           const weightB = getWeight(b);
-
           if (weightA !== weightB) return weightA - weightB;
           return a.localeCompare(b);
         });
@@ -340,32 +320,41 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
         tagsRowHtml = sortedRefs
           .map((ref) => {
             let chipBg = isDark
-              ? "rgba(79, 70, 229, 0.15)"
-              : "rgba(99, 102, 241, 0.1)";
-            let chipText = isDark ? "#818cf8" : "#4338ca";
+              ? "rgba(99, 102, 241, 0.12)"
+              : "rgba(99, 102, 241, 0.08)";
+            let chipText = isDark ? "#a5b4fc" : "#4f46e5";
             let chipBorder = isDark
-              ? "rgba(99, 102, 241, 0.3)"
-              : "rgba(99, 102, 241, 0.2)";
+              ? "rgba(99, 102, 241, 0.25)"
+              : "rgba(99, 102, 241, 0.15)";
+            
+            let icon = `<svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor" style="flex-shrink:0;"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1a2.5 2.5 0 0 1 2.5 2.5v9.146a.25.25 0 0 1-.427.177L10.677 11.93a.25.25 0 0 1-.035-.118l-.142-.812a.25.25 0 0 1 .487-.085l.13.743 1.883 1.883V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 4a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 9.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"></path></svg>`;
 
             const isTag = ref.startsWith("tag: ");
             const displayName = isTag ? ref.substring(5) : ref;
 
             if (ref.includes("HEAD") || isTag) {
               chipBg = isDark
-                ? "rgba(16, 185, 129, 0.15)"
-                : "rgba(16, 185, 129, 0.1)";
-              chipText = isDark ? "#34d399" : "#059669";
+                ? "rgba(16, 185, 129, 0.12)"
+                : "rgba(16, 185, 129, 0.08)";
+              chipText = isDark ? "#6ee7b7" : "#059669";
               chipBorder = isDark
-                ? "rgba(52, 211, 153, 0.3)"
-                : "rgba(16, 185, 129, 0.2)";
+                ? "rgba(52, 211, 153, 0.25)"
+                : "rgba(16, 185, 129, 0.15)";
+              
+              if (isTag) {
+                icon = `<svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor" style="flex-shrink:0;"><path d="M1 7.775V2a1 1 0 0 1 1-1h5.775a1 1 0 0 1 .707.293l6.225 6.225a1 1 0 0 1 0 1.414l-5.775 5.775a1 1 0 0 1-1.414 0L1.293 8.482A1 1 0 0 1 1 7.775Zm1.5-4.525v4.525l5.535 5.536L12.57 8.775l-5.535-5.535H2.5Zm3.5 1a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"></path></svg>`;
+              } else {
+                icon = `<svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor" style="flex-shrink:0;"><path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"></path></svg>`;
+              }
             } else if (ref.includes("origin")) {
               chipBg = isDark
-                ? "rgba(236, 72, 153, 0.15)"
-                : "rgba(236, 72, 153, 0.1)";
+                ? "rgba(236, 72, 153, 0.12)"
+                : "rgba(236, 72, 153, 0.08)";
               chipText = isDark ? "#f472b6" : "#db2777";
               chipBorder = isDark
-                ? "rgba(244, 114, 182, 0.3)"
-                : "rgba(236, 72, 153, 0.2)";
+                ? "rgba(244, 114, 182, 0.25)"
+                : "rgba(236, 72, 153, 0.15)";
+              icon = `<svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor" style="flex-shrink:0;"><path d="M14.28 9.31a.25.25 0 0 1-.28.24h-1c-.11 0-.21-.07-.24-.18l-.5-1.5a.25.25 0 0 0-.48 0l-.5 1.5c-.03.11-.13.18-.24.18H10a.25.25 0 0 1-.22-.38l1-1.5a.25.25 0 0 1 .42 0l1 1.5a.25.25 0 0 1 .08.14ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Z"></path></svg>`;
             }
 
             const safeRef = ref
@@ -376,7 +365,31 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
               .replace(/"/g, "&quot;")
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;");
-            return `<div data-ref="${safeRef}" style="background-color: ${chipBg}; color: ${chipText}; border: 1px solid ${chipBorder}; border-radius: 9999px; padding: 1px 8px; font-size: 10px; font-weight: 500; line-height: 14px; white-space: nowrap; pointer-events: auto; max-width: 130px; overflow: hidden; text-overflow: ellipsis; display: inline-block; cursor: context-menu;">${safeDisplayName}</div>`;
+            
+            return `
+              <div data-ref="${safeRef}" class="git-chip" style="
+                background-color: ${chipBg}; 
+                color: ${chipText}; 
+                border: 1px solid ${chipBorder}; 
+                border-radius: 6px; 
+                padding: 1px 6px; 
+                font-size: 10.5px; 
+                font-weight: 600; 
+                line-height: 14px; 
+                white-space: nowrap; 
+                pointer-events: auto; 
+                max-width: 150px; 
+                overflow: hidden; 
+                text-overflow: ellipsis; 
+                display: inline-flex; 
+                align-items: center; 
+                gap: 4px;
+                cursor: context-menu;
+                transition: all 0.15s ease;
+              ">
+                ${icon}
+                <span style="overflow: hidden; text-overflow: ellipsis;">${safeDisplayName}</span>
+              </div>`;
           })
           .join("");
       }
@@ -384,16 +397,14 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       const absoluteX = (d as any).x + currentX;
       const minTextWidth = 450;
       const foWidth = Math.max(minTextWidth, width - absoluteX - 16);
-      const foHeight = 56; // Constrain to exactly the row height to prevent overlapping adjacent rows
+      const foHeight = 56; 
 
       if (absoluteX + foWidth + 16 > maxContentWidth) {
         maxContentWidth = absoluteX + foWidth + 16;
       }
 
       const commitDate = new Date(d.date * 1000);
-
       const datePart = commitDate.toLocaleDateString(undefined, {
-        year: "numeric",
         month: "short",
         day: "numeric",
       });
@@ -404,10 +415,8 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
 
       const msgColor =
         selectedCommit?.hash === d.hash
-          ? isDark
-            ? "#ffffff"
-            : "#0f172a"
-          : authorColor;
+          ? isDark ? "#ffffff" : "#0f172a"
+          : isDark ? "#cbd5e1" : "#334155";
       const msgWeight = selectedCommit?.hash === d.hash ? "600" : "500";
       const hoverBg = isDark
         ? "rgba(30, 41, 59, 0.5)"
@@ -421,13 +430,12 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       const fo = group
         .append("foreignObject")
         .attr("x", currentX)
-        .attr("y", -24)
+        .attr("y", -28)
         .attr("width", foWidth)
         .attr("height", foHeight)
         .style("pointer-events", "none")
-        .style("overflow", "visible"); // Allow overflow just in case
+        .style("overflow", "visible");
 
-      // Use standard double quotes for the template string and escape quotes in data
       const safeMsg = d.message
         .replace(/"/g, "&quot;")
         .replace(/</g, "&lt;")
@@ -440,7 +448,6 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       const authorInitial = safeAuthor.charAt(0).toUpperCase();
       const avatarColor = getAvatarColor(safeAuthor);
 
-      // Use display:block + explicit row heights to avoid WebKit foreignObject column-flex bug
       const contentDiv = fo
         .append("xhtml:div")
         .attr("xmlns", "http://www.w3.org/1999/xhtml")
@@ -448,42 +455,39 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
         .style("width", "100%")
         .style("height", "56px")
         .style("box-sizing", "border-box")
-        .style("padding", "2px 12px 2px 8px")
+        .style("padding", "0 12px 0 8px")
         .style("border-radius", "0 8px 8px 0")
         .style("font-family", "'Inter', 'Roboto', 'Segoe UI', sans-serif")
-        .style("font-size", "13px")
         .style("pointer-events", "auto")
         .style("background-color", baseBg)
-        .style(
-          "transition",
-          "background-color 0.15s ease",
-        )
+        .style("transition", "background-color 0.15s ease")
         .on("mouseover", function () {
           d3.select(this).style("background-color", hoverBg);
+          d3.select(this).selectAll(".git-chip").style("filter", "brightness(1.1)");
         })
         .on("mouseout", function () {
           d3.select(this).style("background-color", baseBg);
+          d3.select(this).selectAll(".git-chip").style("filter", "none");
         })
         .on("click", (_event) => onSelectCommit(d));
 
-      // Row 1 (top): commit message + author avatar + author name + date (no time)
-      // Row 2 (bottom): branch chips + time
-      // Note: Removed box-shadow, added explicit widths and xmlns to fully stabilize Safari foreignObject rendering
       contentDiv.html(`
-        <div xmlns="http://www.w3.org/1999/xhtml" style="width: 100%; height: 100%;">
-          <div style="width: 100%; height: 28px; overflow: hidden; display: flex; align-items: center; gap: 8px;">
-            <div class="commit-message" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: ${msgColor}; font-weight: ${msgWeight}; font-size: 13px; line-height: 1.4; pointer-events: none; transition: color 0.15s;">${safeMsg}</div>
-            <div style="width: 150px; flex-shrink: 0; display: flex; align-items: center; gap: 6px; overflow: hidden; color: ${authorColor}; pointer-events: none;" title="${safeAuthor}">
-              <div style="width: 20px; height: 20px; flex-shrink: 0; border-radius: 50%; background-color: ${avatarColor}; color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; border: 1px solid rgba(255,255,255,0.15);">${authorInitial}</div>
-              <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; font-size: 12px;">${safeAuthor}</span>
+        <div xmlns="http://www.w3.org/1999/xhtml" class="flex flex-col justify-center h-full w-full antialiased overflow-visible">
+          <div class="flex items-center gap-2 overflow-visible w-full">
+            <div class="commit-message flex-1 min-w-0 flex items-center gap-2 overflow-hidden whitespace-nowrap">
+              <span style="overflow: hidden; text-overflow: ellipsis; color: ${msgColor}; font-weight: ${msgWeight}; font-size: 13.5px; line-height: 1.4; pointer-events: none;">${safeMsg}</span>
+              <div class="flex items-center gap-1.5 shrink-0 overflow-visible">
+                ${tagsRowHtml}
+              </div>
             </div>
-            <div style="width: 78px; flex-shrink: 0; text-align: right; color: ${dateColor}; white-space: nowrap; font-size: 11px; font-weight: 500; pointer-events: none;" title="${datePart}">${datePart}</div>
-          </div>
-          <div style="width: 100%; height: 24px; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-            <div style="flex: 1; min-width: 0; display: flex; align-items: center; gap: 5px; overflow: hidden;">
-              ${tagsRowHtml}
+            <div class="w-[140px] shrink-0 flex items-center gap-2 overflow-hidden" style="color: ${authorColor}; pointer-events: none;" title="${safeAuthor}">
+              <div class="w-[22px] h-[22px] shrink-0 rounded-md flex items-center justify-center text-[11px] font-semibold border border-white/10 shadow-sm" style="background-color: ${avatarColor}; color: white;">${authorInitial}</div>
+              <span class="whitespace-nowrap overflow-hidden text-ellipsis font-medium text-xs opacity-90">${safeAuthor}</span>
             </div>
-            <div style="flex-shrink: 0; font-size: 11px; color: ${dateColor}; white-space: nowrap; pointer-events: none;">${timePart}</div>
+            <div class="w-[85px] shrink-0 text-right whitespace-nowrap flex flex-col justify-center leading-tight" style="color: ${dateColor}; pointer-events: none;">
+              <span class="text-[11px] font-semibold">${datePart}</span>
+              <span class="text-[10px] opacity-80">${timePart}</span>
+            </div>
           </div>
         </div>
       `);
@@ -503,6 +507,40 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
                 (evt as MouseEvent).clientY,
               );
             });
+            // Add hover effect for chips specifically
+            el.onmouseover = (e) => {
+                e.stopPropagation();
+                el.style.filter = "brightness(1.2)";
+                // Extract current border color or recalculate based on ref type
+                const refName = el.getAttribute("data-ref") || "";
+                const isTag = refName.startsWith("tag: ");
+                const isHEAD = refName.includes("HEAD");
+                const isRemote = refName.includes("origin");
+                
+                let border = isDark ? "rgba(99, 102, 241, 0.25)" : "rgba(99, 102, 241, 0.15)";
+                if (isHEAD || isTag) {
+                  border = isDark ? "rgba(52, 211, 153, 0.25)" : "rgba(16, 185, 129, 0.15)";
+                } else if (isRemote) {
+                  border = isDark ? "rgba(244, 114, 182, 0.25)" : "rgba(236, 72, 153, 0.15)";
+                }
+                el.style.borderColor = border.replace("0.25", "0.5").replace("0.15", "0.4");
+            };
+            el.onmouseout = (e) => {
+                e.stopPropagation();
+                el.style.filter = "none";
+                const refName = el.getAttribute("data-ref") || "";
+                const isTag = refName.startsWith("tag: ");
+                const isHEAD = refName.includes("HEAD");
+                const isRemote = refName.includes("origin");
+                
+                let border = isDark ? "rgba(99, 102, 241, 0.25)" : "rgba(99, 102, 241, 0.15)";
+                if (isHEAD || isTag) {
+                  border = isDark ? "rgba(52, 211, 153, 0.25)" : "rgba(16, 185, 129, 0.15)";
+                } else if (isRemote) {
+                  border = isDark ? "rgba(244, 114, 182, 0.25)" : "rgba(236, 72, 153, 0.15)";
+                }
+                el.style.borderColor = border;
+            };
           });
         }
       }
@@ -520,7 +558,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
   ]);
 
   return (
-    <div ref={containerRef} className="overflow-auto flex-1 custom-scrollbar">
+    <div ref={containerRef} className="overflow-auto flex-1 custom-scrollbar overflow-touch">
       <svg ref={svgRef} className="min-w-full block" />
       {/* Sentinel for IntersectionObserver – always rendered at the bottom */}
       <div ref={sentinelRef} style={{ height: 1 }} />

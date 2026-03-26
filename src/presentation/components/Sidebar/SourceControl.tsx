@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   ArrowLeftToLine,
   ArrowRightToLine,
+  FolderGit2,
 } from "lucide-react";
 import { Commit } from "../../../domain/entities/GitEntities";
 import { useSourceControlController } from "../../controllers/useSourceControlController";
@@ -81,7 +82,8 @@ export function SourceControl({
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/50 dark:bg-slate-950/50 backdrop-blur-sm shrink-0 flex items-center justify-between sticky top-0 z-10">
         <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-widest flex items-center gap-2">
-          {t("sidebar.sourceControl.title")}
+          <FolderGit2 className="w-4 h-4 text-indigo-500" />
+          <span>{t("sidebar.sourceControl.title")}</span>
         </span>
       </div>
 

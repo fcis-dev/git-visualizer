@@ -23,9 +23,15 @@ function App() {
     window.addEventListener('popstate', handleLocationChange);
     window.addEventListener('project-change' as any, handleLocationChange);
     
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('contextmenu', handleContextMenu);
+    
     return () => {
       window.removeEventListener('popstate', handleLocationChange);
       window.removeEventListener('project-change' as any, handleLocationChange);
+      window.removeEventListener('contextmenu', handleContextMenu);
     };
   }, []);
 
