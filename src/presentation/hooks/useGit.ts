@@ -21,6 +21,19 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
   const [hasRemote, setHasRemote] = useState(false);
 
   const commitCountRef = useRef(0);
+  const prevRepoPathRef = useRef(repoPath);
+
+  if (repoPath !== prevRepoPathRef.current) {
+    prevRepoPathRef.current = repoPath;
+    setCommits([]);
+    setBranchName("");
+    setAvailableBranches([]);
+    setHeadHash("");
+    setIsWorktree(false);
+    setWorktreeCount(0);
+    setHasRemote(false);
+    commitCountRef.current = 0;
+  }
 
   const loadCommits = useCallback(async () => {
     if (!repoPath) return;
