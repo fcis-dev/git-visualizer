@@ -104,7 +104,7 @@ export function WorkspaceHeader({
         <div className="relative">
           <button
             onClick={() => setIsProjectSelectorOpen(!isProjectSelectorOpen)}
-            className="flex flex-col text-left hover:bg-slate-100 dark:hover:bg-slate-800/80 px-2 py-1 rounded-md transition-all group border border-transparent hover:border-slate-200 dark:hover:border-slate-700 h-full justify-center"
+            className="flex flex-col text-left hover:bg-slate-100 dark:hover:bg-slate-800/80 px-2 py-1 rounded-md transition-all group border border-transparent hover:border-slate-200 dark:hover:border-slate-700 h-full justify-center w-64"
           >
             <AnimatePresence mode="wait">
               <motion.div
@@ -113,19 +113,20 @@ export function WorkspaceHeader({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
                 transition={{ duration: 0.2 }}
+                className="w-full flex justify-between items-center"
               >
-                <div className="flex items-center space-x-1">
-                  <h1 className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                <div className="flex flex-col w-[calc(100%-16px)] pr-2">
+                  <h1 className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate">
                     {repoName}
                   </h1>
-                  <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isProjectSelectorOpen ? 'rotate-180' : ''}`} />
+                  <p 
+                    className="text-xs text-slate-500 dark:text-slate-400 truncate" 
+                    title={repoPath}
+                  >
+                    {truncatePath(repoPath)}
+                  </p>
                 </div>
-                <p 
-                  className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[250px]" 
-                  title={repoPath}
-                >
-                  {truncatePath(repoPath)}
-                </p>
+                <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform shrink-0 ${isProjectSelectorOpen ? 'rotate-180' : ''}`} />
               </motion.div>
             </AnimatePresence>
           </button>
