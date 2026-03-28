@@ -1051,23 +1051,65 @@ pub fn get_source_control_status(path: &str) -> Result<crate::models::SourceCont
     })
 }
 
-pub fn get_git_config_user(_path: &str) -> Result<(String, String), String> {
-    // Open default config (global/system) directly
-    let config = git2::Config::open_default().map_err(|e| e.to_string())?;
-    let name = config.get_string("user.name").unwrap_or_default();
-    let email = config.get_string("user.email").unwrap_or_default();
+pub fn get_git_config_user(path: &str) -> Result<(String, String), String> {
+    let repo = Repository::open(path).map_err(|e| e.to_string())?;
+    let config = repo.config().map_err(|e| e.to_string())?;
+    
+    // Open only the local level to check for project-specific overrides
+    let local_config = config.open_level(git2::ConfigLevel::Local).map_err(|e| e.to_string())?;
+    
+    let name = local_config.get_string("user.name").unwrap_or_default();
+    let email = local_config.get_string("user.email").unwrap_or_default();
     Ok((name, email))
 }
 
-pub fn set_git_config_user(_path: &str, name: &str, email: &str) -> Result<(), String> {
-    let global_path = git2::Config::find_global().map_err(|e| e.to_string())?;
-    let mut config = git2::Config::open(&global_path).map_err(|e| e.to_string())?;
-    config
-        .set_str("user.name", name)
-        .map_err(|e| e.to_string())?;
-    config
-        .set_str("user.email", email)
-        .map_err(|e| e.to_string())?;
+pub fn get_global_git_config_user() -> Result<(String, String), String> {
+    let config = git2::Config::open_default().map_err(|e| e.to_string())?;
+    
+    // Open specifically the global level
+    let global_config = config.open_level(git2::ConfigLevel::Global).map_err(|e| e.to_string())?;
+    
+    let name = global_config.get_string("user.name").unwrap_or_default();
+    let email = global_config.get_string("user.email").unwrap_or_default();
+    Ok((name, email))
+}
+
+pub fn set_git_config_user(path: &str, name: &str, email: &str) -> Result<(), String> {
+    let repo = Repository::open(path).map_err(|e| e.to_string())?;
+    let config = repo.config().map_err(|e| e.to_string())?;
+    let mut local_config = config.open_level(git2::ConfigLevel::Local).map_err(|e| e.to_string())?;
+    
+    if name.is_empty() {
+        let _ = local_config.remove("user.name");
+    } else {
+        local_config.set_str("user.name", name).map_err(|e| e.to_string())?;
+    }
+
+    if email.is_empty() {
+        let _ = local_config.remove("user.email");
+    } else {
+        local_config.set_str("user.email", email).map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
+}
+
+pub fn set_global_git_config_user(name: &str, email: &str) -> Result<(), String> {
+    let config = git2::Config::open_default().map_err(|e| e.to_string())?;
+    let mut global_config = config.open_level(git2::ConfigLevel::Global).map_err(|e| e.to_string())?;
+    
+    if name.is_empty() {
+        let _ = global_config.remove("user.name");
+    } else {
+        global_config.set_str("user.name", name).map_err(|e| e.to_string())?;
+    }
+
+    if email.is_empty() {
+        let _ = global_config.remove("user.email");
+    } else {
+        global_config.set_str("user.email", email).map_err(|e| e.to_string())?;
+    }
+
     Ok(())
 }
 

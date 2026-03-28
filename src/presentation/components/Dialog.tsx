@@ -61,7 +61,7 @@ export const Dialog: React.FC<DialogProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-200 flex items-center justify-center bg-black/40 animate-in fade-in duration-200">
             <motion.div 
                 drag
                 dragControls={dragControls}

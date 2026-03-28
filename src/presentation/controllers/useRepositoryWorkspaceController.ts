@@ -26,6 +26,7 @@ export function useRepositoryWorkspaceController(
   const [commitDetails, setCommitDetails] = useState<CommitDetails | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
+  const [isProjectSettingsModalOpen, setIsProjectSettingsModalOpen] = useState(false);
   
   const [diffTarget, setDiffTarget] = useState<{ path: string; commitHash?: string; cached?: boolean; } | null>(null);
   const [contentTarget, setContentTarget] = useState<{ path: string; commitHash: string; } | null>(null);
@@ -109,6 +110,8 @@ export function useRepositoryWorkspaceController(
     setSelectedCommit(null);
     setCommitDetails(null);
     setDetailsLoading(false);
+    setIsStatsModalOpen(false);
+    setIsProjectSettingsModalOpen(false);
     setDiffTarget(null);
     setContentTarget(null);
     setConflictTarget(null);
@@ -315,6 +318,7 @@ export function useRepositoryWorkspaceController(
       commitDetails,
       detailsLoading,
       isStatsModalOpen,
+      isProjectSettingsModalOpen,
       diffTarget,
       contentTarget,
       conflictTarget,
@@ -357,6 +361,7 @@ export function useRepositoryWorkspaceController(
       setCommitSearchQuery,
       setSelectedCommit,
       setIsStatsModalOpen,
+      setIsProjectSettingsModalOpen,
       setDiffTarget,
       setContentTarget,
       setConflictTarget,

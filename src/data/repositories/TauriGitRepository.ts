@@ -355,4 +355,32 @@ export class TauriGitRepository implements IGitRepository {
   async getSourceControlStatus(path: string): Promise<SourceControlStatus> {
     return await invoke<SourceControlStatus>("get_source_control_status", { path });
   }
+
+  async getGitConfigUser(path: string): Promise<[string, string]> {
+    return await invoke<[string, string]>("get_git_config_user", { path });
+  }
+
+  async getGlobalGitConfigUser(): Promise<[string, string]> {
+    return await invoke<[string, string]>("get_global_git_config_user");
+  }
+
+  async setGitConfigUser(path: string, name: string, email: string): Promise<void> {
+    await invoke("set_git_config_user", { path, name, email });
+  }
+
+  async setGlobalGitConfigUser(name: string, email: string): Promise<void> {
+    await invoke("set_global_git_config_user", { name, email });
+  }
+
+  async getRemotesList(path: string): Promise<string[]> {
+    return await invoke<string[]>("git_remote_list", { path });
+  }
+
+  async addRemote(path: string, name: string, url: string): Promise<void> {
+    await invoke("git_remote_add", { path, name, url });
+  }
+
+  async removeRemote(path: string, name: string): Promise<void> {
+    await invoke("git_remote_remove", { path, name });
+  }
 }

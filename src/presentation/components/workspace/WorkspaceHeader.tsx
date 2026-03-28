@@ -9,7 +9,8 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronRight,
-  Check
+  Check,
+  Settings
 } from "lucide-react";
 import { buildBranchTree, sortTreeNodes, BranchTreeNode } from "../../utils/branchTreeUtils";
 import { useTranslation } from "react-i18next";
@@ -30,6 +31,7 @@ interface WorkspaceHeaderProps {
   isScrollingToHead: boolean;
   onScrollToHead: () => void;
   setIsStatsModalOpen: (open: boolean) => void;
+  setIsProjectSettingsModalOpen: (open: boolean) => void;
   isFetchingManual: boolean;
   isAutoFetching: boolean;
   onFetch: (prune?: boolean) => void;
@@ -66,6 +68,7 @@ export function WorkspaceHeader({
   aheadCount,
   onPush,
   hasRemote,
+  setIsProjectSettingsModalOpen,
 }: WorkspaceHeaderProps) {
   const { t } = useTranslation();
   const controller = useSessionController();
@@ -279,6 +282,14 @@ export function WorkspaceHeader({
           title={t("workspace.header.repoStats")}
         >
           <TrendingUp className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={() => setIsProjectSettingsModalOpen(true)}
+          className="flex flex-col items-center justify-center p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          title={t("workspace.header.settings", "Project Settings")}
+        >
+          <Settings className="w-4 h-4" />
         </button>
         
         <div className="w-px h-5 bg-slate-200 dark:bg-slate-800 mx-1" />

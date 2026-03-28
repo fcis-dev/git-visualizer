@@ -67,7 +67,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
   useEffect(() => {
     if (isOpen) {
       setLoadingConfig(true);
-      invoke<[string, string]>('get_git_config_user', { path: repoPath || '.' })
+      invoke<[string, string]>('get_global_git_config_user')
         .then(([name, email]) => {
           setUserName(name);
           setUserEmail(email);
@@ -75,11 +75,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
         .catch(console.error)
         .finally(() => setLoadingConfig(false));
     }
-  }, [isOpen, repoPath]);
+  }, [isOpen]);
 
   const handleSaveConfig = async () => {
     try {
-      await invoke('set_git_config_user', { path: repoPath || '.', name: userName, email: userEmail });
+      await invoke('set_global_git_config_user', { name: userName, email: userEmail });
       showAlert(t('settings.successTitle'), t('settings.saveSuccess'));
     } catch (e: any) {
       console.error(e);
@@ -96,7 +96,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, r
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-in fade-in duration-200 p-4">
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 animate-in fade-in duration-200 p-4">
       <motion.div 
         drag
         dragControls={dragControls}

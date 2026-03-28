@@ -28,8 +28,6 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
 
   const [isLocalExpanded, setIsLocalExpanded] = useState(true);
   const [isRemoteExpanded, setIsRemoteExpanded] = useState(true);
-  const [isRemotesExpanded, setIsRemotesExpanded] = useState(true);
-  const [remotes, setRemotes] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
   const [contextMenu, setContextMenu] = useState<{
@@ -54,7 +52,6 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
       loadBranchesAndRemotes();
     } else {
         setBranches([]);
-        setRemotes([]);
     }
   }, [repoPath, refreshTrigger]);
 
@@ -66,7 +63,6 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
       const data = await repository.getBranchesAndRemotes(repoPath!);
       data.branches.sort((a, b) => b.date - a.date);
       setBranches(data.branches);
-      setRemotes(data.remotes);
     } catch (e: any) {
       setError(e.toString());
     } finally {
@@ -296,48 +292,6 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
     });
   };
 
-  // Replace the old separate loadRemotes function — now integrated into loadBranchesAndRemotes
-  const handleAddRemote = () => {
-      if (!repoPath) return;
-      showInput(
-          t('sidebar.branches.addRemoteTitle'),
-          t('sidebar.branches.addRemoteNamePrompt'),
-          (name) => {
-              if (!name) return;
-              showInput(
-                  t('sidebar.branches.addRemoteTitle'),
-                  t('sidebar.branches.addRemoteUrlPrompt'),
-                  async (url) => {
-                      if (!url) return;
-                      try {
-                        await invoke('git_remote_add', { path: repoPath, name, url });
-                        loadBranchesAndRemotes();
-                        showAlert(t('sidebar.branches.successTitle'), t('sidebar.branches.successRemoteAdded'));
-                      } catch (e: any) {
-                        setError(t('sidebar.branches.errorAddRemoteFailed', { error: e.toString() }));
-                      }
-                  }
-              );
-          }
-      );
-  };
-
-  const handleRemoveRemote = (remoteLine: string) => {
-      if (!repoPath) return;
-      const name = remoteLine.split(/\s+/)[0]; // "origin https://..." -> "origin"
-      showConfirm(
-          t('sidebar.branches.removeRemoteTitle'),
-          t('sidebar.branches.removeRemoteMsg', { name }),
-          async () => {
-              try {
-                  await invoke('git_remote_remove', { path: repoPath, name });
-                  loadBranchesAndRemotes();
-              } catch (e: any) {
-                  setError(e.toString());
-              }
-          }
-      );
-  };
 
   if (!repoPath) {
     return <div className="p-4 text-center text-slate-600 dark:text-slate-400 text-sm">{t("sidebar.branches.noRepo")}</div>;
@@ -441,62 +395,7 @@ export function BranchesSidebar({ repoPath, currentBranch, onRefreshGraph, refre
             )}
         </div>
 
-        <div className="space-y-1 mt-4">
-            <div 
-                className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 py-1.5 bg-slate-100/50 dark:bg-slate-800/30 rounded-md cursor-pointer select-none transition-colors"
-                onClick={() => setIsRemotesExpanded(!isRemotesExpanded)}
-            >
-                <div className="flex items-center space-x-1">
-                    {isRemotesExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                    <span>{t("sidebar.branches.remotes")}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <span className="bg-white dark:bg-slate-700 px-1.5 py-0.5 rounded-full text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-600 leading-none">
-                        {remotes.length}
-                    </span>
-                    <button 
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleAddRemote();
-                        }}
-                        className="p-1 hover:bg-white dark:hover:bg-slate-700/50 rounded-md transition-colors text-slate-400 hover:text-indigo-500 shadow-xs"
-                        title={t("sidebar.branches.addRemote")}
-                    >
-                        <Plus className="w-3.5 h-3.5" />
-                    </button>
-                </div>
-            </div>
-            
-            {isRemotesExpanded && (
-                <div className="pl-2 pr-1 py-1 space-y-0.5 pt-1">
-                    {remotes.length > 0 ? remotes.map((remote) => (
-                        <div 
-                            key={remote} 
-                            className="group flex items-center justify-between p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded transition-colors"
-                        >
-                            <div className="flex items-center space-x-2 truncate flex-1 min-w-0">
-                                <Globe className="w-3.5 h-3.5 shrink-0 text-slate-500" />
-                                <span className="text-sm text-slate-600 dark:text-slate-300 truncate" title={remote}>
-                                    {remote}
-                                </span>
-                            </div>
-                            <button 
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRemoveRemote(remote);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transaction-colors text-slate-500"
-                                title={t("sidebar.branches.removeRemote")}
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                        </div>
-                    )) : (
-                        <div className="text-xs text-slate-500 italic px-2 py-1">{t("sidebar.branches.noRemotes")}</div>
-                    )}
-                </div>
-            )}
-        </div>
+
       </div>
 
       {contextMenu.visible && contextMenu.branch && (

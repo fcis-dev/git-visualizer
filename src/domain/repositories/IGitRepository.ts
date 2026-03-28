@@ -106,4 +106,13 @@ export interface IGitRepository {
   getBranchesAndRemotes(path: string): Promise<BranchesAndRemotes>;
 
   getSourceControlStatus(path: string): Promise<SourceControlStatus>;
+
+  getGitConfigUser(path: string): Promise<[string, string]>;
+  getGlobalGitConfigUser(): Promise<[string, string]>;
+  setGitConfigUser(path: string, name: string, email: string): Promise<void>;
+  setGlobalGitConfigUser(name: string, email: string): Promise<void>;
+  
+  getRemotesList(path: string): Promise<string[]>;
+  addRemote(path: string, name: string, url: string): Promise<void>;
+  removeRemote(path: string, name: string): Promise<void>;
 }

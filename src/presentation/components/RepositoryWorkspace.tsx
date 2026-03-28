@@ -12,6 +12,7 @@ import { CommitDetails } from "./CommitDetails";
 import { HistoricalFileContentView } from "./HistoricalFileContentView";
 import { CreateBranchModal } from "./CreateBranchModal";
 import { RepositoryStatsModal } from "./RepositoryStatsModal";
+import { ProjectSettingsModal } from "./workspace/ProjectSettingsModal";
 import { MergeConflictEditor } from "./MergeConflictEditor";
 import { WorktreesSidebar } from "./Sidebar/WorktreesSidebar";
 import { StashesSidebar } from "./Sidebar/StashesSidebar";
@@ -84,7 +85,8 @@ export function RepositoryWorkspace({
     aheadCount,
     behindCount,
     isAutoFetching,
-    hasRemote
+    hasRemote,
+    isProjectSettingsModalOpen
   } = state;
 
   const {
@@ -108,6 +110,7 @@ export function RepositoryWorkspace({
     setCommitDetails,
     setDetailsLoading,
     setRefreshDate,
+    setIsProjectSettingsModalOpen,
     loadCommits,
     loadMoreCommits,
     checkoutBranch,
@@ -317,6 +320,7 @@ export function RepositoryWorkspace({
         aheadCount={aheadCount}
         onPush={handlePush}
         hasRemote={hasRemote}
+        setIsProjectSettingsModalOpen={setIsProjectSettingsModalOpen}
       />
 
       {/* Main Content (Activity Bar + Sidebar + Main Area) */}
@@ -663,6 +667,13 @@ export function RepositoryWorkspace({
         <RepositoryStatsModal
           repoPath={repoPath}
           onClose={() => setIsStatsModalOpen(false)}
+        />
+      )}
+
+      {isProjectSettingsModalOpen && (
+        <ProjectSettingsModal
+          repoPath={repoPath}
+          onClose={() => setIsProjectSettingsModalOpen(false)}
         />
       )}
 

@@ -536,6 +536,13 @@ pub async fn get_git_config_user(
 }
 
 #[tauri::command]
+pub async fn get_global_git_config_user(
+    _state: tauri::State<'_, AppState>,
+) -> Result<(String, String), String> {
+    services::get_global_git_config_user()
+}
+
+#[tauri::command]
 pub async fn set_git_config_user(
     _state: tauri::State<'_, AppState>,
     path: &str,
@@ -543,6 +550,15 @@ pub async fn set_git_config_user(
     email: &str,
 ) -> Result<(), String> {
     services::set_git_config_user(path, name, email)
+}
+
+#[tauri::command]
+pub async fn set_global_git_config_user(
+    _state: tauri::State<'_, AppState>,
+    name: &str,
+    email: &str,
+) -> Result<(), String> {
+    services::set_global_git_config_user(name, email)
 }
 
 #[tauri::command]
