@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ThemeProvider } from "./presentation/context/ThemeContext";
 import { DialogProvider } from "./presentation/context/DialogContext";
-import { Dashboard } from "./presentation/pages/Dashboard";
+import { EmptyWorkspace } from "./presentation/components/EmptyWorkspace";
 import { RepositoryWorkspace } from "./presentation/components/RepositoryWorkspace";
 import { useSessionController } from "./presentation/controllers/useSessionController";
 import { AnimatePresence, motion } from "framer-motion";
@@ -69,14 +69,14 @@ function App() {
             ) : (
 
               <motion.div
-                key="dashboard"
+                key="empty-workspace"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 className="h-full w-full"
               >
-                <Dashboard />
+                <EmptyWorkspace />
               </motion.div>
             )}
           </AnimatePresence>

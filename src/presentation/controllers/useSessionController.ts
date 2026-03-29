@@ -22,6 +22,10 @@ export function useSessionController() {
     return await useCases.getAddedFolders();
   };
 
+  const removeProject = async (path: string) => {
+    await useCases.removeFolder(path);
+  };
+
   const switchProject = async (path: string) => {
     const label = repository.getCurrentWindowLabel();
     await useCases.switchProject(label, path);
@@ -31,17 +35,49 @@ export function useSessionController() {
     window.dispatchEvent(new CustomEvent('project-change'));
   };
 
-  const launchProject = async (path: string) => {
-    await useCases.launchProject(path);
+  const launchProject = async (path: string, replaceCurrentWindow: boolean = false) => {
+    await useCases.launchProject(path, replaceCurrentWindow);
   };
 
+  const openLocalProject = async (replaceCurrentWindow: boolean = false, openAfterAdd: boolean = true) => {
+    try {
+      const formattedPath = await useCases.selectLocalFolder();
+
+      if (formattedPath) {
+        await useCases.addFolder(formattedPath);
+        
+        if (openAfterAdd) {
+          if (replaceCurrentWindow) {
+            await switchProject(formattedPath);
+          } else {
+            await useCases.launchProject(formattedPath, false);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to open local project", error);
+    }
+  };
+
+  const closeCurrentProject = async () => {
+    const windows = await useCases.getAllWindows();
+    if (windows.length > 1) {
+      await useCases.closeCurrentWindow();
+    } else {
+      window.history.pushState(null, '', '/');
+      window.dispatchEvent(new CustomEvent('project-change'));
+    }
+  };
 
   return {
     registerCurrentWindow,
     launchProject,
+    openLocalProject,
     isMainWindow,
     openDashboard,
     getAddedFolders,
+    removeProject,
     switchProject,
+    closeCurrentProject,
   };
 }

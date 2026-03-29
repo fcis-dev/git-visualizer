@@ -1,12 +1,17 @@
 import { useState, useEffect } from "react";
-import { X, Globe, User, Plus, Trash2, Save, AlertCircle, GripHorizontal, Check } from "lucide-react";
+import { X, Globe, User, Plus, Trash2, Save, AlertCircle, GripHorizontal, Palette, Info, Moon, Sun, Download, Check } from "lucide-react";
 import { TauriGitRepository } from "../../../data/repositories/TauriGitRepository";
 import { useTranslation } from "react-i18next";
 import { motion, useDragControls } from "framer-motion";
 import { useDialog } from "../../context/DialogContext";
+import { useTheme } from "../../context/ThemeContext";
+import { check } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { getVersion } from "@tauri-apps/api/app";
+import { invoke } from "@tauri-apps/api/core";
 
 interface ProjectSettingsModalProps {
-  repoPath: string;
+  repoPath: string | null;
   onClose: () => void;
 }
 
@@ -14,10 +19,12 @@ const repository = new TauriGitRepository();
 
 export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModalProps) {
   const { t } = useTranslation();
-  const { showConfirm } = useDialog();
-  const [activeTab, setActiveTab] = useState<"git" | "remotes">("git");
+  const { theme, toggleTheme } = useTheme();
+  const { showConfirm, showAlert } = useDialog();
+  const [activeTab, setActiveTab] = useState<"appearance" | "git" | "remotes" | "about">("appearance");
+  const [activeGitTab, setActiveGitTab] = useState<"global" | "local">("global");
   const [saving, setSaving] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Git Config state
@@ -25,6 +32,10 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
   const [localEmail, setLocalEmail] = useState("");
   const [globalName, setGlobalName] = useState("");
   const [globalEmail, setGlobalEmail] = useState("");
+
+  // Updates State
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [appVersion, setAppVersion] = useState("...");
 
   // Remotes state
   const [remotes, setRemotes] = useState<{ name: string; url: string }[]>([]);
@@ -34,29 +45,60 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
   const dragControls = useDragControls();
 
   useEffect(() => {
+    getVersion().then(v => setAppVersion(`v${v}`)).catch(console.error);
     loadData();
   }, [repoPath]);
 
   const loadData = async () => {
     setError(null);
     try {
-      // getGitConfigUser now returns ONLY local settings in our updated service
-      const [lName, lEmail] = await repository.getGitConfigUser(repoPath);
-      // getGlobalGitConfigUser returns specifically global settings
       const [gName, gEmail] = await repository.getGlobalGitConfigUser();
-      
-      setLocalName(lName);
-      setLocalEmail(lEmail);
       setGlobalName(gName);
       setGlobalEmail(gEmail);
 
-      const remoteLines = await repository.getRemotesList(repoPath);
-      const parsedRemotes = parseRemotes(remoteLines);
-      setRemotes(parsedRemotes);
+      if (repoPath) {
+        const [lName, lEmail] = await repository.getGitConfigUser(repoPath);
+        setLocalName(lName);
+        setLocalEmail(lEmail);
+
+        const remoteLines = await repository.getRemotesList(repoPath);
+        const parsedRemotes = parseRemotes(remoteLines);
+        setRemotes(parsedRemotes);
+      }
     } catch (err: any) {
       setError(err.toString());
     }
   };
+
+  const handleCheckUpdate = async () => {
+    try {
+      setCheckingUpdate(true);
+      const update = await check();
+      setCheckingUpdate(false);
+
+      if (update) {
+        showConfirm(
+          t('settings.updateAvailableTitle', "Update Available"),
+          t('settings.updateAvailableDesc', { version: update.version }),
+          async () => {
+            try {
+              showAlert(t('settings.title', "Settings"), t('settings.installingUpdate', "Installing update..."));
+              await update.downloadAndInstall();
+              await relaunch();
+            } catch (e: any) {
+              showAlert(t('settings.errorTitle', "Error"), t('settings.updateError', "Update error: ") + e.toString());
+            }
+          }
+        );
+      } else {
+        showAlert(t('settings.upToDateTitle', "Up to Date"), t('settings.upToDateDesc', "You are running the latest version."));
+      }
+    } catch (e: any) {
+      setCheckingUpdate(false);
+      showAlert(t('settings.errorTitle', "Error"), t('settings.updateError', "Update error: ") + e.toString());
+    }
+  };
+
 
   const parseRemotes = (lines: string[]) => {
     const map = new Map<string, string>();
@@ -74,11 +116,14 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
   const handleSaveConfig = async () => {
     setSaving(true);
     setError(null);
-    setShowSuccess(false);
     try {
-      await repository.setGitConfigUser(repoPath, localName, localEmail);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 5000);
+      await invoke("set_global_git_config_user", { name: globalName, email: globalEmail });
+      
+      if (repoPath) {
+        await repository.setGitConfigUser(repoPath, localName, localEmail);
+      }
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 5000);
     } catch (err: any) {
       setError(err.toString());
     } finally {
@@ -87,7 +132,7 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
   };
 
   const handleAddRemote = async () => {
-    if (!newRemoteName || !newRemoteUrl) return;
+    if (!newRemoteName || !newRemoteUrl || !repoPath) return;
     setSaving(true);
     try {
       await repository.addRemote(repoPath, newRemoteName, newRemoteUrl);
@@ -103,6 +148,7 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
   };
 
   const handleRemoveRemote = async (name: string) => {
+    if (!repoPath) return;
     showConfirm(
       t("settings.remotes.removeTitle", "Remove Remote"),
       t("settings.remotes.removeConfirm", { name, defaultValue: `Are you sure you want to remove the remote "${name}"?` }),
@@ -130,7 +176,7 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
         dragMomentum={false}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-[480px] overflow-hidden"
+        className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-[520px] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -142,11 +188,13 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
             <GripHorizontal className="w-4 h-4 text-slate-400 opacity-0 group-hover/header:opacity-100 transition-opacity" />
             <div>
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                {t("settings.project.title", "Project Settings")}
+                {t("settings.title", "Settings")}
               </h2>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[200px]" title={repoPath}>
-                {repoPath}
-              </p>
+              {repoPath && (
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[200px]" title={repoPath}>
+                  {repoPath}
+                </p>
+              )}
             </div>
           </div>
           <button 
@@ -160,7 +208,18 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
         {/* Body: sidebar + content */}
         <div className="flex flex-1 min-h-0">
           {/* Left Tab Sidebar */}
-          <nav className="w-48 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 flex flex-col py-3 gap-1 px-2">
+          <nav className="w-48 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 flex flex-col py-3 gap-1 px-2 overflow-y-auto">
+            <button
+              onClick={() => setActiveTab("appearance")}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left w-full ${
+                activeTab === "appearance"
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+              }`}
+            >
+              <Palette className="w-4 h-4" />
+              <span>{t("settings.appearance", "Appearance")}</span>
+            </button>
             <button
               onClick={() => setActiveTab("git")}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left w-full ${
@@ -172,21 +231,34 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
               <User className="w-4 h-4" />
               <span>{t("settings.tabs.gitConfig", "Git Config")}</span>
             </button>
+            {repoPath && (
+              <button
+                onClick={() => setActiveTab("remotes")}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left w-full ${
+                  activeTab === "remotes"
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                <Globe className="w-4 h-4" />
+                <span>{t("settings.tabs.remotes", "Remotes")}</span>
+              </button>
+            )}
             <button
-              onClick={() => setActiveTab("remotes")}
+              onClick={() => setActiveTab("about")}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left w-full ${
-                activeTab === "remotes"
+                activeTab === "about"
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
               }`}
             >
-              <Globe className="w-4 h-4" />
-              <span>{t("settings.tabs.remotes", "Remotes")}</span>
+              <Info className="w-4 h-4" />
+              <span>{t("settings.about", "About")}</span>
             </button>
           </nav>
 
           {/* Right Content Panel */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
             {error && (
               <div className="mb-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg flex items-start space-x-3 text-red-600 dark:text-red-400 text-sm">
                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
@@ -194,64 +266,163 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
               </div>
             )}
 
-            {activeTab === "git" ? (
+            {/* Appearance Tab */}
+            {activeTab === "appearance" && (
               <div className="space-y-5">
-                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{t("settings.tabs.gitConfig", "Git Config")}</h3>
-                <div className="space-y-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                       {t("settings.git.name", "User Name")}
-                    </label>
-                    <input
-                      type="text"
-                      value={localName}
-                      onChange={e => setLocalName(e.target.value)}
-                      placeholder={globalName ? `${globalName}` : t("settings.userNamePlaceholder")}
-                      className="w-full text-sm px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/50 outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                       {t("settings.git.email", "User Email")}
-                    </label>
-                    <input
-                      type="email"
-                      value={localEmail}
-                      onChange={e => setLocalEmail(e.target.value)}
-                      placeholder={globalEmail ? `${globalEmail}` : t("settings.userEmailPlaceholder")}
-                      className="w-full text-sm px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/50 outline-none"
-                    />
-                  </div>
-                  <div className="pt-1 flex items-center justify-end gap-3">
-                    {showSuccess && (
-                      <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 text-sm font-medium animate-in fade-in zoom-in-95 duration-300">
-                        <Check className="w-4 h-4" />
-                        <span>{t("common.saved", "Saved")}</span>
+                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{t('settings.appearance')}</h3>
+                <div className="flex items-center justify-between p-4 rounded-lg bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
+                  <div className="flex items-center space-x-3">
+                    <div className={`p-2 rounded-full ${theme === 'dark' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-amber-500/20 text-amber-600'}`}>
+                      {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <div className="font-medium text-slate-900 dark:text-slate-200 text-sm">
+                        {theme === 'dark' ? t('settings.darkMode', "Dark Mode") : t('settings.lightMode', "Light Mode")}
                       </div>
-                    )}
-                    <button
-                      onClick={handleSaveConfig}
-                      disabled={saving}
-                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition-all active:scale-[0.98] disabled:opacity-50 shadow-sm"
-                    >
-                      {saving ? (
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4" />
-                      )}
-                      {t("common.saveChanges", "Save Changes")}
-                    </button>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {t('settings.themeDesc', "Adjust the appearance of GitVi.")}
+                      </div>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-lg flex items-start gap-3">
-                  <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                  <p className="text-[11px] text-amber-700 dark:text-amber-400/80 leading-relaxed">
-                    {t("settings.git.infoText", "Editing these values will strictly update the repository's local configuration (.git/config). If left empty, Git will use your system-wide global settings.")}
-                  </p>
+                  <button
+                    onClick={toggleTheme}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${
+                      theme === 'dark' ? 'bg-indigo-600' : 'bg-slate-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        theme === 'dark' ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
-            ) : (
+            )}
+
+            {/* Git Tab */}
+            {activeTab === "git" && (
+              <div className="space-y-5">
+                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{t("settings.tabs.gitConfig", "Git Config")}</h3>
+                
+                {repoPath && (
+                  <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 rounded-lg">
+                    <button
+                      onClick={() => setActiveGitTab("global")}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${
+                        activeGitTab === "global"
+                          ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                          : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                      }`}
+                    >
+                      <Globe className="w-4 h-4" />
+                      {t("settings.git.global", "Global Scope")}
+                    </button>
+                    <button
+                      onClick={() => setActiveGitTab("local")}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${
+                        activeGitTab === "local"
+                          ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm"
+                          : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                      }`}
+                    >
+                      <User className="w-4 h-4" />
+                      {t("settings.git.local", "Local Scope")}
+                    </button>
+                  </div>
+                )}
+
+                {/* Global Config */}
+                {activeGitTab === "global" && (
+                  <div className="space-y-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 animate-in fade-in duration-200">
+                    <p className="text-xs text-slate-500">
+                      {t("settings.git.globalDesc", "These settings apply across all your repositories.")}
+                    </p>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                         {t("settings.git.name", "User Name")}
+                      </label>
+                      <input
+                        type="text"
+                        value={globalName}
+                        onChange={e => setGlobalName(e.target.value)}
+                        placeholder={t("settings.userNamePlaceholder")}
+                        className="w-full text-sm px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/50 outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                         {t("settings.git.email", "User Email")}
+                      </label>
+                      <input
+                        type="email"
+                        value={globalEmail}
+                        onChange={e => setGlobalEmail(e.target.value)}
+                        placeholder={t("settings.userEmailPlaceholder")}
+                        className="w-full text-sm px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/50 outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Local Config */}
+                {activeGitTab === "local" && repoPath && (
+                  <div className="space-y-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 animate-in fade-in duration-200">
+                     <p className="text-xs text-slate-500">
+                      {t("settings.git.localDesc", "These settings strictly apply to the current active repository.")}
+                     </p>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                         {t("settings.git.name", "User Name")}
+                      </label>
+                      <input
+                        type="text"
+                        value={localName}
+                        onChange={e => setLocalName(e.target.value)}
+                        placeholder={globalName ? `${globalName}` : t("settings.userNamePlaceholder")}
+                        className="w-full text-sm px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/50 outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                         {t("settings.git.email", "User Email")}
+                      </label>
+                      <input
+                        type="email"
+                        value={localEmail}
+                        onChange={e => setLocalEmail(e.target.value)}
+                        placeholder={globalEmail ? `${globalEmail}` : t("settings.userEmailPlaceholder")}
+                        className="w-full text-sm px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/50 outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                <div className="pt-1 flex justify-end items-center gap-3">
+                  {saveSuccess && (
+                     <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1 animate-in fade-in duration-300">
+                       <Check className="w-4 h-4" />
+                       {t("common.saved", "Saved")}
+                     </span>
+                  )}
+                  <button
+                    onClick={handleSaveConfig}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    {t("common.saveChanges", "Save Changes")}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Remotes Tab */}
+            {activeTab === "remotes" && repoPath && (
               <div className="space-y-5">
                 <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{t("settings.tabs.remotes", "Remotes")}</h3>
                 
@@ -312,9 +483,41 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
                 </div>
               </div>
             )}
+
+            {/* About Tab */}
+            {activeTab === 'about' && (
+              <div className="space-y-5">
+                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{t('settings.about', "About")}</h3>
+                <div className="p-6 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 text-center space-y-4">
+                  <div className="space-y-2">
+                    <div className="w-14 h-14 mx-auto flex items-center justify-center">
+                      <img src="/app-icon.png" alt="GitVi" className="w-full h-full object-contain" />
+                    </div>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-xl">GitVi</h4>
+                    <p className="text-sm text-slate-600 dark:text-slate-300 max-w-xs mx-auto">
+                      {t('settings.aboutDesc', "A robust, native GUI for Git, beautifully built with Tauri + React.")}
+                    </p>
+                    <div className="pt-1">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-300 font-mono">
+                        {appVersion}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="pt-3 border-t border-slate-200 dark:border-slate-700/50">
+                    <button
+                      onClick={handleCheckUpdate}
+                      disabled={checkingUpdate}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 w-full sm:w-auto bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      <Download className="w-4 h-4" />
+                      {checkingUpdate ? t('settings.checkingForUpdates', "Checking...") : t('settings.checkForUpdates', "Check for Updates")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-
       </motion.div>
     </div>
   );

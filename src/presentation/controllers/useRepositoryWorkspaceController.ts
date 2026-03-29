@@ -9,7 +9,7 @@ import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 
-type SidebarTab = "changes" | "branches" | "tags" | "rescue" | "worktrees" | "stashes" | "submodules";
+type SidebarTab = "changes" | "branches" | "tags" | "rescue" | "worktrees" | "stashes" | "submodules" | "projects";
 
 // In a real DI setup, we would inject this into the hook or Context.
 const gitRepository = new TauriGitRepository();

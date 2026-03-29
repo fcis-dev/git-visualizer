@@ -17,7 +17,7 @@ export class SessionUseCases {
   /**
    * Launches or focuses a project window.
    */
-  async launchProject(path: string): Promise<void> {
+  async launchProject(path: string, replaceCurrentWindow: boolean = false): Promise<void> {
     const label = `project-${path.replace(/[^a-zA-Z0-9]/g, "")}`;
     const existingWindows = await this.sessionRepository.getAllWindows();
     
@@ -28,6 +28,10 @@ export class SessionUseCases {
       // Register it immediately so it's persisted if the app closes before the window fully mounts
       await this.sessionRepository.registerWindow(label, path);
       await this.sessionRepository.openProjectWindow(label, title, path);
+    }
+
+    if (replaceCurrentWindow && this.sessionRepository.getCurrentWindowLabel() === "main") {
+      await this.sessionRepository.closeCurrentWindow();
     }
   }
 
@@ -55,5 +59,40 @@ export class SessionUseCases {
    */
   async switchProject(label: string, newPath: string): Promise<void> {
     await this.sessionRepository.registerWindow(label, newPath);
+  }
+
+  /**
+   * Prompts the user to select a local folder.
+   */
+  async selectLocalFolder(): Promise<string | null> {
+    return await this.sessionRepository.selectLocalFolder();
+  }
+
+  /**
+   * Adds a folder to the application's list of projects.
+   */
+  async addFolder(path: string): Promise<string[]> {
+    return await this.sessionRepository.addFolder(path);
+  }
+
+  /**
+   * Removes a folder from the application's list of projects.
+   */
+  async removeFolder(path: string): Promise<string[]> {
+    return await this.sessionRepository.removeFolder(path);
+  }
+
+  /**
+   * Gets all currently open windows.
+   */
+  async getAllWindows(): Promise<{ label: string }[]> {
+    return await this.sessionRepository.getAllWindows();
+  }
+
+  /**
+   * Closes the current window.
+   */
+  async closeCurrentWindow(): Promise<void> {
+    await this.sessionRepository.closeCurrentWindow();
   }
 }

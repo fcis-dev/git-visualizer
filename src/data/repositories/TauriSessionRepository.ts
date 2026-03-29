@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { open } from "@tauri-apps/plugin-dialog";
 import { ISessionRepository } from "../../domain/repositories/ISessionRepository";
 import { WindowSession } from "../../domain/entities/Session";
 
@@ -76,5 +77,26 @@ export class TauriSessionRepository implements ISessionRepository {
 
   async getAddedFolders(): Promise<string[]> {
     return await invoke<string[]>("list_folders");
+  }
+
+  async selectLocalFolder(): Promise<string | null> {
+    const selected = await open({
+      directory: true,
+      multiple: false,
+    });
+
+    if (selected && typeof selected === "string") {
+      // Correctly format path for different OS
+      return selected.replace(/\\/g, "/");
+    }
+    return null;
+  }
+
+  async addFolder(path: string): Promise<string[]> {
+    return await invoke<string[]>("add_folder", { path });
+  }
+
+  async removeFolder(path: string): Promise<string[]> {
+    return await invoke<string[]>("remove_folder", { path });
   }
 }

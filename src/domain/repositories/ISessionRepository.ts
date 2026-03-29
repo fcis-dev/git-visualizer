@@ -30,4 +30,13 @@ export interface ISessionRepository {
 
   /** Gets the list of folders added to the application */
   getAddedFolders(): Promise<string[]>;
+
+  /** Prompts the user to select a local folder and returns its path */
+  selectLocalFolder(): Promise<string | null>;
+
+  /** Adds a folder to the application's list of projects */
+  addFolder(path: string): Promise<string[]>;
+
+  /** Removes a folder from the application's list of projects */
+  removeFolder(path: string): Promise<string[]>;
 }

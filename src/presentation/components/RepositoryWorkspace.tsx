@@ -17,6 +17,7 @@ import { MergeConflictEditor } from "./MergeConflictEditor";
 import { WorktreesSidebar } from "./Sidebar/WorktreesSidebar";
 import { StashesSidebar } from "./Sidebar/StashesSidebar";
 import { SubmodulesSidebar } from "./Sidebar/SubmodulesSidebar";
+import { ProjectsSidebar } from "./Sidebar/ProjectsSidebar";
 import { WorkspaceHeader } from "./workspace/WorkspaceHeader";
 import { WorkspaceActivityBar } from "./workspace/WorkspaceActivityBar";
 import { WorkspaceSearchBar } from "./workspace/WorkspaceSearchBar";
@@ -321,6 +322,15 @@ export function RepositoryWorkspace({
         onPush={handlePush}
         hasRemote={hasRemote}
         setIsProjectSettingsModalOpen={setIsProjectSettingsModalOpen}
+        activeSidebarTab={activeSidebarTab}
+        onToggleProjectsSidebar={() => {
+          if (activeSidebarTab === "projects") {
+            actions.setIsLeftSidebarVisible(!isLeftSidebarVisible);
+          } else {
+            actions.setActiveSidebarTab("projects");
+            actions.setIsLeftSidebarVisible(true);
+          }
+        }}
       />
 
       {/* Main Content (Activity Bar + Sidebar + Main Area) */}
@@ -413,6 +423,12 @@ export function RepositoryWorkspace({
               repoPath={repoPath}
               onOpenSubmodule={onOpenSubmodule}
               onRefreshGraph={loadCommits}
+            />
+          )}
+
+          {activeSidebarTab === "projects" && (
+            <ProjectsSidebar
+              repoPath={repoPath}
             />
           )}
 
