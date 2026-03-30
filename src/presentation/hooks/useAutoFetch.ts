@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
 
-const FETCH_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes
+const FETCH_INTERVAL_MS = 60 * 1000; // 1 minute
 
 interface UseAutoFetchOptions {
   /** Called after each successful fetch with the new state */

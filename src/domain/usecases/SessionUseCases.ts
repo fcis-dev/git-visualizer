@@ -18,12 +18,17 @@ export class SessionUseCases {
    * Launches or focuses a project window.
    */
   async launchProject(path: string, replaceCurrentWindow: boolean = false): Promise<void> {
-    const label = `project-${path.replace(/[^a-zA-Z0-9]/g, "")}`;
+    const sessions = await this.sessionRepository.getSessions();
+    const existingSession = sessions.find(s => s.path === path);
     const existingWindows = await this.sessionRepository.getAllWindows();
     
-    if (existingWindows.some(w => w.label === label)) {
-      await this.sessionRepository.focusWindow(label);
+    if (existingSession && existingWindows.some(w => w.label === existingSession.label)) {
+      await this.sessionRepository.focusWindow(existingSession.label);
     } else {
+      let label = `project-${path.replace(/[^a-zA-Z0-9]/g, "")}`;
+      if (existingWindows.some(w => w.label === label)) {
+        label = `${label}-${Date.now()}`;
+      }
       const title = `GitVi - ${path.split(/[/\\]/).pop()}`;
       // Register it immediately so it's persisted if the app closes before the window fully mounts
       await this.sessionRepository.registerWindow(label, path);

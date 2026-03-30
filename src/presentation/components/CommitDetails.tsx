@@ -274,12 +274,7 @@ export function CommitDetails({
                     </div>
                 ) : (
                     <div>
-                        {treeLoading ? (
-                            <div className="flex justify-center py-4">
-                                 <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500"></div>
-                                 <span className="ml-2 text-xs text-slate-500">{t('commitDetails.loadingTree')}</span>
-                            </div>
-                        ) : (
+                        {treeLoading ? null : (
                             <FileTreeViewer files={treeFiles} onSelectFile={onViewHistoricalFile} onViewFileHistory={onViewFileHistory} />
                         )}
                     </div>

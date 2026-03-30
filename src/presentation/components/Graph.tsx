@@ -451,7 +451,8 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       const contentDiv = fo
         .append("xhtml:div")
         .attr("xmlns", "http://www.w3.org/1999/xhtml")
-        .style("display", "block")
+        .style("display", "flex")
+        .style("align-items", "center")
         .style("width", "100%")
         .style("height", "56px")
         .style("box-sizing", "border-box")
@@ -463,16 +464,14 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
         .style("transition", "background-color 0.15s ease")
         .on("mouseover", function () {
           d3.select(this).style("background-color", hoverBg);
-          d3.select(this).selectAll(".git-chip").style("filter", "brightness(1.1)");
         })
         .on("mouseout", function () {
           d3.select(this).style("background-color", baseBg);
-          d3.select(this).selectAll(".git-chip").style("filter", "none");
         })
         .on("click", (_event) => onSelectCommit(d));
 
       contentDiv.html(`
-        <div xmlns="http://www.w3.org/1999/xhtml" class="flex flex-col justify-center h-full w-full antialiased overflow-visible">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="w-full antialiased overflow-visible">
           <div class="flex items-center gap-2 overflow-visible w-full">
             <div class="commit-message flex-1 min-w-0 flex items-center gap-2 overflow-hidden whitespace-nowrap">
               <span style="overflow: hidden; text-overflow: ellipsis; color: ${msgColor}; font-weight: ${msgWeight}; font-size: 13.5px; line-height: 1.4; pointer-events: none;">${safeMsg}</span>
@@ -510,7 +509,6 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
             // Add hover effect for chips specifically
             el.onmouseover = (e) => {
                 e.stopPropagation();
-                el.style.filter = "brightness(1.2)";
                 // Extract current border color or recalculate based on ref type
                 const refName = el.getAttribute("data-ref") || "";
                 const isTag = refName.startsWith("tag: ");
@@ -527,7 +525,6 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
             };
             el.onmouseout = (e) => {
                 e.stopPropagation();
-                el.style.filter = "none";
                 const refName = el.getAttribute("data-ref") || "";
                 const isTag = refName.startsWith("tag: ");
                 const isHEAD = refName.includes("HEAD");

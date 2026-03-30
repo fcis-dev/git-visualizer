@@ -102,21 +102,23 @@ export function ProjectsSidebar({ repoPath }: ProjectsSidebarProps) {
                   </span>
 
                   <div className="flex items-center space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    <button
-                      onClick={(e) => handleLaunchProject(path, e)}
-                      className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors"
-                      title={t("workspace.header.openNewWindow", "Open in new window")}
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
                     {!isActive && (
-                      <button
-                        onClick={(e) => handleRemoveProject(path, e)}
-                        className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
-                        title={t("workspace.header.removeProject", "Remove project")}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <>
+                        <button
+                          onClick={(e) => handleLaunchProject(path, e)}
+                          className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors"
+                          title={t("workspace.header.openNewWindow", "Open in new window")}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={(e) => handleRemoveProject(path, e)}
+                          className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
+                          title={t("workspace.header.removeProject", "Remove project")}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
