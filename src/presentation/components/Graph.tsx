@@ -454,7 +454,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
         .style("display", "flex")
         .style("align-items", "center")
         .style("width", "100%")
-        .style("height", "56px")
+        .style("height", "100%")
         .style("box-sizing", "border-box")
         .style("padding", "0 12px 0 8px")
         .style("border-radius", "0 8px 8px 0")
@@ -471,7 +471,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
         .on("click", (_event) => onSelectCommit(d));
 
       contentDiv.html(`
-        <div xmlns="http://www.w3.org/1999/xhtml" class="w-full antialiased overflow-visible">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="w-full h-full antialiased overflow-visible flex items-center">
           <div class="flex items-center gap-2 overflow-visible w-full">
             <div class="commit-message flex-1 min-w-0 flex items-center gap-2 overflow-hidden whitespace-nowrap">
               <span style="overflow: hidden; text-overflow: ellipsis; color: ${msgColor}; font-weight: ${msgWeight}; font-size: 13.5px; line-height: 1.4; pointer-events: none;">${safeMsg}</span>
