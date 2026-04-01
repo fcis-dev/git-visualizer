@@ -21,6 +21,8 @@ interface UseAutoFetchResult {
   lastFetchedAt: Date | null;
   /** Manually trigger an immediate fetch. If withPrune is true, the onFetchDone callback will be told it was a prune request. */
   triggerFetch: (withPrune?: boolean) => Promise<void>;
+  /** Update ahead/behind stats without network fetch */
+  refreshStats: () => Promise<void>;
 }
 
 const repository = new TauriGitRepository();
@@ -40,6 +42,22 @@ export function useAutoFetch(
   // Keep options ref to avoid unnecessary restarts of the interval
   const onFetchDoneRef = useRef(options?.onFetchDone);
   onFetchDoneRef.current = options?.onFetchDone;
+
+  const refreshStats = useCallback(async () => {
+    if (!repoPath || !hasRemote) return;
+    try {
+      const [behind, ahead, pruned] = await Promise.all([
+        repository.checkBehind(repoPath),
+        repository.checkAhead(repoPath),
+        repository.getPrunedBranches(repoPath),
+      ]);
+      setBehindCount(behind);
+      setAheadCount(ahead);
+      setPrunedBranches(pruned);
+    } catch (e) {
+      console.warn("Failed to check behind/ahead stats:", e);
+    }
+  }, [repoPath, hasRemote]);
 
   const runFetch = useCallback(async (withPrune: boolean = false) => {
     if (!repoPath || !hasRemote) return;
@@ -118,5 +136,6 @@ export function useAutoFetch(
     isFetching,
     lastFetchedAt,
     triggerFetch: runFetch,
+    refreshStats,
   };
 }

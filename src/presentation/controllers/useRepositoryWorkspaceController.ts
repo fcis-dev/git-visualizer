@@ -75,10 +75,15 @@ export function useRepositoryWorkspaceController(
     hasRemote,
   } = useGit(repoPath, graphBranches);
 
-  const gitActions = useGitActions(repoPath, () => {
+  const refreshStatsRef = useRef<(() => Promise<void>) | null>(null);
+
+  const onActionSuccess = () => {
     loadCommits();
+    refreshStatsRef.current?.();
     setRefreshDate(new Date());
-  });
+  };
+
+  const gitActions = useGitActions(repoPath, onActionSuccess);
 
   const { showConfirm, showAlert } = useDialog();
 
@@ -150,6 +155,7 @@ export function useRepositoryWorkspaceController(
     prunedBranches: _prunedBranches,
     isFetching: isAutoFetching,
     triggerFetch,
+    refreshStats,
   } = useAutoFetch(repoPath, branchName, hasRemote, {
     onFetchDone: (_behind, pruned, withPrune) => {
       if (withPrune && pruned.length > 0) {
@@ -172,6 +178,10 @@ export function useRepositoryWorkspaceController(
       }
     },
   });
+
+  useEffect(() => {
+    refreshStatsRef.current = refreshStats;
+  }, [refreshStats]);
 
   useEffect(() => {
     if (commitSearchQuery.trim().length === 0) {
@@ -298,17 +308,12 @@ export function useRepositoryWorkspaceController(
     try {
       await invoke("git_push", { path: repoPath });
       await triggerFetch();
-      loadCommits();
+      onActionSuccess();
     } catch (e: any) {
       setError(e.toString());
     } finally {
       setIsPushing(false);
     }
-  };
-
-  const onActionSuccess = () => {
-    loadCommits();
-    setRefreshDate(new Date());
   };
 
   return {

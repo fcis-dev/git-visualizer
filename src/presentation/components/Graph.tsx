@@ -367,7 +367,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
               .replace(/>/g, "&gt;");
             
             return `
-              <div data-ref="${safeRef}" class="git-chip" style="
+              <div title="${safeDisplayName}" data-ref="${safeRef}" class="git-chip" style="
                 background-color: ${chipBg}; 
                 color: ${chipText}; 
                 border: 1px solid ${chipBorder}; 

@@ -163,10 +163,10 @@ export function CommitDetails({
                                 }
                                 
                                 return (
-                                    <span key={ref} className={`px-2 py-1 rounded-md border flex items-center shadow-sm text-[11px] font-semibold whitespace-nowrap overflow-hidden text-ellipsis max-w-[220px] backdrop-blur-sm transition-transform hover:scale-105 duration-200 ${baseStyles}`}>
+                                    <span key={ref} className={`px-2 py-1 rounded-md border flex items-center shadow-sm text-[11px] font-semibold break-all backdrop-blur-sm transition-transform hover:scale-105 duration-200 ${baseStyles}`}>
                                         {isTag && <Tag className="w-3 h-3 shrink-0 mr-1.5 opacity-80" />}
                                         {!isTag && <GitBranch className="w-3 h-3 shrink-0 mr-1.5 opacity-80" />}
-                                        <span className="truncate">{displayName}</span>
+                                        <span>{displayName}</span>
                                     </span>
                                 );
                             })}
