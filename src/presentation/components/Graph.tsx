@@ -471,19 +471,19 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
         .on("click", (_event) => onSelectCommit(d));
 
       contentDiv.html(`
-        <div xmlns="http://www.w3.org/1999/xhtml" class="w-full h-full antialiased overflow-visible flex items-center">
-          <div class="flex items-center gap-2 overflow-visible w-full">
-            <div class="commit-message flex-1 min-w-0 flex items-center gap-2 overflow-hidden whitespace-nowrap">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="w-full h-full antialiased flex items-center" style="width: 100%; height: 100%; overflow: visible;">
+          <div class="flex items-center gap-2 w-full" style="width: 100%; overflow: visible; display: flex; align-items: center;">
+            <div class="commit-message flex items-center gap-2 overflow-hidden whitespace-nowrap" style="flex: 1 1 auto; min-width: 0; display: flex; align-items: center;">
               <span style="overflow: hidden; text-overflow: ellipsis; color: ${msgColor}; font-weight: ${msgWeight}; font-size: 13.5px; line-height: 1.4; pointer-events: none;">${safeMsg}</span>
-              <div class="flex items-center gap-1.5 shrink-0 overflow-visible">
+              <div class="flex items-center gap-1.5 shrink-0" style="flex-shrink: 0; display: flex; align-items: center;">
                 ${tagsRowHtml}
               </div>
             </div>
-            <div class="w-[140px] shrink-0 flex items-center gap-2 overflow-hidden" style="color: ${authorColor}; pointer-events: none;" title="${safeAuthor}">
-              <div class="w-[22px] h-[22px] shrink-0 rounded-md flex items-center justify-center text-[11px] font-semibold border border-white/10 shadow-sm" style="background-color: ${avatarColor}; color: white;">${authorInitial}</div>
-              <span class="whitespace-nowrap overflow-hidden text-ellipsis font-medium text-xs opacity-90">${safeAuthor}</span>
+            <div class="flex items-center gap-2 overflow-hidden" style="flex: 0 0 140px; width: 140px; min-width: 140px; max-width: 140px; color: ${authorColor}; pointer-events: none;" title="${safeAuthor}">
+              <div class="rounded-md flex items-center justify-center text-[11px] font-semibold border border-white/10 shadow-sm" style="flex: 0 0 22px; width: 22px; height: 22px; min-width: 22px; background-color: ${avatarColor}; color: white;">${authorInitial}</div>
+              <span class="whitespace-nowrap overflow-hidden text-ellipsis font-medium text-xs opacity-90" style="flex: 1 1 auto; min-width: 0;">${safeAuthor}</span>
             </div>
-            <div class="w-[85px] shrink-0 text-right whitespace-nowrap flex flex-col justify-center leading-tight" style="color: ${dateColor}; pointer-events: none;">
+            <div class="text-right whitespace-nowrap flex flex-col justify-center leading-tight" style="flex: 0 0 85px; width: 85px; min-width: 85px; max-width: 85px; color: ${dateColor}; pointer-events: none;">
               <span class="text-[11px] font-semibold">${datePart}</span>
               <span class="text-[10px] opacity-80">${timePart}</span>
             </div>
