@@ -11,6 +11,8 @@ interface DiffViewProps {
   filePath: string;
   commitHash?: string;
   cached?: boolean;
+  rawDiff?: string;
+  stashIndex?: string;
   onClose: () => void;
   onRefresh?: () => void;
 }
@@ -39,6 +41,7 @@ interface DiffLineProps {
   isDarkMode: boolean;
   commitHash?: string;
   cached: boolean;
+  stashIndex?: string;
   hunk: Hunk;
   searchQuery: string;
   onStageHunk: (hunk: Hunk) => void;
@@ -50,6 +53,7 @@ const DiffLine = memo(function DiffLine({
   isDarkMode,
   commitHash,
   cached,
+  stashIndex,
   hunk,
   searchQuery,
   onStageHunk,
@@ -121,7 +125,7 @@ const DiffLine = memo(function DiffLine({
         </SyntaxHighlighter>
 
         {/* Line-level staging button */}
-        {!commitHash && (line.type === "add" || line.type === "delete") && (
+        {!commitHash && !stashIndex && (line.type === "add" || line.type === "delete") && (
           <button
             onClick={handleStageLine}
             className={`absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity px-2 py-0.5 text-[10px] rounded border bg-white dark:bg-slate-800 z-10 font-bold ${
@@ -175,6 +179,8 @@ export function DiffView({
   filePath,
   commitHash,
   cached = false,
+  rawDiff,
+  stashIndex,
   onClose,
   onRefresh,
 }: DiffViewProps) {
@@ -287,6 +293,13 @@ export function DiffView({
   const loadDiff = () => {
     setLoading(true);
     setError(null);
+
+    if (rawDiff) {
+      parseDiff(rawDiff);
+      setLoading(false);
+      return;
+    }
+
     if (viewMode === "diff") {
       setBlame(null);
       invoke<string>("git_diff", {
@@ -348,6 +361,19 @@ export function DiffView({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generatePatchForHunk, cached]);
 
+  const handleApplyStash = async () => {
+    if (!stashIndex) return;
+    try {
+      setLoading(true);
+      await invoke("git_stash_apply", { path: repoPath, index: stashIndex });
+      onRefresh?.();
+      onClose();
+    } catch (err: any) {
+      setError(err.toString());
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="absolute inset-0 z-30 bg-white dark:bg-slate-950 flex flex-col animate-in fade-in duration-200">
       <div className="flex items-center justify-between h-12 px-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-x-4 cursor-default select-none">
@@ -386,13 +412,26 @@ export function DiffView({
               >
                 {t("diffView.diffTab")}
               </button>
-              <button
-                onClick={() => setViewMode("blame")}
-                className={`px-3 py-1 text-xs rounded-md transition-all ${viewMode === "blame" ? "bg-white dark:bg-slate-700 shadow text-indigo-600 dark:text-indigo-400 font-medium" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
-              >
-                {t("diffView.blameTab")}
-              </button>
+              {!rawDiff && (
+                <button
+                  onClick={() => setViewMode("blame")}
+                  className={`px-3 py-1 text-xs rounded-md transition-all ${viewMode === "blame" ? "bg-white dark:bg-slate-700 shadow text-indigo-600 dark:text-indigo-400 font-medium" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"}`}
+                >
+                  {t("diffView.blameTab")}
+                </button>
+              )}
             </div>
+
+            {stashIndex && (
+              <button
+                onClick={handleApplyStash}
+                disabled={loading}
+                className="flex items-center space-x-1.5 px-3 py-1 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow-sm transition-colors font-medium disabled:opacity-50"
+              >
+                <Play className="w-3.5 h-3.5" />
+                <span>{t("stashes.apply", "Apply Stash")}</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -436,7 +475,7 @@ export function DiffView({
                   {/* Hunk Header */}
                   <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800/80 px-4 py-2 border-b border-slate-200 dark:border-slate-800">
                     <span className="text-slate-600 dark:text-slate-300 font-semibold">{hunk.header}</span>
-                    {!commitHash && (
+                    {!commitHash && !stashIndex && (
                       <button
                         onClick={() => handleStageHunk(hunk)}
                         className={`flex items-center space-x-1.5 px-2.5 py-1 text-xs rounded-md shadow-sm transition-colors font-medium border ${
@@ -463,6 +502,7 @@ export function DiffView({
                           isDarkMode={isDarkMode}
                           commitHash={commitHash}
                           cached={cached}
+                          stashIndex={stashIndex}
                           hunk={hunk}
                           searchQuery={searchQuery}
                           onStageHunk={handleStageHunk}

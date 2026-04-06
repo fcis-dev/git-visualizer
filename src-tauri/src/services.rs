@@ -462,6 +462,17 @@ pub fn git_stash_list(path: &str) -> Result<Vec<StashEntry>, String> {
     Ok(entries)
 }
 
+pub fn git_stash_show_diff(path: &str, index: &str) -> Result<String, String> {
+    // index is usually something like "stash@{0}", but we might receive just "0"
+    let stash_ref = if index.starts_with("stash@{") {
+        index.to_string()
+    } else {
+        format!("stash@{{{}}}", index)
+    };
+
+    run_git_cmd(path, &["stash", "show", "-p", &stash_ref])
+}
+
 pub fn git_stash_apply(path: &str, index: &str) -> Result<String, String> {
     run_git_cmd(path, &["stash", "apply", index])
 }

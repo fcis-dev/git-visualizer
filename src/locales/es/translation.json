@@ -258,7 +258,11 @@
     "popAction": "Hacer pop del stash (aplicar y eliminar)",
     "dropTitle": "Eliminar Stash (Drop)",
     "dropConfirm": "¿Estás seguro de que quieres eliminar permanentemente {{index}}? Esta acción no se puede deshacer.",
-    "dropAction": "Eliminar stash (Drop permanentemente)"
+    "dropAction": "Eliminar stash (Drop permanentemente)",
+    "noStagedTitle": "Sin cambios en Stage",
+    "noStagedMsg": "No hay archivos en el área de preparación (stage). ¿Quieres guardar todos los cambios locales en el stash?",
+    "noChangesTitle": "Sin cambios",
+    "noChangesMsg": "No hay cambios para guardar en el stash."
   },
   "settings": {
     "title": "Configuración",

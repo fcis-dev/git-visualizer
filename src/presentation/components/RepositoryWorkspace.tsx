@@ -415,6 +415,9 @@ export function RepositoryWorkspace({
             <StashesSidebar
               repoPath={repoPath}
               onRefreshGraph={loadCommits}
+              onSelectStash={(index, rawDiff) => {
+                setDiffTarget({ path: "Stash Content", stashIndex: index, rawDiff });
+              }}
             />
           )}
 
@@ -569,6 +572,8 @@ export function RepositoryWorkspace({
                 filePath={diffTarget.path}
                 commitHash={diffTarget.commitHash}
                 cached={diffTarget.cached}
+                rawDiff={diffTarget.rawDiff}
+                stashIndex={diffTarget.stashIndex}
                 onClose={() => setDiffTarget(null)}
                 onRefresh={onActionSuccess}
             />

@@ -91,6 +91,7 @@ pub fn run() {
             commands::git_stash_save,
             commands::git_stash_pop,
             commands::git_stash_list,
+            commands::git_stash_show_diff,
             commands::git_stash_apply,
             commands::git_stash_drop,
             commands::git_cherry_pick,

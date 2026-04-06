@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Archive, Trash2, Download, Play, Plus } from 'lucide-react';
+import { Archive, Trash2, Download, Play, Plus, Eye } from 'lucide-react';
 import { StashEntry } from '../../../domain/entities/GitEntities';
 import { useGitActions } from '../../hooks/useGitActions';
 import { useDialog } from '../../context/DialogContext';
@@ -9,9 +9,10 @@ import { invoke } from '@tauri-apps/api/core';
 interface StashesSidebarProps {
   repoPath: string | null;
   onRefreshGraph: () => void;
+  onSelectStash: (index: string, rawDiff: string) => void;
 }
 
-export function StashesSidebar({ repoPath, onRefreshGraph }: StashesSidebarProps) {
+export function StashesSidebar({ repoPath, onRefreshGraph, onSelectStash }: StashesSidebarProps) {
   const [stashes, setStashes] = useState<StashEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,24 +87,67 @@ export function StashesSidebar({ repoPath, onRefreshGraph }: StashesSidebarProps
     );
   };
 
-  const handleStashSave = () => {
+  const handlePreview = async (index: string) => {
     if (!repoPath) return;
-    showInput(t('sidebar.sourceControl.stashTitle'), t('sidebar.sourceControl.stashMsg'), async (msg) => {
-      setLoading(true);
-      try {
-        await invoke("git_stash_save", {
-          path: repoPath,
-          message: msg || null,
-        });
-        loadStashes();
-        onRefreshGraph();
-      } catch (err: any) {
-        console.error("Failed to stash", err);
-        setError(err.toString());
-      } finally {
+    setLoading(true);
+    try {
+      const diff = await invoke<string>("git_stash_show_diff", { path: repoPath, index });
+      onSelectStash(index, diff);
+    } catch (e: any) {
+      setError(e.toString());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStashSave = async () => {
+    if (!repoPath) return;
+    setLoading(true);
+    try {
+      const status = await invoke<any[]>("get_git_status", { path: repoPath });
+      
+      if (status.length === 0) {
         setLoading(false);
+        showAlert(t("stashes.noChangesTitle"), t("stashes.noChangesMsg"));
+        return;
       }
-    });
+
+      const hasStaged = status.some(s => s.status === "staged");
+
+      const proceed = () => {
+        showInput(t('sidebar.sourceControl.stashTitle'), t('sidebar.sourceControl.stashMsg'), async (msg) => {
+          setLoading(true);
+          try {
+            await invoke("git_stash_save", {
+              path: repoPath,
+              message: msg || null,
+            });
+            loadStashes();
+            onRefreshGraph();
+          } catch (err: any) {
+            console.error("Failed to stash", err);
+            setError(err.toString());
+          } finally {
+            setLoading(false);
+          }
+        });
+      };
+
+      if (!hasStaged) {
+        setLoading(false);
+        showConfirm(
+          t("stashes.noStagedTitle"),
+          t("stashes.noStagedMsg"),
+          proceed
+        );
+      } else {
+        setLoading(false);
+        proceed();
+      }
+    } catch (err: any) {
+      setError(err.toString());
+      setLoading(false);
+    }
   };
 
   if (!repoPath) {
@@ -157,11 +201,19 @@ export function StashesSidebar({ repoPath, onRefreshGraph }: StashesSidebarProps
                       {stash.hash.substring(0, 7)}
                     </span>
                   </div>
-                  <p className="text-xs font-medium text-slate-800 dark:text-slate-200 mb-2 break-words">
+                  <p className="text-xs font-medium text-slate-800 dark:text-slate-200 mb-2 wrap-break-word">
                     {stash.message}
                   </p>
                   
                   <div className="flex items-center space-x-1.5 opacity-0 group-hover:opacity-100 transition-opacity mt-auto pt-1 border-t border-slate-200/50 dark:border-slate-800/50">
+                    <button
+                      onClick={() => handlePreview(stash.index)}
+                      className="flex-1 flex items-center justify-center space-x-1 py-1 text-[10px] font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 rounded transition-colors"
+                      title={t("stashes.previewAction", "Preview Stash")}
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>{t("stashes.previewAction", "Preview")}</span>
+                    </button>
                     <button
                       onClick={() => handleApply(stash.index)}
                       className="flex-1 flex items-center justify-center space-x-1 py-1 text-[10px] font-medium text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-500/10 rounded transition-colors"

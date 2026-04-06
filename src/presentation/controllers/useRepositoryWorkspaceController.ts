@@ -28,7 +28,7 @@ export function useRepositoryWorkspaceController(
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
   const [isProjectSettingsModalOpen, setIsProjectSettingsModalOpen] = useState(false);
   
-  const [diffTarget, setDiffTarget] = useState<{ path: string; commitHash?: string; cached?: boolean; } | null>(null);
+  const [diffTarget, setDiffTarget] = useState<{ path: string; commitHash?: string; cached?: boolean; rawDiff?: string; stashIndex?: string; } | null>(null);
   const [contentTarget, setContentTarget] = useState<{ path: string; commitHash: string; } | null>(null);
   const [conflictTarget, setConflictTarget] = useState<string | null>(null);
   

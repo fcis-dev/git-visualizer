@@ -258,7 +258,11 @@
     "popAction": "Pop stash (apply and drop)",
     "dropTitle": "Drop Stash",
     "dropConfirm": "Are you sure you want to permanently delete {{index}}? This action cannot be undone.",
-    "dropAction": "Drop stash (delete permanently)"
+    "dropAction": "Drop stash (delete permanently)",
+    "noStagedTitle": "No Staged Changes",
+    "noStagedMsg": "There are no files in the staging area. Do you want to stash all local changes instead?",
+    "noChangesTitle": "No Changes",
+    "noChangesMsg": "There are no changes to stash."
   },
   "settings": {
     "title": "Settings",

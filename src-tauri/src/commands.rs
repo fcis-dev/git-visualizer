@@ -210,6 +210,16 @@ pub async fn git_stash_list(
 }
 
 #[tauri::command]
+pub async fn git_stash_show_diff(
+    state: tauri::State<'_, AppState>,
+    path: &str,
+    index: &str,
+) -> Result<String, String> {
+    validate_path_in_workspace(&state, path)?;
+    services::git_stash_show_diff(path, index)
+}
+
+#[tauri::command]
 pub async fn git_stash_apply(
     state: tauri::State<'_, AppState>,
     path: &str,
