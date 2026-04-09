@@ -84,7 +84,7 @@ export function WorkspaceSearchBar({
               className="fixed inset-0 z-30"
               onClick={() => setIsBranchFilterOpen(false)}
             />
-            <div className="absolute left-0 top-full mt-1 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-40 overflow-hidden">
+            <div className="absolute left-0 top-full mt-1 w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-40 overflow-hidden">
               <button
                 onClick={() => {
                   setGraphBranches([]);
@@ -239,6 +239,7 @@ function FilterBranchNodeRenderer({
           className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center text-slate-600 dark:text-slate-300 font-medium"
           style={{ paddingLeft: `${level * 12 + 12}px` }}
           type="button"
+          title={node.name}
         >
           {expanded ? (
             <ChevronDown className="w-3.5 h-3.5 mr-1" />
@@ -277,6 +278,7 @@ function FilterBranchNodeRenderer({
       }`}
       style={{ paddingLeft: `${level * 12 + 24}px` }}
       type="button"
+      title={b}
     >
       <span
         className={`w-4 h-4 flex items-center justify-center rounded border shrink-0 transition-colors ${

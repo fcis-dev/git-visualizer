@@ -56,25 +56,8 @@ export function ProjectsSidebar({ repoPath }: ProjectsSidebarProps) {
         </h2>
       </div>
 
-      <div className="p-3 shrink-0 flex flex-col gap-2">
-        <button
-          onClick={handleOpenProject}
-          className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition-colors shadow-sm"
-        >
-          <FolderOpen className="w-4 h-4 shrink-0" />
-          {t("dashboard.addProject", "Add Project")}
-        </button>
-        <button
-          onClick={handleCloseProject}
-          className="w-full flex items-center justify-center gap-2 px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-500/20 text-slate-600 dark:text-slate-300 rounded-md text-sm font-medium transition-colors shadow-sm"
-        >
-          <X className="w-4 h-4 shrink-0" />
-          {t("workspace.projects.closeProject", "Close Project")}
-        </button>
-      </div>
-
       {/* Projects List */}
-      <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-1 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto px-2 pt-3 pb-2 space-y-1 custom-scrollbar">
         {addedProjects.length > 0 ? (
           addedProjects.map((path) => {
             const name = path.split(/[/\\]/).pop() || path;
@@ -135,6 +118,23 @@ export function ProjectsSidebar({ repoPath }: ProjectsSidebarProps) {
              <p className="text-xs text-slate-500">{t("dashboard.projects.empty", "No projects found")}</p>
           </div>
         )}
+      </div>
+
+      <div className="p-3 shrink-0 flex flex-col gap-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+        <button
+          onClick={handleOpenProject}
+          className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition-colors shadow-sm"
+        >
+          <FolderOpen className="w-4 h-4 shrink-0" />
+          {t("dashboard.addProject", "Add Project")}
+        </button>
+        <button
+          onClick={handleCloseProject}
+          className="w-full flex items-center justify-center gap-2 px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-500/20 text-slate-600 dark:text-slate-300 rounded-md text-sm font-medium transition-colors shadow-sm"
+        >
+          <X className="w-4 h-4 shrink-0" />
+          {t("workspace.projects.closeProject", "Close Project")}
+        </button>
       </div>
     </div>
   );

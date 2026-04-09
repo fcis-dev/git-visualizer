@@ -123,7 +123,7 @@ export function WorkspaceHeader({
                 className="fixed inset-0 z-30"
                 onClick={() => setIsBranchDropdownOpen(false)}
               />
-              <div className="absolute left-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-40 overflow-hidden animate-in slide-in-from-top-2 duration-150">
+              <div className="absolute left-0 mt-2 w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-40 overflow-hidden animate-in slide-in-from-top-2 duration-150">
                 <div className="px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
                   {t("workspace.header.localBranches")}
                 </div>
@@ -347,6 +347,7 @@ function DropdownBranchNodeRenderer({
           className="w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center text-slate-600 dark:text-slate-300 font-medium"
           style={{ paddingLeft: `${level * 12 + 12}px` }}
           type="button"
+          title={node.name}
         >
           {expanded ? (
             <ChevronDown className="w-3.5 h-3.5 mr-1" />
@@ -383,6 +384,7 @@ function DropdownBranchNodeRenderer({
             `}
       style={{ paddingLeft: `${level * 12 + 24}px` }}
       type="button"
+      title={branch}
     >
       <span className="truncate">{node.name}</span>
       {checkoutingBranch === branch ? (
