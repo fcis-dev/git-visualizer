@@ -405,7 +405,15 @@ fn run_git_cmd(path: &str, args: &[&str]) -> Result<String, String> {
     if output.status.success() {
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
     } else {
-        Err(String::from_utf8_lossy(&output.stderr).to_string())
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        if stderr.trim().is_empty() {
+            Err(stdout)
+        } else if stdout.trim().is_empty() {
+            Err(stderr)
+        } else {
+            Err(format!("{}\n{}", stderr, stdout))
+        }
     }
 }
 

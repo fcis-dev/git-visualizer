@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { invoke } from "@tauri-apps/api/core";
 import { ArrowLeft } from "lucide-react";
@@ -22,6 +22,7 @@ import { WorkspaceHeader } from "./workspace/WorkspaceHeader";
 import { WorkspaceActivityBar } from "./workspace/WorkspaceActivityBar";
 import { WorkspaceSearchBar } from "./workspace/WorkspaceSearchBar";
 import { GraphBranchContextMenu } from "./workspace/GraphBranchContextMenu";
+import { DragDropActionModal } from "./DragDropActionModal";
 import { useGitActions } from "../hooks/useGitActions";
 import { useDialog } from "../context/DialogContext";
 import {
@@ -144,6 +145,20 @@ export function RepositoryWorkspace({
   const graphRef = useRef<GraphHandle>(null);
   const leftSidebarRef = useRef<HTMLDivElement>(null);
   const rightSidebarRef = useRef<HTMLDivElement>(null);
+
+  const [dragDropModal, setDragDropModal] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    sourceCommit: Commit | null;
+    targetCommit: Commit | null;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    sourceCommit: null,
+    targetCommit: null,
+  });
 
   // Scroll the graph to the HEAD commit of the current branch.
   const handleScrollToHead = async () => {
@@ -532,6 +547,15 @@ export function RepositoryWorkspace({
                   onBranchContextMenu={(refName, x, y) => {
                     setGraphBranchContextMenu({ visible: true, x, y, refName });
                   }}
+                  onDropCommit={(sourceCommit, targetCommit, x, y) => {
+                    setDragDropModal({
+                      visible: true,
+                      x,
+                      y,
+                      sourceCommit,
+                      targetCommit,
+                    });
+                  }}
                 />
               </motion.div>
             </AnimatePresence>
@@ -697,6 +721,93 @@ export function RepositoryWorkspace({
           onClose={() => setIsProjectSettingsModalOpen(false)}
         />
       )}
+
+      {dragDropModal.visible && dragDropModal.sourceCommit && dragDropModal.targetCommit && (() => {
+        const getCommitBranchName = (commit: Commit): string | null => {
+          if (!commit.refs) return null;
+          return commit.refs.find(r => !r.includes("HEAD") && !r.includes("origin/") && !r.startsWith("tag: ")) || null;
+        };
+
+        const srcHash = dragDropModal.sourceCommit.hash;
+        const tgtHash = dragDropModal.targetCommit.hash;
+        const srcBranch = getCommitBranchName(dragDropModal.sourceCommit);
+        const tgtBranch = getCommitBranchName(dragDropModal.targetCommit);
+        const tgtName = tgtBranch || tgtHash.substring(0, 7);
+        const srcName = srcBranch || srcHash.substring(0, 7);
+
+        return (
+          <DragDropActionModal
+            x={dragDropModal.x}
+            y={dragDropModal.y}
+            sourceCommitHash={srcHash}
+            targetCommitHash={tgtHash}
+            targetBranchName={tgtName}
+            onClose={() => setDragDropModal(prev => ({ ...prev, visible: false }))}
+            onSelectAction={(action) => {
+              setDragDropModal(prev => ({ ...prev, visible: false }));
+
+              if (action === "merge") {
+                showConfirm(
+                  t('graphActions.mergeTitle', 'Merge'),
+                  `Merge ${srcHash.substring(0, 7)} into ${tgtName}?`,
+                  async () => {
+                    try {
+                      // We want to merge src into tgt. So checkout tgt, then merge src.
+                      const needsCheckout = tgtBranch ? tgtBranch !== branchName : tgtHash !== headHash;
+                      if (needsCheckout) {
+                        if (tgtBranch) await gitActions.checkoutBranch(tgtBranch);
+                        else await gitActions.checkoutCommit(tgtHash);
+                      }
+                      await gitActions.merge(srcHash);
+                      onActionSuccess();
+                    } catch (e: any) {
+                      showAlert(t('graphActions.errorTitle'), e.toString());
+                    }
+                  }
+                );
+              } else if (action === "rebase") {
+                showConfirm(
+                  t('graphActions.rebaseTitle', 'Rebase'),
+                  `Rebase ${srcName} onto ${tgtName}?`,
+                  async () => {
+                    try {
+                      // We want to rebase src onto tgt. So checkout src, then rebase tgt.
+                      const needsCheckout = srcBranch ? srcBranch !== branchName : srcHash !== headHash;
+                      if (needsCheckout) {
+                        if (srcBranch) await gitActions.checkoutBranch(srcBranch);
+                        else await gitActions.checkoutCommit(srcHash);
+                      }
+                      await gitActions.rebase(tgtBranch || tgtHash);
+                      onActionSuccess();
+                    } catch (e: any) {
+                      showAlert(t('graphActions.errorTitle'), e.toString());
+                    }
+                  }
+                );
+              } else if (action === "cherryPick") {
+                showConfirm(
+                  t('graphActions.cherryPickTitle', 'Cherry-Pick'),
+                  `Cherry-pick ${srcHash.substring(0, 7)} onto ${tgtName}?`,
+                  async () => {
+                    try {
+                      // We want to cherryPick src onto tgt. So checkout tgt, then cherryPick src.
+                      const needsCheckout = tgtBranch ? tgtBranch !== branchName : tgtHash !== headHash;
+                      if (needsCheckout) {
+                        if (tgtBranch) await gitActions.checkoutBranch(tgtBranch);
+                        else await gitActions.checkoutCommit(tgtHash);
+                      }
+                      await gitActions.cherryPick(srcHash);
+                      onActionSuccess();
+                    } catch (e: any) {
+                      showAlert(t('graphActions.errorTitle'), e.toString());
+                    }
+                  }
+                );
+              }
+            }}
+          />
+        );
+      })()}
 
     </div>
   );

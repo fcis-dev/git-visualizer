@@ -19,6 +19,7 @@ interface GraphProps {
   hasMore?: boolean;
   isSearchResult?: boolean;
   onBranchContextMenu?: (refName: string, x: number, y: number) => void;
+  onDropCommit?: (sourceCommit: Commit, targetCommit: Commit, clientX: number, clientY: number) => void;
 }
 
 export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
@@ -31,6 +32,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
     hasMore = false,
     isSearchResult = false,
     onBranchContextMenu,
+    onDropCommit,
   },
   ref,
 ) {
@@ -263,6 +265,88 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
 
     const bgFill = isDark ? "#0f172a" : "#ffffff";
 
+    const dragBehavior = d3
+      .drag<SVGCircleElement, any>()
+      .on("start", function (event, d) {
+        event.sourceEvent.stopPropagation();
+        
+        const pointer = d3.pointer(event, svg.node());
+        let dragGhost = svg.select<SVGCircleElement>(".ghost-commit");
+        if (dragGhost.empty()) {
+            dragGhost = svg.append("circle")
+               .attr("class", "ghost-commit");
+        }
+        dragGhost
+           .attr("r", 7)
+           .attr("fill", bgFill)
+           .attr("stroke", LANE_COLORS[d.lane % LANE_COLORS.length])
+           .attr("stroke-width", 3)
+           .attr("cx", pointer[0])
+           .attr("cy", pointer[1])
+           .style("pointer-events", "none")
+           .style("filter", "drop-shadow(0px 4px 6px rgba(0,0,0,0.3))");
+           
+        d3.select(this).style("opacity", 0.3);
+      })
+      .on("drag", function (event, d) {
+        const pointer = d3.pointer(event, svg.node());
+        svg.select(".ghost-commit").attr("cx", pointer[0]).attr("cy", pointer[1]);
+        
+        let closest: any = null;
+        let minDist = 30; 
+        
+        nodes.forEach(n => {
+           if (n.hash === d.hash) return;
+           const dx = n.x - pointer[0];
+           const dy = n.y - pointer[1];
+           const dist = Math.sqrt(dx*dx + dy*dy);
+           if (dist < minDist) {
+               minDist = dist;
+               closest = n;
+           }
+        });
+        
+        nodeGroup.selectAll<SVGCircleElement, any>("circle").each(function(n) {
+           if (n.hash === d.hash) return;
+           const isSelected = selectedCommit?.hash === n.hash;
+           const isClosest = closest && n.hash === closest.hash;
+           d3.select(this)
+             .attr("r", isClosest ? 9 : (isSelected ? 7 : 5))
+             .attr("stroke-width", isClosest ? 5 : (isSelected ? 5 : 3))
+             .style("filter", isClosest ? "url(#glow)" : (isSelected ? "url(#glow)" : "none"));
+        });
+      })
+      .on("end", function (event, d) {
+        svg.select(".ghost-commit").remove();
+        d3.select(this).style("opacity", 1);
+        
+        const pointer = d3.pointer(event, svg.node());
+        let closest: any = null;
+        let minDist = 30;
+        nodes.forEach(n => {
+           if (n.hash === d.hash) return;
+           const dx = n.x - pointer[0];
+           const dy = n.y - pointer[1];
+           const dist = Math.sqrt(dx*dx + dy*dy);
+           if (dist < minDist) {
+               minDist = dist;
+               closest = n;
+           }
+        });
+        
+        nodeGroup.selectAll<SVGCircleElement, any>("circle").each(function(n) {
+           const isSelected = selectedCommit?.hash === n.hash;
+           d3.select(this)
+             .attr("r", isSelected ? 7 : 5)
+             .attr("stroke-width", isSelected ? 5 : 3)
+             .style("filter", isSelected ? "url(#glow)" : "none");
+        });
+        
+        if (closest && onDropCommit) {
+           onDropCommit(d, closest, event.sourceEvent.clientX, event.sourceEvent.clientY);
+        }
+      });
+
     // Node Circle
     nodeGroup
       .append("circle")
@@ -273,7 +357,8 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       .style("filter", (d) =>
         selectedCommit?.hash === d.hash ? "url(#glow)" : "none",
       )
-      .style("transition", "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)");
+      .style("transition", "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)")
+      .call(dragBehavior as any);
 
     let maxContentWidth = containerWidth;
 
@@ -554,6 +639,7 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
     theme,
     containerWidth,
     onBranchContextMenu,
+    onDropCommit,
   ]);
 
   return (
