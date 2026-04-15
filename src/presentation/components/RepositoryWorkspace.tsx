@@ -216,9 +216,11 @@ export function RepositoryWorkspace({
   const repoName = repoPath.split(/[\/\\]/).pop() || t('common.repository');
 
   const handleGraphBranchCheckout = (refName: string) => {
-    const isRemote = refName.includes("/");
+    // Check if it starts with origin/ to be safer, or check against available branches
+    const isRemote = refName.startsWith("origin/") || refName.startsWith("refs/remotes/");
     if (isRemote) {
       const parts = refName.split("/");
+      const remoteName = parts[0]; // e.g. origin
       const localName = parts.slice(1).join("/");
       showConfirm(t('repositoryWorkspace.checkoutRemoteTitle'), t('repositoryWorkspace.checkoutRemoteMsg', { localName }), async () => {
         try {
@@ -268,9 +270,8 @@ export function RepositoryWorkspace({
   const handleGraphBranchDelete = (refName: string) => {
     showConfirm(t('repositoryWorkspace.deleteBranchTitle'), t('repositoryWorkspace.deleteBranchMsg', { refName }), async () => {
       try {
-        const isRemote = refName.includes("/") && !availableBranches.includes(refName) && !commits.some(c => c.refs?.includes(refName) && !c.refs.some(r => r === `origin/${refName}` || r.startsWith("refs/remotes/")));
-        // Simpler fallback since graphBranches is string[]
-        const actuallyIsRemote = refName.includes("/"); // Fallback for now
+        const isRemoteMatch = refName.startsWith("origin/") || refName.startsWith("refs/remotes/");
+        const actuallyIsRemote = isRemoteMatch && !availableBranches.includes(refName);
 
         if (actuallyIsRemote) {
           const parts = refName.split("/");
@@ -283,7 +284,7 @@ export function RepositoryWorkspace({
         onActionSuccess();
       } catch (e: any) {
         const msg = e.toString();
-        const actuallyIsRemote = refName.includes("/");
+        const actuallyIsRemote = refName.startsWith("origin/") || refName.startsWith("refs/remotes/");
         if (!actuallyIsRemote && msg.includes("not fully merged")) {
           showConfirm(t('repositoryWorkspace.forceDeleteTitle'), t('repositoryWorkspace.forceDeleteMsg', { refName }), async () => {
             try {
