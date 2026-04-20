@@ -209,10 +209,10 @@ export function StashesSidebar({ repoPath, onRefreshGraph, onSelectStash }: Stas
                     <button
                       onClick={() => handlePreview(stash.index)}
                       className="flex-1 flex items-center justify-center space-x-1 py-1 text-[10px] font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 rounded transition-colors"
-                      title={t("stashes.previewAction", "Preview Stash")}
+                      title={t("stashes.previewAction")}
                     >
                       <Eye className="w-3 h-3" />
-                      <span>{t("stashes.previewAction", "Preview")}</span>
+                      <span>{t("stashes.previewAction")}</span>
                     </button>
                     <button
                       onClick={() => handleApply(stash.index)}

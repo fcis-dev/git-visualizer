@@ -47,7 +47,7 @@ export function EmptyWorkspace() {
         <button
           onClick={() => setIsSettingsOpen(true)}
           className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
-          title={t("workspace.header.settings", "Settings")}
+          title={t("workspace.header.settings")}
         >
           <Settings className="w-5 h-5" />
         </button>
@@ -63,7 +63,7 @@ export function EmptyWorkspace() {
         </h1>
         
         <p className="text-slate-500 dark:text-slate-400 mb-10 max-w-sm text-center leading-relaxed">
-          {t("dashboard.getStarted", "Open a Git repository to start visualizing your commits and managing your branches.")}
+          {t("dashboard.getStarted")}
         </p>
 
         <button
@@ -72,14 +72,14 @@ export function EmptyWorkspace() {
         >
           <div className="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-10 transition-opacity" />
           <FolderOpen className="w-5 h-5" />
-          <span className="font-medium text-sm">{t("dashboard.addProject", "Open Folder")}</span>
+          <span className="font-medium text-sm">{t("dashboard.addProject")}</span>
         </button>
 
         {addedProjects.length > 0 && (
           <div className="mt-12 w-full max-w-lg bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
             <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
               <h2 className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                {t("dashboard.projects.title", "Recent Projects")}
+                {t("dashboard.projects.title")}
               </h2>
             </div>
             <div className="max-h-64 overflow-y-auto custom-scrollbar">
@@ -102,7 +102,7 @@ export function EmptyWorkspace() {
                     <button
                       onClick={(e) => handleRemoveProject(path, e)}
                       className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md opacity-0 group-hover:opacity-100 transition-all"
-                      title={t("dashboard.removeFolder", "Remove")}
+                      title={t("dashboard.removeFolder")}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

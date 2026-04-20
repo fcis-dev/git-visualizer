@@ -52,7 +52,7 @@ export function ProjectsSidebar({ repoPath }: ProjectsSidebarProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-950">
         <h2 className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wider">
-          {t("workspace.projects.title", "PROJECTS")}
+          {t("workspace.projects.title")}
         </h2>
       </div>
 
@@ -90,14 +90,14 @@ export function ProjectsSidebar({ repoPath }: ProjectsSidebarProps) {
                         <button
                           onClick={(e) => handleLaunchProject(path, e)}
                           className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors"
-                          title={t("workspace.header.openNewWindow", "Open in new window")}
+                          title={t("workspace.header.openNewWindow")}
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={(e) => handleRemoveProject(path, e)}
                           className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors"
-                          title={t("workspace.header.removeProject", "Remove project")}
+                          title={t("workspace.header.removeProject")}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -115,7 +115,7 @@ export function ProjectsSidebar({ repoPath }: ProjectsSidebarProps) {
           })
         ) : (
           <div className="py-8 text-center px-4">
-             <p className="text-xs text-slate-500">{t("dashboard.projects.empty", "No projects found")}</p>
+             <p className="text-xs text-slate-500">{t("dashboard.projects.empty")}</p>
           </div>
         )}
       </div>
@@ -126,14 +126,14 @@ export function ProjectsSidebar({ repoPath }: ProjectsSidebarProps) {
           className="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-sm font-medium transition-colors shadow-sm"
         >
           <FolderOpen className="w-4 h-4 shrink-0" />
-          {t("dashboard.addProject", "Add Project")}
+          {t("dashboard.addProject")}
         </button>
         <button
           onClick={handleCloseProject}
           className="w-full flex items-center justify-center gap-2 px-3 py-1.5 border border-slate-200 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-500/20 text-slate-600 dark:text-slate-300 rounded-md text-sm font-medium transition-colors shadow-sm"
         >
           <X className="w-4 h-4 shrink-0" />
-          {t("workspace.projects.closeProject", "Close Project")}
+          {t("workspace.projects.closeProject")}
         </button>
       </div>
     </div>

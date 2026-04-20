@@ -302,59 +302,26 @@ pub fn git_unstage(path: &str, files: Vec<String>) -> Result<(), String> {
     Ok(())
 }
 
-pub fn git_commit(path: &str, message: String) -> Result<String, String> {
+pub fn git_commit(path: &str, message: String, no_verify: bool) -> Result<String, String> {
     let repo = Repository::open(path).map_err(|e| e.to_string())?;
-    let mut index = repo.index().map_err(|e| e.to_string())?;
-    let tree_id = index.write_tree().map_err(|e| e.to_string())?;
-    let tree = repo.find_tree(tree_id).map_err(|e| e.to_string())?;
-    let signature = repo
-        .signature()
-        .map_err(|_| "Failed to get signature".to_string())?;
+    // We will use the CLI to support git hooks naturally, but we must handle MERGE_HEAD
+    // If MERGE_HEAD exists, the `git commit` CLI command will use it automatically.
+    
+    let mut args = vec!["commit", "-m", &message];
+    if no_verify {
+        args.push("--no-verify");
+    }
+    
+    // We execute the CLI which honors hooks.
+    let out = run_git_cmd(path, &args)?;
 
-    let mut parents_commits = Vec::new();
-
-    // Always include HEAD as the first parent
+    // Return the new HEAD hash
     if let Ok(head) = repo.head() {
-        if let Ok(head_commit) = head.peel_to_commit() {
-            parents_commits.push(head_commit);
+        if let Some(target) = head.target() {
+            return Ok(target.to_string());
         }
     }
-
-    // Check if we are in the middle of a merge
-    let merge_head_path = std::path::Path::new(path).join(".git/MERGE_HEAD");
-    if merge_head_path.exists() {
-        if let Ok(merge_head_content) = std::fs::read_to_string(merge_head_path) {
-            let merge_oid_str = merge_head_content.trim();
-            if let Ok(merge_oid) = git2::Oid::from_str(merge_oid_str) {
-                if let Ok(merge_commit) = repo.find_commit(merge_oid) {
-                    parents_commits.push(merge_commit);
-                }
-            }
-        }
-    }
-
-    let mut parents: Vec<&git2::Commit> = Vec::new();
-    for commit in &parents_commits {
-        parents.push(commit);
-    }
-
-    let oid = repo
-        .commit(
-            Some("HEAD"),
-            &signature,
-            &signature,
-            &message,
-            &tree,
-            &parents,
-        )
-        .map_err(|e| e.to_string())?;
-
-    // Clean up merge state files
-    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_HEAD"));
-    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_MODE"));
-    let _ = std::fs::remove_file(std::path::Path::new(path).join(".git/MERGE_MSG"));
-
-    Ok(oid.to_string())
+    Ok(out)
 }
 
 pub fn git_commit_amend(path: &str, message: String) -> Result<String, String> {
@@ -793,9 +760,106 @@ pub fn get_branches_info(path: &str) -> Result<Vec<BranchData>, String> {
                 is_remote,
             });
         }
-    }
+}
 
     Ok(branches)
+}
+
+pub fn get_git_hooks(path: &str) -> Result<Vec<crate::models::GitHook>, String> {
+    let hooks_dir = Path::new(path).join(".git").join("hooks");
+    if !hooks_dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    let mut hooks = Vec::new();
+    if let Ok(entries) = fs::read_dir(hooks_dir) {
+        let mut map = std::collections::HashMap::new();
+
+        for entry in entries.filter_map(Result::ok) {
+            let file_name = entry.file_name().into_string().unwrap_or_default();
+            if file_name.ends_with(".sample") {
+                let name = file_name.replace(".sample", "");
+                map.entry(name).or_insert(false);
+            } else {
+                map.insert(file_name, true);
+            }
+        }
+
+        for (name, active) in map {
+            hooks.push(crate::models::GitHook { name, active });
+        }
+    }
+
+    Ok(hooks)
+}
+
+pub fn toggle_git_hook(path: &str, hook_name: &str, state: bool) -> Result<(), String> {
+    let hooks_dir = Path::new(path).join(".git").join("hooks");
+    if !hooks_dir.exists() {
+        fs::create_dir_all(&hooks_dir).map_err(|e| e.to_string())?;
+    }
+
+    let active_path = hooks_dir.join(hook_name);
+    let sample_path = hooks_dir.join(format!("{}.sample", hook_name));
+
+    if state {
+        if sample_path.exists() {
+            fs::rename(&sample_path, &active_path).map_err(|e| e.to_string())?;
+        } else if !active_path.exists() {
+            // Create empty bash script
+            fs::write(&active_path, "#!/bin/sh\n").map_err(|e| e.to_string())?;
+        }
+        
+        // Give execution permissions on Unix
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if let Ok(mut perms) = fs::metadata(&active_path).map(|m| m.permissions()) {
+                perms.set_mode(0o755);
+                let _ = fs::set_permissions(&active_path, perms);
+            }
+        }
+    } else {
+        if active_path.exists() {
+            fs::rename(&active_path, &sample_path).map_err(|e| e.to_string())?;
+        }
+    }
+
+    Ok(())
+}
+
+pub fn read_hook_content(path: &str, hook_name: &str) -> Result<String, String> {
+    let hooks_dir = Path::new(path).join(".git").join("hooks");
+    let active_path = hooks_dir.join(hook_name);
+    let sample_path = hooks_dir.join(format!("{}.sample", hook_name));
+
+    if active_path.exists() {
+        fs::read_to_string(&active_path).map_err(|e| e.to_string())
+    } else if sample_path.exists() {
+        fs::read_to_string(&sample_path).map_err(|e| e.to_string())
+    } else {
+        Ok(String::new())
+    }
+}
+
+pub fn save_hook_content(path: &str, hook_name: &str, content: &str) -> Result<(), String> {
+    let hooks_dir = Path::new(path).join(".git").join("hooks");
+    if !hooks_dir.exists() {
+        fs::create_dir_all(&hooks_dir).map_err(|e| e.to_string())?;
+    }
+    
+    let active_path = hooks_dir.join(hook_name);
+    let sample_path = hooks_dir.join(format!("{}.sample", hook_name));
+
+    let target_path = if active_path.exists() {
+        active_path
+    } else {
+        sample_path
+    };
+
+    fs::write(&target_path, content).map_err(|e| e.to_string())?;
+
+    Ok(())
 }
 
 /// Aggregated startup call: returns commits, current branch, branch list, HEAD hash,

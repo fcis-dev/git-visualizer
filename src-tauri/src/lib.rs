@@ -152,7 +152,11 @@ pub fn run() {
             commands::get_source_control_status,
             commands::register_window,
             commands::unregister_window,
-            commands::get_session
+            commands::get_session,
+            commands::get_git_hooks,
+            commands::toggle_git_hook,
+            commands::read_hook_content,
+            commands::save_hook_content
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {

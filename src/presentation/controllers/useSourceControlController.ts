@@ -174,14 +174,14 @@ export function useSourceControlController(
     );
   };
 
-  const handleCommit = async () => {
+  const handleCommit = async (noVerify?: boolean) => {
     if (!repoPath || !commitMessage) return;
     try {
       if (isAmend) {
         await sourceControlUseCases.commitAmend(repoPath, commitMessage);
         setIsAmend(false);
       } else {
-        await sourceControlUseCases.commit(repoPath, commitMessage);
+        await sourceControlUseCases.commit(repoPath, commitMessage, noVerify);
       }
       setCommitMessage("");
       loadStatus();

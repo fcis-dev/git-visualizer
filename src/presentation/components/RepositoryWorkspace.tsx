@@ -749,7 +749,7 @@ export function RepositoryWorkspace({
 
               if (action === "merge") {
                 showConfirm(
-                  t('graphActions.mergeTitle', 'Merge'),
+                  t('graphActions.mergeTitle'),
                   `Merge ${srcHash.substring(0, 7)} into ${tgtName}?`,
                   async () => {
                     try {
@@ -768,7 +768,7 @@ export function RepositoryWorkspace({
                 );
               } else if (action === "rebase") {
                 showConfirm(
-                  t('graphActions.rebaseTitle', 'Rebase'),
+                  t('graphActions.rebaseTitle'),
                   `Rebase ${srcName} onto ${tgtName}?`,
                   async () => {
                     try {
@@ -787,7 +787,7 @@ export function RepositoryWorkspace({
                 );
               } else if (action === "cherryPick") {
                 showConfirm(
-                  t('graphActions.cherryPickTitle', 'Cherry-Pick'),
+                  t('graphActions.cherryPickTitle'),
                   `Cherry-pick ${srcHash.substring(0, 7)} onto ${tgtName}?`,
                   async () => {
                     try {

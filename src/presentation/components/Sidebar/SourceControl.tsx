@@ -14,6 +14,7 @@ import {
   ArrowLeftToLine,
   ArrowRightToLine,
   FolderGit2,
+  ChevronDown,
 } from "lucide-react";
 import { Commit } from "../../../domain/entities/GitEntities";
 import { useSourceControlController } from "../../controllers/useSourceControlController";
@@ -45,6 +46,7 @@ export function SourceControl({
 }: SourceControlProps) {
   const { t } = useTranslation();
   const { state, actions } = useSourceControlController(repoPath, onCommit, refreshTrigger);
+  const [showCommitOptions, setShowCommitOptions] = useState(false);
 
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
@@ -166,17 +168,49 @@ export function SourceControl({
               }
             }}
           />
-          <button
-            onClick={actions.handleCommit}
-            disabled={
-              !state.commitMessage ||
-              (!state.isAmend && state.stagedFiles.length === 0 && !state.lastMergeMsg)
-            }
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed text-white py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm disabled:shadow-none relative z-10"
-          >
-            <Check className="w-4 h-4" />
-            {state.isAmend ? t("sidebar.sourceControl.commitAmendButton") : t("sidebar.sourceControl.commitButton")}
-          </button>
+          <div className="flex gap-1 relative z-10 w-full mb-1">
+            <button
+              onClick={() => actions.handleCommit(false)}
+              disabled={
+                !state.commitMessage ||
+                (!state.isAmend && state.stagedFiles.length === 0 && !state.lastMergeMsg)
+              }
+              className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed text-white py-2 rounded-l-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm disabled:shadow-none"
+            >
+              <Check className="w-4 h-4" />
+              {state.isAmend ? t("sidebar.sourceControl.commitAmendButton") : t("sidebar.sourceControl.commitButton")}
+            </button>
+            <button
+              onClick={() => setShowCommitOptions(!showCommitOptions)}
+              disabled={
+                !state.commitMessage ||
+                (!state.isAmend && state.stagedFiles.length === 0 && !state.lastMergeMsg)
+              }
+              className="bg-indigo-700 hover:bg-indigo-600 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed text-white px-2 py-2 rounded-r-lg transition-all shadow-sm disabled:shadow-none flex items-center justify-center"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </button>
+            
+            {showCommitOptions && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setShowCommitOptions(false)} 
+                />
+                <div className="absolute top-10 right-0 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-md z-50 overflow-hidden py-1">
+                  <button
+                    onClick={() => {
+                      actions.handleCommit(true);
+                      setShowCommitOptions(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    {t("sidebar.sourceControl.commitNoVerify")}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Staged Changes */}

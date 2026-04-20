@@ -66,7 +66,7 @@ export function DragDropActionModal({
           >
             <GitMerge size={16} className="text-indigo-500" />
             <div className="flex flex-col">
-              <span className="font-medium">{t("graphActions.mergeTitle", "Merge")}</span>
+              <span className="font-medium">{t("graphActions.mergeTitle")}</span>
               <span className="text-xs text-slate-500 dark:text-slate-400">{`Merge into ${targetLabel}`}</span>
             </div>
           </button>
@@ -77,7 +77,7 @@ export function DragDropActionModal({
           >
             <GitCommit size={16} className="text-pink-500" />
             <div className="flex flex-col">
-              <span className="font-medium">{t("graphActions.rebaseTitle", "Rebase")}</span>
+              <span className="font-medium">{t("graphActions.rebaseTitle")}</span>
               <span className="text-xs text-slate-500 dark:text-slate-400">{`Rebase onto ${targetLabel}`}</span>
             </div>
           </button>
@@ -88,7 +88,7 @@ export function DragDropActionModal({
           >
             <CopyPlus size={16} className="text-emerald-500" />
             <div className="flex flex-col">
-              <span className="font-medium">{t("graphActions.cherryPickTitle", "Cherry-Pick")}</span>
+              <span className="font-medium">{t("graphActions.cherryPickTitle")}</span>
               <span className="text-xs text-slate-500 dark:text-slate-400">{`Cherry-pick ${shortHash}`}</span>
             </div>
           </button>

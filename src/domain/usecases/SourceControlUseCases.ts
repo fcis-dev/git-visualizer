@@ -15,8 +15,8 @@ export class SourceControlUseCases {
     return await this.repository.discardChanges(path, files);
   }
 
-  async commit(path: string, message: string): Promise<void> {
-    return await this.repository.commit(path, message);
+  async commit(path: string, message: string, noVerify?: boolean): Promise<void> {
+    return await this.repository.commit(path, message, noVerify);
   }
 
   async commitAmend(path: string, message: string): Promise<void> {

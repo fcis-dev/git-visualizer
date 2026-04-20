@@ -39,7 +39,7 @@ export interface IGitRepository {
   stageFiles(path: string, files: string[]): Promise<void>;
   unstageFiles(path: string, files: string[]): Promise<void>;
   discardChanges(path: string, files: string[]): Promise<void>;
-  commit(path: string, message: string): Promise<void>;
+  commit(path: string, message: string, noVerify?: boolean): Promise<void>;
 
   stashSave(path: string, message?: string): Promise<void>;
   stashPop(path: string): Promise<void>;
@@ -115,4 +115,10 @@ export interface IGitRepository {
   getRemotesList(path: string): Promise<string[]>;
   addRemote(path: string, name: string, url: string): Promise<void>;
   removeRemote(path: string, name: string): Promise<void>;
+
+  getGitHooks(path: string): Promise<import("../entities/GitEntities").GitHook[]>;
+  toggleGitHook(path: string, hookName: string, state: boolean): Promise<void>;
+  readHookContent(path: string, hookName: string): Promise<string>;
+  saveHookContent(path: string, hookName: string, content: string): Promise<void>;
 }
+

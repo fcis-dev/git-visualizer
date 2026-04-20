@@ -81,8 +81,8 @@ export class TauriGitRepository implements IGitRepository {
     await invoke("git_discard_changes", { path, files });
   }
 
-  async commit(path: string, message: string): Promise<void> {
-    await invoke("git_commit", { path, message });
+  async commit(path: string, message: string, noVerify: boolean = false): Promise<void> {
+    await invoke("git_commit", { path, message, no_verify: noVerify });
   }
 
   async applyPatch(path: string, patch: string, reverse: boolean = false): Promise<void> {
@@ -383,4 +383,21 @@ export class TauriGitRepository implements IGitRepository {
   async removeRemote(path: string, name: string): Promise<void> {
     await invoke("git_remote_remove", { path, name });
   }
+
+  async getGitHooks(path: string): Promise<import("../../domain/entities/GitEntities").GitHook[]> {
+    return await invoke("get_git_hooks", { path });
+  }
+
+  async toggleGitHook(path: string, hookName: string, state: boolean): Promise<void> {
+    await invoke("toggle_git_hook", { path, hook_name: hookName, hook_state: state });
+  }
+
+  async readHookContent(path: string, hookName: string): Promise<string> {
+    return await invoke<string>("read_hook_content", { path, hook_name: hookName });
+  }
+
+  async saveHookContent(path: string, hookName: string, content: string): Promise<void> {
+    await invoke("save_hook_content", { path, hook_name: hookName, content });
+  }
 }
+

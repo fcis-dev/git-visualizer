@@ -160,7 +160,7 @@ const DebouncedSearchInput = ({ onSearch, className = "w-48 ml-4 mr-2" }: { onSe
       <Search className="w-3.5 h-3.5 absolute left-2 text-slate-400" />
       <input
         type="text"
-        placeholder={t('common.search', 'Search...')}
+        placeholder={t('common.search')}
         value={input}
         onChange={(e) => setInput(e.target.value)}
         className="pl-7 pr-6 py-1 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full"
@@ -384,7 +384,7 @@ export function DiffView({
                 className="flex items-center space-x-1 p-1 -ml-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
             >
                 <ArrowLeft className="w-4 h-4" />
-                <span className="text-sm font-medium">{t('historicalFile.back', 'Back')}</span>
+                <span className="text-sm font-medium">{t('historicalFile.back')}</span>
             </button>
             <span className="text-slate-300 dark:text-slate-700 shrink-0">|</span>
             <div className="flex flex-col min-w-0 flex-1">
@@ -429,7 +429,7 @@ export function DiffView({
                 className="flex items-center space-x-1.5 px-3 py-1 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow-sm transition-colors font-medium disabled:opacity-50"
               >
                 <Play className="w-3.5 h-3.5" />
-                <span>{t("stashes.apply", "Apply Stash")}</span>
+                <span>{t("stashes.apply")}</span>
               </button>
             )}
           </div>

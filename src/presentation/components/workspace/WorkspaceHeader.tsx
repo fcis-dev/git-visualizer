@@ -87,7 +87,7 @@ export function WorkspaceHeader({
                ? "bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400"
                : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white"
           }`}
-          title={t("workspace.projects.title", "Projects")}
+          title={t("workspace.projects.title")}
         >
           <FolderOpen className="w-5 h-5" />
         </button>
@@ -207,7 +207,7 @@ export function WorkspaceHeader({
         <button
           onClick={() => setIsProjectSettingsModalOpen(true)}
           className="flex flex-col items-center justify-center p-1.5 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          title={t("workspace.header.settings", "Project Settings")}
+          title={t("workspace.header.settings")}
         >
           <Settings className="w-4 h-4" />
         </button>

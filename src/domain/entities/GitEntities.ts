@@ -117,3 +117,9 @@ interface FileStatus {
   path: string;
   status: string;
 }
+
+export interface GitHook {
+  name: string;
+  active: boolean;
+  content?: string;
+}

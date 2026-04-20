@@ -31,7 +31,7 @@ const DebouncedSearchInput = ({ onSearch, className = "w-40 mr-2" }: { onSearch:
             <Search className="w-3.5 h-3.5 absolute left-2 text-slate-400" />
             <input
                 type="text"
-                placeholder={t('common.search', 'Search...')}
+                placeholder={t('common.search')}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 className="pl-7 pr-6 py-1 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full"
@@ -174,7 +174,7 @@ export function HistoricalFileContentView({
                             {totalLines > 1500 ? (
                                 <div className="p-4">
                                     <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/30 rounded-md text-amber-800 dark:text-amber-200 flex items-center justify-between">
-                                        <p className="text-sm">{t('historicalFile.performanceMode', 'Performance mode active (large file)')}</p>
+                                        <p className="text-sm">{t('historicalFile.performanceMode')}</p>
                                     </div>
                                     <pre className="whitespace-pre overflow-visible text-slate-800 dark:text-slate-200 selection:bg-indigo-500/30">
                                         {content || ''}

@@ -2,7 +2,11 @@
   "welcome": "Bienvenido a Git Visualizer",
   "common": {
     "search": "Buscar...",
-    "repository": "Repositorio"
+    "repository": "Repositorio",
+    "saved": "Guardado",
+    "saveChanges": "Guardar cambios",
+    "save": "Guardar",
+    "edit": "Editar"
   },
   "dashboard": {
     "title": "Proyectos",
@@ -18,7 +22,11 @@
     "noProjects": "No se encontraron proyectos",
     "noProjectsMatch": "Ningún proyecto coincide con tu búsqueda.",
     "getStarted": "Empieza añadiendo una carpeta que contenga tus repositorios Git.",
-    "backToRoot": "Volver al proyecto raíz"
+    "backToRoot": "Volver al proyecto raíz",
+    "projects": {
+      "title": "Proyectos recientes",
+      "empty": "No se encontraron proyectos"
+    }
   },
   "workspace": {
     "activityBar": {
@@ -43,7 +51,10 @@
       "pull": "Pull",
       "pullBehind": "Pull ({{count}} atrás)",
       "push": "Push",
-      "pushAhead": "Push ({{count}} adelante)"
+      "pushAhead": "Push ({{count}} adelante)",
+      "settings": "Configuración",
+      "openNewWindow": "Abrir en nueva ventana",
+      "removeProject": "Eliminar proyecto"
     },
     "search": {
       "allBranches": "Todas las ramas",
@@ -76,6 +87,10 @@
     "prune": {
       "title": "Ramas remotas eliminadas",
       "message": "Las siguientes ramas locales rastrean refs remotas ya borradas:\n\n{{branches}}\n\n¿Eliminarlas localmente?"
+    },
+    "projects": {
+      "title": "PROYECTOS",
+      "closeProject": "Cerrar Proyecto"
     }
   },
   "sidebar": {
@@ -125,7 +140,8 @@
       "discardAllMsg": "¿Estás seguro de que quieres descartar TODOS los {{count}} cambios? Esta acción no se puede deshacer.",
       "removeSubmoduleTitle": "Eliminar submódulo",
       "removeSubmoduleMsg": "¿Estás seguro de que quieres eliminar completamente el submódulo '{{name}}'? Esto lo borrará del árbol de trabajo y de .git/modules.",
-      "commitErrorConflicts": "No se puede hacer commit: debes añadir al stage todos los archivos y resolver los conflictos primero."
+      "commitErrorConflicts": "No se puede hacer commit: debes añadir al stage todos los archivos y resolver los conflictos primero.",
+      "commitNoVerify": "Hacer commit sin verificar (--no-verify)"
     },
     "branches": {
       "title": "RAMAS",
@@ -262,7 +278,9 @@
     "noStagedTitle": "Sin cambios en Stage",
     "noStagedMsg": "No hay archivos en el área de preparación (stage). ¿Quieres guardar todos los cambios locales en el stash?",
     "noChangesTitle": "Sin cambios",
-    "noChangesMsg": "No hay cambios para guardar en el stash."
+    "noChangesMsg": "No hay cambios para guardar en el stash.",
+    "apply": "Aplicar Stash",
+    "previewAction": "Vista previa Stash"
   },
   "settings": {
     "title": "Configuración",
@@ -280,6 +298,16 @@
     "saveError": "Error al guardar la configuración de Git: ",
     "successTitle": "Éxito",
     "errorTitle": "Error",
+    "tabs": {
+      "gitConfig": "Configuración de Git",
+      "remotes": "Remotos",
+      "hooks": "Git Hooks"
+    },
+    "hooks": {
+      "edit": "Editar Script",
+      "desc": "Habilita o deshabilita localmente los git hooks en este repositorio.",
+      "empty": "No hay gits hooks creados en el directorio .git/hooks."
+    },
     "about": "Acerca de",
     "aboutDesc": "Una herramienta moderna para visualizar y gestionar tus repositorios Git.",
     "checkForUpdates": "Buscar actualizaciones",
@@ -290,7 +318,20 @@
     "upToDateDesc": "Estás ejecutando la última versión.",
     "updateError": "Error al buscar actualizaciones: ",
     "installingUpdate": "Instalando actualización... La aplicación se reiniciará automáticamente.",
-    "footer": "Creado con Tauri + React"
+    "footer": "Creado con Tauri + React",
+    "remotes": {
+      "removeTitle": "Eliminar Remoto",
+      "empty": "No hay remotos configurados",
+      "addNew": "Añadir nuevo remoto"
+    },
+    "git": {
+      "global": "Ámbito global",
+      "local": "Ámbito local",
+      "globalDesc": "Estos ajustes aplican a todos tus repositorios.",
+      "name": "Nombre de Usuario",
+      "email": "Correo Electrónico",
+      "localDesc": "Estos ajustes aplican estrictamente al repositorio actual."
+    }
   },
   "rebase": {
     "title": "Rebase Interactivo",
@@ -362,7 +403,8 @@
   "historicalFile": {
     "back": "Atrás",
     "copyFileContent": "Copiar contenido del archivo",
-    "failedToLoad": "Error al cargar el contenido del archivo:"
+    "failedToLoad": "Error al cargar el contenido del archivo:",
+    "performanceMode": "Modo de rendimiento activo (archivo grande)"
   },
   "dialog": {
     "confirm": "Confirmar",

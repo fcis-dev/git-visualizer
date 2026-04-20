@@ -108,9 +108,10 @@ pub async fn git_commit(
     state: tauri::State<'_, AppState>,
     path: &str,
     message: String,
+    no_verify: bool,
 ) -> Result<String, String> {
     validate_path_in_workspace(&state, path)?;
-    services::git_commit(path, message)
+    services::git_commit(path, message, no_verify)
 }
 
 #[tauri::command]
@@ -797,6 +798,47 @@ pub async fn register_window(
 #[tauri::command]
 pub async fn unregister_window(state: State<'_, AppState>, label: String) -> Result<(), String> {
     services::unregister_window(state, label)
+}
+
+#[tauri::command]
+pub async fn get_git_hooks(
+    state: tauri::State<'_, AppState>,
+    path: &str,
+) -> Result<Vec<crate::models::GitHook>, String> {
+    validate_path_in_workspace(&state, path)?;
+    services::get_git_hooks(path)
+}
+
+#[tauri::command]
+pub async fn toggle_git_hook(
+    state: tauri::State<'_, AppState>,
+    path: &str,
+    hook_name: &str,
+    hook_state: bool,
+) -> Result<(), String> {
+    validate_path_in_workspace(&state, path)?;
+    services::toggle_git_hook(path, hook_name, hook_state)
+}
+
+#[tauri::command]
+pub async fn read_hook_content(
+    state: tauri::State<'_, AppState>,
+    path: &str,
+    hook_name: &str,
+) -> Result<String, String> {
+    validate_path_in_workspace(&state, path)?;
+    services::read_hook_content(path, hook_name)
+}
+
+#[tauri::command]
+pub async fn save_hook_content(
+    state: tauri::State<'_, AppState>,
+    path: &str,
+    hook_name: &str,
+    content: &str,
+) -> Result<(), String> {
+    validate_path_in_workspace(&state, path)?;
+    services::save_hook_content(path, hook_name, content)
 }
 
 #[tauri::command]

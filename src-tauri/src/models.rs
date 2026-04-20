@@ -146,3 +146,9 @@ pub struct WindowSession {
     pub label: String,
     pub path: String,
 }
+
+#[derive(Debug, Serialize)]
+pub struct GitHook {
+    pub name: String,
+    pub active: bool,
+}

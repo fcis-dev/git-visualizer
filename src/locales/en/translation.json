@@ -2,7 +2,11 @@
   "welcome": "Welcome to Git Visualizer",
   "common": {
     "search": "Search...",
-    "repository": "Repository"
+    "repository": "Repository",
+    "saved": "Saved",
+    "saveChanges": "Save Changes",
+    "save": "Save",
+    "edit": "Edit"
   },
   "dashboard": {
     "title": "Projects",
@@ -18,7 +22,11 @@
     "noProjects": "No projects found",
     "noProjectsMatch": "No projects match your search.",
     "getStarted": "Get started by adding a folder containing your Git repositories.",
-    "backToRoot": "Back to root project"
+    "backToRoot": "Back to root project",
+    "projects": {
+      "title": "Recent Projects",
+      "empty": "No projects found"
+    }
   },
   "workspace": {
     "activityBar": {
@@ -43,7 +51,10 @@
       "pull": "Pull",
       "pullBehind": "Pull ({{count}} behind)",
       "push": "Push",
-      "pushAhead": "Push ({{count}} ahead)"
+      "pushAhead": "Push ({{count}} ahead)",
+      "settings": "Settings",
+      "openNewWindow": "Open in new window",
+      "removeProject": "Remove project"
     },
     "search": {
       "allBranches": "All branches",
@@ -76,6 +87,10 @@
     "prune": {
       "title": "Remote branches deleted",
       "message": "The following local branches track removed remote refs:\n\n{{branches}}\n\nDelete them locally?"
+    },
+    "projects": {
+      "title": "PROJECTS",
+      "closeProject": "Close Project"
     }
   },
   "sidebar": {
@@ -125,7 +140,8 @@
       "discardAllMsg": "Are you sure you want to discard ALL {{count}} changes? This cannot be undone.",
       "removeSubmoduleTitle": "Remove Submodule",
       "removeSubmoduleMsg": "Are you sure you want to completely remove the submodule '{{name}}'? This deletes it from the working tree and .git/modules.",
-      "commitErrorConflicts": "Cannot commit: You must stage all files and resolve conflicts first."
+      "commitErrorConflicts": "Cannot commit: You must stage all files and resolve conflicts first.",
+      "commitNoVerify": "Commit without verifying (--no-verify)"
     },
     "branches": {
       "title": "BRANCHES",
@@ -262,7 +278,9 @@
     "noStagedTitle": "No Staged Changes",
     "noStagedMsg": "There are no files in the staging area. Do you want to stash all local changes instead?",
     "noChangesTitle": "No Changes",
-    "noChangesMsg": "There are no changes to stash."
+    "noChangesMsg": "There are no changes to stash.",
+    "apply": "Apply Stash",
+    "previewAction": "Preview Stash"
   },
   "settings": {
     "title": "Settings",
@@ -280,6 +298,16 @@
     "saveError": "Failed to save git config: ",
     "successTitle": "Success",
     "errorTitle": "Error",
+    "tabs": {
+      "gitConfig": "Git Config",
+      "remotes": "Remotes",
+      "hooks": "Git Hooks"
+    },
+    "hooks": {
+      "edit": "Edit Script",
+      "desc": "Enable or disable local git hooks for this repository.",
+      "empty": "No hooks found in .git/hooks directory."
+    },
     "about": "About",
     "aboutDesc": "A modern tool to visualize and manage your Git repositories.",
     "checkForUpdates": "Check for Updates",
@@ -290,7 +318,20 @@
     "upToDateDesc": "You are running the latest version.",
     "updateError": "Error checking for updates: ",
     "installingUpdate": "Installing update... The application will restart automatically.",
-    "footer": "Created with Tauri + React"
+    "footer": "Created with Tauri + React",
+    "remotes": {
+      "removeTitle": "Remove Remote",
+      "empty": "No remotes configured",
+      "addNew": "Add New Remote"
+    },
+    "git": {
+      "global": "Global Scope",
+      "local": "Local Scope",
+      "globalDesc": "These settings apply across all your repositories.",
+      "name": "User Name",
+      "email": "User Email",
+      "localDesc": "These settings strictly apply to the current active repository."
+    }
   },
   "rebase": {
     "title": "Interactive Rebase",
@@ -362,7 +403,8 @@
   "historicalFile": {
     "back": "Back",
     "copyFileContent": "Copy file content",
-    "failedToLoad": "Failed to load file content:"
+    "failedToLoad": "Failed to load file content:",
+    "performanceMode": "Performance mode active (large file)"
   },
   "dialog": {
     "confirm": "Confirm",
