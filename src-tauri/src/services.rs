@@ -215,6 +215,7 @@ pub fn get_git_status(path: &str) -> Result<Vec<FileStatus>, String> {
     let mut statuses = Vec::new();
     let mut opts = git2::StatusOptions::new();
     opts.include_untracked(true);
+    opts.recurse_untracked_dirs(true);
     let repo_statuses = repo.statuses(Some(&mut opts)).map_err(|e| e.to_string())?;
 
     for entry in repo_statuses.iter() {
