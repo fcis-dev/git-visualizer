@@ -30,6 +30,7 @@ export interface ReflogEntry {
   index: string;
   action: string;
   message: string;
+  timestamp: number;
 }
 
 export interface TagData {

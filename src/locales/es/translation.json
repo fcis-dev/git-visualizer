@@ -499,7 +499,12 @@
     "noEntries": "No se encontraron entradas en el reflog.",
     "rescueTooltip": "Crear una nueva rama desde este estado de manera segura",
     "rescue": "Rescatar",
-    "hardResetTooltip": "Hacer Hard Reset a este estado"
+    "hardResetTooltip": "Hacer Hard Reset a este estado",
+    "quickUndoTitle": "Deshacer Rápido",
+    "quickUndoAction": "Deshacer último cambio",
+    "quickUndoDesc": "Volver al estado justo anterior al último comando ejecutado (HEAD@{1}).",
+    "rescueBranchButton": "Rescatar en Rama",
+    "hardResetButton": "Forzar Reset Aquí"
   },
   "tagsSidebar": {
     "deleteTagTitle": "Eliminar etiqueta",

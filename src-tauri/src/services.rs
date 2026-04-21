@@ -1384,7 +1384,7 @@ fn search_commits_internal(
 }
 
 pub fn get_git_reflog(path: &str) -> Result<Vec<ReflogEntry>, String> {
-    let output = run_git_cmd(path, &["reflog", "-n", "100"])?;
+    let output = run_git_cmd(path, &["log", "-g", "-n", "100", "--format=%h|%gd|%ct|%gs"])?;
     let mut entries = Vec::new();
 
     for line in output.lines() {
@@ -1392,30 +1392,15 @@ pub fn get_git_reflog(path: &str) -> Result<Vec<ReflogEntry>, String> {
             continue;
         }
 
-        // Example line:
-        // 9b6d61d HEAD@{0}: commit: my message here
-        // 564177c HEAD@{1}: reset: moving to HEAD~1
-
-        // Handle variations gracefully
-        // Handle variations gracefully
-        let hash_index_part;
-        let action_message_part;
-
-        if let Some(pos) = line.find(": ") {
-            hash_index_part = &line[..pos];
-            action_message_part = &line[pos + 2..];
-        } else {
-            hash_index_part = line;
-            action_message_part = "";
-        }
-
-        let hash_index_split: Vec<&str> = hash_index_part.split_whitespace().collect();
-        if hash_index_split.len() < 2 {
+        let parts: Vec<&str> = line.splitn(4, '|').collect();
+        if parts.len() < 4 {
             continue;
         }
 
-        let hash = hash_index_split[0].to_string();
-        let index = hash_index_split[1..].join(" ");
+        let hash = parts[0].to_string();
+        let index = parts[1].to_string();
+        let timestamp: i64 = parts[2].parse().unwrap_or(0);
+        let action_message_part = parts[3];
 
         let action;
         let message;
@@ -1433,6 +1418,7 @@ pub fn get_git_reflog(path: &str) -> Result<Vec<ReflogEntry>, String> {
             index,
             action,
             message,
+            timestamp,
         });
     }
 

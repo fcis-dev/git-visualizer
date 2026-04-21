@@ -48,6 +48,7 @@ pub struct ReflogEntry {
     pub index: String,
     pub action: String,
     pub message: String,
+    pub timestamp: i64,
 }
 
 #[derive(Debug, Serialize)]

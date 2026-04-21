@@ -499,7 +499,12 @@
     "noEntries": "No reflog entries found.",
     "rescueTooltip": "Create a new branch from this state securely",
     "rescue": "Rescue",
-    "hardResetTooltip": "Hard Reset to this state"
+    "hardResetTooltip": "Hard Reset to this state",
+    "quickUndoTitle": "Quick Undo",
+    "quickUndoAction": "Undo Last Action",
+    "quickUndoDesc": "Return to the state right before the last command (HEAD@{1}).",
+    "rescueBranchButton": "Rescue in Branch",
+    "hardResetButton": "Force Reset Here"
   },
   "tagsSidebar": {
     "deleteTagTitle": "Delete Tag",
