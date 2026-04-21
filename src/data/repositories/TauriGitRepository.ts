@@ -399,5 +399,41 @@ export class TauriGitRepository implements IGitRepository {
   async saveHookContent(path: string, hookName: string, content: string): Promise<void> {
     await invoke("save_hook_content", { path, hook_name: hookName, content });
   }
+
+  async isLfsInstalled(): Promise<boolean> {
+    try {
+      return await invoke<boolean>("git_lfs_is_installed");
+    } catch {
+      return false;
+    }
+  }
+
+  async getLfsFiles(path: string): Promise<string[]> {
+    try {
+      return await invoke<string[]>("git_lfs_ls_files", { path });
+    } catch {
+      return [];
+    }
+  }
+
+  async trackLfs(path: string, pattern: string): Promise<void> {
+    await invoke("git_lfs_track", { path, pattern });
+  }
+
+  async untrackLfs(path: string, pattern: string): Promise<void> {
+    await invoke("git_lfs_untrack", { path, pattern });
+  }
+
+  async pullLfs(path: string): Promise<void> {
+    await invoke("git_lfs_pull", { path });
+  }
+
+  async lockLfs(path: string, file: string): Promise<void> {
+    await invoke("git_lfs_lock", { path, file });
+  }
+
+  async unlockLfs(path: string, file: string): Promise<void> {
+    await invoke("git_lfs_unlock", { path, file });
+  }
 }
 

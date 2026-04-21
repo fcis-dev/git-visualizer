@@ -31,13 +31,33 @@ export function useSourceControlController(
   const [previousMessage, setPreviousMessage] = useState("");
   const [isRebasing, setIsRebasing] = useState(false);
 
+  // Git LFS
+  const [isLfsInstalled, setIsLfsInstalled] = useState(false);
+  const [lfsFiles, setLfsFiles] = useState<string[]>([]);
+
+  useEffect(() => {
+    const checkLfs = () => {
+      repository.isLfsInstalled().then(installed => {
+        const lfsEnabled = localStorage.getItem("enableGitLfs") === "true";
+        setIsLfsInstalled(installed && lfsEnabled);
+      });
+    };
+    
+    checkLfs();
+    window.addEventListener("lfs-config-changed", checkLfs);
+    return () => window.removeEventListener("lfs-config-changed", checkLfs);
+  }, []);
+
   const { showConfirm, showInput, showAlert } = useDialog();
   const gitActions = useGitActions(repoPath || "");
 
   const loadStatus = useCallback(async () => {
     if (!repoPath) return;
     try {
-      const status = await repository.getSourceControlStatus(repoPath);
+      const [status, fetchedLfsFiles] = await Promise.all([
+        repository.getSourceControlStatus(repoPath),
+        isLfsInstalled ? repository.getLfsFiles(repoPath) : Promise.resolve([])
+      ]);
 
       const staged: { path: string; status: string }[] = [];
       const changed: { path: string; status: string }[] = [];
@@ -57,6 +77,7 @@ export function useSourceControlController(
       setIsRebasing(status.is_rebasing);
       setSubmodules(status.submodules);
       setStashesCount(status.stash_count);
+      setLfsFiles(fetchedLfsFiles);
 
       if (status.merge_msg && status.merge_msg !== lastMergeMsg) {
         setLastMergeMsg(status.merge_msg);
@@ -70,7 +91,7 @@ export function useSourceControlController(
       console.error("Failed to load status", err);
       setError(err.toString());
     }
-  }, [repoPath, lastMergeMsg, commitMessage]);
+  }, [repoPath, lastMergeMsg, commitMessage, isLfsInstalled]);
 
   useEffect(() => {
     if (repoPath) {
@@ -312,6 +333,57 @@ export function useSourceControlController(
     );
   };
 
+  const handleLfsTrack = async (file: string) => {
+    if (!repoPath) return;
+    const parts = file.split(".");
+    const ext = parts.length > 1 ? `*.${parts.pop()}` : file;
+    showInput(t("sidebar.sourceControl.lfsTrackConfig"), t("sidebar.sourceControl.lfsTrackPattern", { ext }), async (pattern) => {
+      if (!pattern) return;
+      try {
+        await repository.trackLfs(repoPath, pattern);
+        loadStatus();
+        showAlert("Git LFS", t("sidebar.sourceControl.lfsTrackSuccess", { pattern }));
+      } catch (err: any) {
+        setError(err.toString());
+        showAlert(t("sidebar.sourceControl.lfsErrorTracking"), err.toString());
+      }
+    }, ext);
+  };
+
+  const handleLfsLock = async (file: string) => {
+    if (!repoPath) return;
+    try {
+      await repository.lockLfs(repoPath, file);
+      showAlert("Git LFS", t("sidebar.sourceControl.lfsLockSuccess", { file }));
+    } catch (err: any) {
+      setError(err.toString());
+      showAlert(t("sidebar.sourceControl.lfsErrorLocking"), err.toString());
+    }
+  };
+
+  const handleLfsUnlock = async (file: string) => {
+    if (!repoPath) return;
+    try {
+      await repository.unlockLfs(repoPath, file);
+      showAlert("Git LFS", t("sidebar.sourceControl.lfsUnlockSuccess", { file }));
+    } catch (err: any) {
+      setError(err.toString());
+      showAlert(t("sidebar.sourceControl.lfsErrorUnlocking"), err.toString());
+    }
+  };
+
+  const handleLfsPull = async () => {
+    if (!repoPath) return;
+    try {
+      await repository.pullLfs(repoPath);
+      loadStatus();
+      showAlert("Git LFS", t("sidebar.sourceControl.lfsPullSuccess"));
+    } catch (err: any) {
+      setError(err.toString());
+      showAlert(t("sidebar.sourceControl.lfsErrorPulling"), err.toString());
+    }
+  };
+
   return {
     state: {
       stagedFiles,
@@ -328,6 +400,8 @@ export function useSourceControlController(
       isAmend,
       previousMessage,
       isRebasing,
+      isLfsInstalled,
+      lfsFiles,
     },
     actions: {
       setCommitMessage,
@@ -349,6 +423,10 @@ export function useSourceControlController(
       handleSyncSubmodules,
       handleUpdateSubmodules,
       handleRemoveSubmodule,
+      handleLfsTrack,
+      handleLfsLock,
+      handleLfsUnlock,
+      handleLfsPull,
     }
   };
 }

@@ -2,6 +2,10 @@
 
 This project follows Clean Architecture principles to ensure separation of concerns, scalability, and maintainability.
 
+## 0. General Rules
+
+- **No Hardcoded User-Facing Text**: ALL user-facing text in the frontend MUST be translated using the `useTranslation()` hook from `react-i18next`. Do not use hardcoded string literals for UI rendering under any circumstances. When adding new text, always define the translation keys in both `src/locales/en/translation.json` and `src/locales/es/translation.json`.
+
 ## 1. Frontend Architecture (React)
 
 The frontend code is located in `src/` and is divided into three main layers:

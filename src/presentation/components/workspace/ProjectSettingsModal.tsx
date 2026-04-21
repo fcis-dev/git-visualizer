@@ -35,6 +35,10 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
   const [globalName, setGlobalName] = useState("");
   const [globalEmail, setGlobalEmail] = useState("");
 
+  // LFS config state
+  const [isLfsSystemInstalled, setIsLfsSystemInstalled] = useState(false);
+  const [lfsEnabled, setLfsEnabled] = useState(() => localStorage.getItem("enableGitLfs") === "true");
+
   // Updates State
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [appVersion, setAppVersion] = useState("...");
@@ -54,6 +58,10 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
   useEffect(() => {
     getVersion().then(v => setAppVersion(`v${v}`)).catch(console.error);
     loadData();
+    repository.isLfsInstalled().then(installed => {
+      setIsLfsSystemInstalled(installed);
+      if (!installed) setLfsEnabled(false);
+    });
   }, [repoPath]);
 
   const loadData = async () => {
@@ -132,6 +140,10 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
       if (repoPath) {
         await repository.setGitConfigUser(repoPath, localName, localEmail);
       }
+      
+      localStorage.setItem("enableGitLfs", String(lfsEnabled));
+      window.dispatchEvent(new Event("lfs-config-changed"));
+
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 5000);
     } catch (err: any) {
@@ -221,7 +233,7 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
         dragMomentum={false}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-[520px] overflow-hidden"
+        className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-[650px] overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -456,6 +468,36 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
                   </div>
                 )}
                 
+                {/* Advanced Features (LFS) */}
+                {isLfsSystemInstalled && (
+                  <div className="pt-2">
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800">
+                      <div className="flex items-center space-x-3">
+                        <div>
+                          <div className="font-medium text-slate-900 dark:text-slate-200 text-sm">
+                            {t("settings.lfs.enable")}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            {t("settings.lfs.desc")}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setLfsEnabled(!lfsEnabled)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 ${
+                          lfsEnabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            lfsEnabled ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="pt-1 flex justify-end items-center gap-3">
                   {saveSuccess && (
                      <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1 animate-in fade-in duration-300">

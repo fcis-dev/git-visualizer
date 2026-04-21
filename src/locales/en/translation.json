@@ -141,7 +141,21 @@
       "removeSubmoduleTitle": "Remove Submodule",
       "removeSubmoduleMsg": "Are you sure you want to completely remove the submodule '{{name}}'? This deletes it from the working tree and .git/modules.",
       "commitErrorConflicts": "Cannot commit: You must stage all files and resolve conflicts first.",
-      "commitNoVerify": "Commit without verifying (--no-verify)"
+      "commitNoVerify": "Commit without verifying (--no-verify)",
+      "lfsPull": "LFS Pull",
+      "lfsTrackPattern": "Enter pattern to track (e.g. {{ext}}):",
+      "lfsTrackConfig": "Git LFS Track",
+      "lfsTrackSuccess": "Now tracking {{pattern}}",
+      "lfsErrorTracking": "Error tracking LFS",
+      "lfsLockSuccess": "{{file}} locked successfully.",
+      "lfsErrorLocking": "Error locking LFS",
+      "lfsUnlockSuccess": "{{file}} unlocked successfully.",
+      "lfsErrorUnlocking": "Error unlocking LFS",
+      "lfsPullSuccess": "LFS Pull completed successfully.",
+      "lfsErrorPulling": "Error in LFS Pull",
+      "lfsTrackWait": "Track with Git LFS",
+      "lfsLock": "Git LFS Lock",
+      "lfsUnlock": "Git LFS Unlock"
     },
     "branches": {
       "title": "BRANCHES",
@@ -331,6 +345,11 @@
       "name": "User Name",
       "email": "User Email",
       "localDesc": "These settings strictly apply to the current active repository."
+    },
+    "lfs": {
+      "enable": "Enable Git LFS Support",
+      "desc": "Show Git LFS tracking options and badges in the Source Control panel.",
+      "notInstalled": "Git LFS is not installed on your system. Please install it first."
     }
   },
   "rebase": {

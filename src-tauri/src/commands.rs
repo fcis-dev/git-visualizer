@@ -847,3 +847,66 @@ pub async fn get_session(
 ) -> Result<Vec<crate::models::WindowSession>, String> {
     services::get_session(state)
 }
+
+#[tauri::command]
+pub async fn git_lfs_is_installed() -> Result<bool, String> {
+    services::git_lfs_is_installed()
+}
+
+#[tauri::command]
+pub async fn git_lfs_ls_files(
+    state: tauri::State<'_, AppState>,
+    path: &str,
+) -> Result<Vec<String>, String> {
+    validate_path_in_workspace(&state, path)?;
+    services::git_lfs_ls_files(path)
+}
+
+#[tauri::command]
+pub async fn git_lfs_track(
+    state: tauri::State<'_, AppState>,
+    path: &str,
+    pattern: &str,
+) -> Result<String, String> {
+    validate_path_in_workspace(&state, path)?;
+    services::git_lfs_track(path, pattern)
+}
+
+#[tauri::command]
+pub async fn git_lfs_untrack(
+    state: tauri::State<'_, AppState>,
+    path: &str,
+    pattern: &str,
+) -> Result<String, String> {
+    validate_path_in_workspace(&state, path)?;
+    services::git_lfs_untrack(path, pattern)
+}
+
+#[tauri::command]
+pub async fn git_lfs_pull(
+    state: tauri::State<'_, AppState>,
+    path: &str,
+) -> Result<String, String> {
+    validate_path_in_workspace(&state, path)?;
+    services::git_lfs_pull(path)
+}
+
+#[tauri::command]
+pub async fn git_lfs_lock(
+    state: tauri::State<'_, AppState>,
+    path: &str,
+    file: &str,
+) -> Result<String, String> {
+    validate_path_in_workspace(&state, path)?;
+    services::git_lfs_lock(path, file)
+}
+
+#[tauri::command]
+pub async fn git_lfs_unlock(
+    state: tauri::State<'_, AppState>,
+    path: &str,
+    file: &str,
+) -> Result<String, String> {
+    validate_path_in_workspace(&state, path)?;
+    services::git_lfs_unlock(path, file)
+}

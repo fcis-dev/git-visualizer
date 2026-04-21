@@ -141,7 +141,21 @@
       "removeSubmoduleTitle": "Eliminar submódulo",
       "removeSubmoduleMsg": "¿Estás seguro de que quieres eliminar completamente el submódulo '{{name}}'? Esto lo borrará del árbol de trabajo y de .git/modules.",
       "commitErrorConflicts": "No se puede hacer commit: debes añadir al stage todos los archivos y resolver los conflictos primero.",
-      "commitNoVerify": "Hacer commit sin verificar (--no-verify)"
+      "commitNoVerify": "Hacer commit sin verificar (--no-verify)",
+      "lfsPull": "Git LFS Pull",
+      "lfsTrackPattern": "Introduce el patrón a trackear (ej. {{ext}}):",
+      "lfsTrackConfig": "Rastrear con Git LFS",
+      "lfsTrackSuccess": "Rastreando {{pattern}} correctamanete",
+      "lfsErrorTracking": "Error al rastrear con LFS",
+      "lfsLockSuccess": "{{file}} bloqueado correctamente.",
+      "lfsErrorLocking": "Error al bloquear con LFS",
+      "lfsUnlockSuccess": "{{file}} desbloqueado correctamente.",
+      "lfsErrorUnlocking": "Error al desbloquear con LFS",
+      "lfsPullSuccess": "LFS Pull completado correctamente.",
+      "lfsErrorPulling": "Error en LFS Pull",
+      "lfsTrackWait": "Trackear con Git LFS",
+      "lfsLock": "Bloquear en Git LFS",
+      "lfsUnlock": "Desbloquear en Git LFS"
     },
     "branches": {
       "title": "RAMAS",
@@ -331,6 +345,11 @@
       "name": "Nombre de Usuario",
       "email": "Correo Electrónico",
       "localDesc": "Estos ajustes aplican estrictamente al repositorio actual."
+    },
+    "lfs": {
+      "enable": "Activar soporte para Git LFS",
+      "desc": "Muestra opciones de rastreo y visualizadores de insignias LFS en el panel de Control de Cambios.",
+      "notInstalled": "Git LFS no está instalado en este sistema operativo. Por favor, instálalo primero."
     }
   },
   "rebase": {

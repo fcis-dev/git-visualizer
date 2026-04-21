@@ -120,5 +120,13 @@ export interface IGitRepository {
   toggleGitHook(path: string, hookName: string, state: boolean): Promise<void>;
   readHookContent(path: string, hookName: string): Promise<string>;
   saveHookContent(path: string, hookName: string, content: string): Promise<void>;
+
+  isLfsInstalled(): Promise<boolean>;
+  getLfsFiles(path: string): Promise<string[]>;
+  trackLfs(path: string, pattern: string): Promise<void>;
+  untrackLfs(path: string, pattern: string): Promise<void>;
+  pullLfs(path: string): Promise<void>;
+  lockLfs(path: string, file: string): Promise<void>;
+  unlockLfs(path: string, file: string): Promise<void>;
 }
 

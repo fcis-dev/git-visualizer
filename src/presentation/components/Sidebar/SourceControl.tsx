@@ -87,6 +87,15 @@ export function SourceControl({
           <FolderGit2 className="w-4 h-4 text-indigo-500" />
           <span>{t("sidebar.sourceControl.title")}</span>
         </span>
+        {state.isLfsInstalled && (
+          <button
+            onClick={actions.handleLfsPull}
+            className="p-1 px-2 text-[10px] uppercase font-bold text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+            title={t("sidebar.sourceControl.lfsPull")}
+          >
+            {t("sidebar.sourceControl.lfsPull")}
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-4">
@@ -238,6 +247,7 @@ export function SourceControl({
               const fileName = parts.pop();
               const dirPath = parts.join("/");
               const displayPath = dirPath ? truncatePath(dirPath, 25) : "";
+              const isLfs = state.lfsFiles.includes(file.path);
               
               return (
               <div
@@ -250,6 +260,7 @@ export function SourceControl({
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
                   <div className="flex items-baseline min-w-0 flex-1 overflow-hidden" title={file.path}>
                     <span className="text-xs text-slate-700 dark:text-slate-300 truncate min-w-0">{fileName}</span>
+                    {isLfs && <span className="ml-1.5 text-[9px] bg-slate-200 dark:bg-slate-700 px-1 rounded-sm font-semibold text-slate-600 dark:text-slate-400 shrink-0">LFS</span>}
                     {displayPath && <span className="ml-1.5 text-[10px] text-slate-400 dark:text-slate-500 truncate min-w-0 [direction:rtl] text-left">&lrm;{displayPath}</span>}
                   </div>
                 </div>
@@ -308,6 +319,7 @@ export function SourceControl({
                 : file.status === "conflicted"
                   ? "text-amber-600 dark:text-amber-400 font-bold"
                   : "text-slate-700 dark:text-slate-300";
+              const isLfs = state.lfsFiles.includes(file.path);
 
               return (
               <div
@@ -332,6 +344,7 @@ export function SourceControl({
                     <span className={`text-xs truncate min-w-0 ${statusColorClass}`}>
                       {fileName}
                     </span>
+                    {isLfs && <span className="ml-1.5 text-[9px] bg-slate-200 dark:bg-slate-700 px-1 rounded-sm font-semibold text-slate-600 dark:text-slate-400 shrink-0">LFS</span>}
                     {displayPath && (
                       <span className={`ml-1.5 text-[10px] truncate min-w-0 [direction:rtl] text-left ${file.status === "deleted" ? "text-red-400/60 line-through" : "text-slate-400 dark:text-slate-500"}`}>
                         &lrm;{displayPath}
@@ -396,15 +409,50 @@ export function SourceControl({
             {contextMenu.path.split("/").pop()}
           </div>
 
-          <button
-            className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
-            onClick={() => {
-              onViewFileHistory(contextMenu.path!);
-              setContextMenu({ ...contextMenu, visible: false });
-            }}
-          >
-            {t("sidebar.sourceControl.viewFileHistory")}
-          </button>
+          {onViewFileHistory && (
+            <button
+              className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+              onClick={() => {
+                onViewFileHistory(contextMenu.path!);
+                setContextMenu({ ...contextMenu, visible: false });
+              }}
+            >
+              {t("sidebar.sourceControl.viewFileHistory")}
+            </button>
+          )}
+
+          {state.isLfsInstalled && (
+            <>
+              <div className="my-1 border-t border-slate-100 dark:border-slate-800"></div>
+              <button
+                className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                onClick={() => {
+                  actions.handleLfsTrack(contextMenu.path!);
+                  setContextMenu({ ...contextMenu, visible: false });
+                }}
+              >
+                {t("sidebar.sourceControl.lfsTrackWait")}
+              </button>
+              <button
+                className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                onClick={() => {
+                  actions.handleLfsLock(contextMenu.path!);
+                  setContextMenu({ ...contextMenu, visible: false });
+                }}
+              >
+                {t("sidebar.sourceControl.lfsLock")}
+              </button>
+              <button
+                className="w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                onClick={() => {
+                  actions.handleLfsUnlock(contextMenu.path!);
+                  setContextMenu({ ...contextMenu, visible: false });
+                }}
+              >
+                {t("sidebar.sourceControl.lfsUnlock")}
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

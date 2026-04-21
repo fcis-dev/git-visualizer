@@ -1761,3 +1761,66 @@ pub fn get_session(
         })
         .collect())
 }
+
+pub fn git_lfs_is_installed() -> Result<bool, String> {
+    use std::process::Command;
+    #[cfg(target_os = "windows")]
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+    let mut cmd = Command::new("git");
+    cmd.args(["lfs", "version"]);
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let output = cmd.output().map_err(|e| e.to_string())?;
+    Ok(output.status.success())
+}
+
+pub fn git_lfs_ls_files(path: &str) -> Result<Vec<String>, String> {
+    let output = run_git_cmd(path, &["lfs", "ls-files", "-n"]);
+    match output {
+        Ok(out) => {
+            let mut files = Vec::new();
+            for line in out.lines() {
+                let trimmed = line.trim();
+                if !trimmed.is_empty() {
+                    files.push(trimmed.to_string());
+                }
+            }
+            Ok(files)
+        }
+        Err(e) => {
+            // If LFS is not configured or no files exist, it might fail or return empty.
+            if e.to_lowercase().contains("not a git repository") {
+                Err(e)
+            } else {
+                Ok(Vec::new())
+            }
+        }
+    }
+}
+
+pub fn git_lfs_track(path: &str, pattern: &str) -> Result<String, String> {
+    run_git_cmd(path, &["lfs", "track", pattern])
+}
+
+pub fn git_lfs_untrack(path: &str, pattern: &str) -> Result<String, String> {
+    run_git_cmd(path, &["lfs", "untrack", pattern])
+}
+
+pub fn git_lfs_pull(path: &str) -> Result<String, String> {
+    run_git_cmd(path, &["lfs", "pull"])
+}
+
+pub fn git_lfs_lock(path: &str, file: &str) -> Result<String, String> {
+    run_git_cmd(path, &["lfs", "lock", file])
+}
+
+pub fn git_lfs_unlock(path: &str, file: &str) -> Result<String, String> {
+    run_git_cmd(path, &["lfs", "unlock", file])
+}
+

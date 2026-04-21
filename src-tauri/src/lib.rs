@@ -156,7 +156,14 @@ pub fn run() {
             commands::get_git_hooks,
             commands::toggle_git_hook,
             commands::read_hook_content,
-            commands::save_hook_content
+            commands::save_hook_content,
+            commands::git_lfs_is_installed,
+            commands::git_lfs_ls_files,
+            commands::git_lfs_track,
+            commands::git_lfs_untrack,
+            commands::git_lfs_pull,
+            commands::git_lfs_lock,
+            commands::git_lfs_unlock
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
