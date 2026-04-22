@@ -82,7 +82,7 @@ export class TauriGitRepository implements IGitRepository {
   }
 
   async commit(path: string, message: string, noVerify: boolean = false): Promise<void> {
-    await invoke("git_commit", { path, message, no_verify: noVerify });
+    await invoke("git_commit", { path, message, noVerify });
   }
 
   async applyPatch(path: string, patch: string, reverse: boolean = false): Promise<void> {
@@ -120,7 +120,7 @@ export class TauriGitRepository implements IGitRepository {
   ): Promise<string> {
     return await invoke<string>("git_rebase_interactive", {
       path,
-      base_commit: baseCommit,
+      baseCommit,
       sequence,
     });
   }
@@ -184,7 +184,7 @@ export class TauriGitRepository implements IGitRepository {
   }
 
   async renameBranch(path: string, oldName: string, newName: string): Promise<void> {
-    await invoke("git_branch_rename", { path, old_name: oldName, new_name: newName });
+    await invoke("git_branch_rename", { path, oldName, newName });
   }
 
   async deleteBranch(
@@ -389,15 +389,15 @@ export class TauriGitRepository implements IGitRepository {
   }
 
   async toggleGitHook(path: string, hookName: string, state: boolean): Promise<void> {
-    await invoke("toggle_git_hook", { path, hook_name: hookName, hook_state: state });
+    await invoke("toggle_git_hook", { path, hookName, hookState: state });
   }
 
   async readHookContent(path: string, hookName: string): Promise<string> {
-    return await invoke<string>("read_hook_content", { path, hook_name: hookName });
+    return await invoke<string>("read_hook_content", { path, hookName });
   }
 
   async saveHookContent(path: string, hookName: string, content: string): Promise<void> {
-    await invoke("save_hook_content", { path, hook_name: hookName, content });
+    await invoke("save_hook_content", { path, hookName, content });
   }
 
   async isLfsInstalled(): Promise<boolean> {
