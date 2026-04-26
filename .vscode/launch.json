@@ -10,7 +10,10 @@
           "build",
           "--manifest-path=./src-tauri/Cargo.toml",
           "--no-default-features"
-        ]
+        ],
+        "env": {
+          "TAURI_CONFIG": "{\"identifier\": \"dev.fcis.gitvi.dev\", \"productName\": \"GitVi (Dev)\", \"bundle\": {\"icon\": [\"icons/32x32_dev.png\", \"icons/128x128_dev.png\", \"icons/128x128@2x_dev.png\", \"icons/icon_dev.icns\", \"icons/icon_dev.ico\"]}}"
+        }
       },
       "env": {
           "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS": "--remote-debugging-port=1421",

@@ -25,6 +25,13 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
+            // Read the product name from config (overridden by tauri.dev.json in dev builds)
+            let product_name = app
+                .config()
+                .product_name
+                .clone()
+                .unwrap_or_else(|| "GitVi".to_string());
+
             let state = app.state::<config::AppState>();
             let sessions = state.active_sessions.lock().map_err(|e| e.to_string())?;
 
@@ -38,7 +45,8 @@ pub fn run() {
                 for (label, path) in projects {
                     let url = format!("index.html?project={}", urlencoding::encode(&path));
                     let title = format!(
-                        "GitVi - {}",
+                        "{} - {}",
+                        product_name,
                         std::path::Path::new(&path)
                             .file_name()
                             .unwrap_or_default()
@@ -63,6 +71,7 @@ pub fn run() {
             } else {
                 // Show dashboard if no session
                 if let Some(main_win) = app.get_webview_window("main") {
+                    let _ = main_win.set_title(&product_name);
                     let _ = main_win.show();
                     let _ = main_win.unminimize();
                     let _ = main_win.set_focus();

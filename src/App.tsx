@@ -80,6 +80,11 @@ function App() {
               </motion.div>
             )}
           </AnimatePresence>
+          {import.meta.env.DEV && (
+            <div className="pointer-events-none fixed bottom-4 right-4 z-50 select-none rounded-full bg-amber-500/90 px-3 py-1 text-xs font-bold tracking-wider text-white shadow-lg backdrop-blur-md dark:bg-amber-600/90">
+              DEV BUILD
+            </div>
+          )}
         </div>
       </DialogProvider>
     </ThemeProvider>
