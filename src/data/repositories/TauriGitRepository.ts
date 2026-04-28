@@ -83,6 +83,11 @@ export class TauriGitRepository implements IGitRepository {
 
   async commit(path: string, message: string, noVerify: boolean = false): Promise<void> {
     await invoke("git_commit", { path, message, noVerify });
+    try {
+      await this.fetch(path);
+    } catch (e) {
+      console.warn("Failed to fetch after commit", e);
+    }
   }
 
   async applyPatch(path: string, patch: string, reverse: boolean = false): Promise<void> {
@@ -243,6 +248,11 @@ export class TauriGitRepository implements IGitRepository {
 
   async commitAmend(path: string, message: string): Promise<void> {
     await invoke("git_commit_amend", { path, message });
+    try {
+      await this.fetch(path);
+    } catch (e) {
+      console.warn("Failed to fetch after commit amend", e);
+    }
   }
 
   async getReflog(path: string): Promise<ReflogEntry[]> {

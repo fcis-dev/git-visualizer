@@ -282,9 +282,15 @@ pub fn git_resolve_conflict(path: &str, file: &str, strategy: &str) -> Result<St
 pub fn git_stage(path: &str, files: Vec<String>) -> Result<(), String> {
     let repo = Repository::open(path).map_err(|e| e.to_string())?;
     let mut index = repo.index().map_err(|e| e.to_string())?;
+    let workdir = repo.workdir().ok_or("No working directory")?;
     for file in files {
-        let path = Path::new(&file);
-        index.add_path(path).map_err(|e| e.to_string())?;
+        let file_path = Path::new(&file);
+        let full_path = workdir.join(file_path);
+        if full_path.symlink_metadata().is_ok() {
+            index.add_path(file_path).map_err(|e| e.to_string())?;
+        } else {
+            index.remove_path(file_path).map_err(|e| e.to_string())?;
+        }
     }
     index.write().map_err(|e| e.to_string())?;
     Ok(())

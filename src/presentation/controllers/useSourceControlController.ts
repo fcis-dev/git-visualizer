@@ -85,6 +85,9 @@ export function useSourceControlController(
           setCommitMessage(status.merge_msg);
         }
       } else if (!status.merge_msg && lastMergeMsg !== "") {
+        if (commitMessage === lastMergeMsg) {
+          setCommitMessage("");
+        }
         setLastMergeMsg("");
       }
     } catch (err: any) {
