@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   FolderTree,
   Trash2,
@@ -23,12 +23,25 @@ export function WorktreesSidebar({
   onOpenWorktree,
 }: WorktreesSidebarProps) {
   const [worktrees, setWorktrees] = useState<WorktreeData[]>([]);
+  const [localBranches, setLocalBranches] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newPath, setNewPath] = useState("");
   const [newBranch, setNewBranch] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const gitActions = useGitActions(repoPath || "", onRefreshGraph);
   const { showConfirm, showAlert } = useDialog();
@@ -49,7 +62,29 @@ export function WorktreesSidebar({
 
   useEffect(() => {
     loadWorktrees();
+    if (repoPath) {
+      gitActions.getBranchesInfo().then(branches => {
+        setLocalBranches(branches.filter(b => !b.is_remote).map(b => b.name));
+      }).catch(e => console.error("Failed to load branches", e));
+    }
   }, [repoPath]);
+
+  const updateBranchAndPath = (value: string) => {
+    if (repoPath) {
+      const repoName = repoPath.split(/[\/\\]/).pop() || 'repo';
+      const expectedOldPath = newBranch ? `../${repoName}.worktrees/${newBranch}` : "";
+      
+      if (!newPath || newPath === expectedOldPath) {
+        setNewPath(value ? `../${repoName}.worktrees/${value}` : "");
+      }
+    }
+    setNewBranch(value);
+  };
+
+  const handleBranchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    updateBranchAndPath(e.target.value);
+    setIsDropdownOpen(true);
+  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,13 +186,40 @@ export function WorktreesSidebar({
               className="w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500"
               required
             />
-            <input
-              type="text"
-              placeholder={t('worktreesSidebar.branchPlaceholder')}
-              value={newBranch}
-              onChange={(e) => setNewBranch(e.target.value)}
-              className="w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500"
-            />
+            <div className="relative" ref={dropdownRef}>
+              <input
+                type="text"
+                placeholder={t('worktreesSidebar.branchPlaceholder')}
+                value={newBranch}
+                onChange={handleBranchChange}
+                onFocus={() => setIsDropdownOpen(true)}
+                className="w-full px-2 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-colors text-slate-700 dark:text-slate-300 placeholder-slate-500"
+              />
+              {isDropdownOpen && localBranches.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-xl z-40 overflow-hidden animate-in slide-in-from-top-2 duration-150 max-h-48 overflow-y-auto custom-scrollbar">
+                  {localBranches
+                    .filter((b) => b.toLowerCase().includes(newBranch.toLowerCase()))
+                    .map((branch) => (
+                      <button
+                        key={branch}
+                        type="button"
+                        onClick={() => {
+                          updateBranchAndPath(branch);
+                          setIsDropdownOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300 flex items-center justify-between"
+                      >
+                        <span className="truncate">{branch}</span>
+                      </button>
+                    ))}
+                    {localBranches.filter(b => b.toLowerCase().includes(newBranch.toLowerCase())).length === 0 && (
+                      <div className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
+                         {t('worktreesSidebar.noBranches')}
+                      </div>
+                    )}
+                </div>
+              )}
+            </div>
             <button
               type="submit"
               disabled={isAdding || !newPath.trim()}

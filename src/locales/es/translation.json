@@ -534,6 +534,7 @@
     "branchPlaceholder": "Rama (opcional, se separará el HEAD si está vacía)",
     "add": "Añadir",
     "noWorktrees": "No se encontraron worktrees",
+    "noBranches": "No se encontraron ramas",
     "main": "Principal",
     "detached": "separado (detached)",
     "openWorkspaceTooltip": "Abrir worktree como proyecto",

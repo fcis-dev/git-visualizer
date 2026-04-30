@@ -534,6 +534,7 @@
     "branchPlaceholder": "Branch (optional, leaves detached)",
     "add": "Add",
     "noWorktrees": "No worktrees found",
+    "noBranches": "No branches found",
     "main": "Main",
     "detached": "detached",
     "openWorkspaceTooltip": "Open worktree as project",
