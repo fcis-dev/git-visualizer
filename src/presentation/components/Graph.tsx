@@ -491,14 +491,25 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       }
 
       const commitDate = new Date(d.date * 1000);
-      const datePart = commitDate.toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-      });
-      const timePart = commitDate.toLocaleTimeString(undefined, {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      const now = new Date();
+      const diffMs = now.getTime() - commitDate.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+      
+      let shortDate = "";
+      if (diffMins < 60) {
+        shortDate = `${Math.max(1, diffMins)}m`;
+      } else if (diffHours < 24) {
+        shortDate = `${diffHours}h`;
+      } else if (diffDays < 7) {
+        shortDate = `${diffDays}d`;
+      } else if (commitDate.getFullYear() === now.getFullYear()) {
+        shortDate = commitDate.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      } else {
+        shortDate = commitDate.toLocaleDateString(undefined, { month: "short", year: "2-digit" });
+      }
+      const fullDateStr = commitDate.toLocaleString();
 
       const msgColor =
         selectedCommit?.hash === d.hash
@@ -560,19 +571,15 @@ export const Graph = React.forwardRef<GraphHandle, GraphProps>(function Graph(
       contentDiv.html(`
         <div xmlns="http://www.w3.org/1999/xhtml" class="w-full h-full antialiased flex items-center" style="width: 100%; height: 100%; overflow: visible;">
           <div class="flex items-center gap-2 w-full" style="width: 100%; overflow: visible; display: flex; align-items: center;">
-            <div class="commit-message flex items-center gap-2 overflow-hidden whitespace-nowrap" style="flex: 1 1 auto; min-width: 0; display: flex; align-items: center;">
+            <div class="commit-message flex flex-col justify-center overflow-hidden whitespace-nowrap" style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 6px;">
               <span style="overflow: hidden; text-overflow: ellipsis; color: ${msgColor}; font-weight: ${msgWeight}; font-size: 13.5px; line-height: 1.4; pointer-events: none;">${safeMsg}</span>
-              <div class="flex items-center gap-1.5 shrink-0" style="flex-shrink: 0; display: flex; align-items: center;">
-                ${tagsRowHtml}
-              </div>
+              ${tagsRowHtml ? `<div class="flex items-center gap-1.5 shrink-0" style="flex-shrink: 0; display: flex; align-items: center; overflow: hidden; pointer-events: none;">${tagsRowHtml}</div>` : ''}
             </div>
-            <div class="flex items-center gap-2 overflow-hidden" style="flex: 0 0 140px; width: 140px; min-width: 140px; max-width: 140px; color: ${authorColor}; pointer-events: none;" title="${safeAuthor}">
-              <div class="rounded-md flex items-center justify-center" style="flex: 0 0 22px; width: 22px; height: 22px; min-width: 22px; background-color: ${avatarColor}; color: white;">${authorInitial}</div>
-              <span style="flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; font-size: 12px; color: ${authorNameColor};">${safeAuthor}</span>
+            <div class="flex items-center justify-center shrink-0" style="width: 32px; pointer-events: auto;" title="${safeAuthor}">
+              <div class="rounded-md flex items-center justify-center" style="width: 22px; height: 22px; background-color: ${avatarColor}; color: white; font-size: 12px; font-weight: 500;">${authorInitial}</div>
             </div>
-            <div style="flex: 0 0 85px; width: 85px; min-width: 85px; max-width: 85px; color: ${dateColor}; pointer-events: none; text-align: right; white-space: nowarp; display: flex; flex-direction: column; justify-content: center; line-height: 1.25;">
-              <span style="font-size: 11px; font-weight: 600;">${datePart}</span>
-              <span style="font-size: 10px; color: ${timeColor};">${timePart}</span>
+            <div style="flex: 0 0 50px; width: 50px; min-width: 50px; max-width: 50px; color: ${dateColor}; pointer-events: auto; text-align: right; white-space: nowrap; display: flex; align-items: center; justify-content: flex-end;" title="${fullDateStr}">
+              <span style="font-size: 11px; font-weight: 500;">${shortDate}</span>
             </div>
           </div>
         </div>
