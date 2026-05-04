@@ -249,15 +249,15 @@ export function WorktreesSidebar({
                   className="group flex flex-col p-2 hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700/50"
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-2 truncate flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 flex-1 min-w-0">
                       <FolderTree className="w-3.5 h-3.5 shrink-0 text-slate-500 group-hover:text-indigo-500" />
-                      <div className="flex flex-col min-w-0">
-                        <div className="flex items-center space-x-2">
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 min-w-0">
                           <span
                             className="text-sm text-slate-700 dark:text-slate-300 font-medium truncate"
                             title={wt.path}
                           >
-                            {wt.path.split(/[\/\\]/).pop()}
+                            {isMain || !wt.branch || wt.branch === "detached" ? wt.path.split(/[\/\\]/).pop() : wt.branch}
                           </span>
                           {isMain && (
                             <span className="text-[9px] uppercase tracking-wider bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 px-1 rounded font-bold">
@@ -265,12 +265,13 @@ export function WorktreesSidebar({
                             </span>
                           )}
                         </div>
-                        <span
-                          className="text-[10px] text-slate-600 dark:text-slate-400 truncate"
+                        <div
+                          className="text-[10px] text-slate-600 dark:text-slate-400 truncate w-full"
+                          style={{ direction: 'rtl', textAlign: 'left' }}
                           title={wt.path}
                         >
-                          {wt.path}
-                        </span>
+                          &lrm;{wt.path}
+                        </div>
                       </div>
                     </div>
                   </div>
