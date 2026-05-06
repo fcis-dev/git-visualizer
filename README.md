@@ -107,3 +107,10 @@ To trigger a new automated release:
 4. Review the drafted release notes, then publish it when you are ready.
 
 You can also trigger the release workflow manually from the **Actions** tab in your GitHub repository.
+
+## License
+
+Copyright (c) 2026 Francisco.
+
+This project is licensed under the **Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)** license.
+This means you are free to share the project, but you must give appropriate credit, you may not use it for commercial purposes, and you may not distribute modified versions of it. See the `LICENSE` file for more details.
