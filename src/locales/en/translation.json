@@ -54,7 +54,8 @@
       "pushAhead": "Push ({{count}} ahead)",
       "settings": "Settings",
       "openNewWindow": "Open in new window",
-      "removeProject": "Remove project"
+      "removeProject": "Remove project",
+      "toggleLogs": "Toggle Output/Logs"
     },
     "search": {
       "allBranches": "All branches",
@@ -561,5 +562,15 @@
     "branchDeleted": "Deleted branch {{name}}",
     "branchCreated": "Created branch {{name}} from {{from}}",
     "rebaseOnto": "rebase (onto {{target}})"
+  },
+  "bottomPanel": {
+    "output": "Output",
+    "clearLogs": "Clear logs",
+    "noLogs": "No logs recorded yet...",
+    "noLogsMatch": "No logs match the current filter."
+  },
+  "globalErrorToast": {
+    "errorTitle": "Error executing command",
+    "clickToView": "Click to view in logs"
   }
 }

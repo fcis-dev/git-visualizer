@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "../../utils/AppLogger";
 import { Edit2, Save, AlertTriangle, RotateCcw, ChevronDown } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
@@ -425,11 +425,7 @@ export function MergeConflictEditor({
         </div>
       </div>
 
-      {error && (
-        <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm border-b border-red-200 dark:border-red-800">
-          {error}
-        </div>
-      )}
+      {/* Removed inline error rendering */}
 
       <div className="flex-1 flex overflow-hidden bg-slate-50 dark:bg-slate-900">
         <div ref={scrollContainerRef} className="flex-1 overflow-auto p-4 custom-scrollbar">

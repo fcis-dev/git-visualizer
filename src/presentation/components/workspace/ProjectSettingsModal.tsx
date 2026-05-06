@@ -10,7 +10,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { check } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { getVersion } from "@tauri-apps/api/app";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "../../../utils/AppLogger";
 
 interface ProjectSettingsModalProps {
   repoPath: string | null;
@@ -329,13 +329,8 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
 
           {/* Right Content Panel */}
           <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg flex items-start space-x-3 text-red-600 dark:text-red-400 text-sm">
-                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                <span>{error}</span>
-              </div>
-            )}
-
+            {/* Removed inline error rendering */}
+            
             {/* Appearance Tab */}
             {activeTab === "appearance" && (
               <div className="space-y-5">

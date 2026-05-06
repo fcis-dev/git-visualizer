@@ -168,13 +168,6 @@ export function RescueSidebar({ repoPath, onRestore, onSelect }: RescueSidebarPr
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar relative">
-        {/* Error message */}
-        {error && (
-            <div className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-200 text-xs rounded-lg break-all">
-                {error}
-            </div>
-        )}
-
         {/* Info Banner */}
         <div className="bg-amber-50/80 dark:bg-amber-500/10 border border-amber-200/80 dark:border-amber-500/20 rounded-xl p-4 text-xs text-amber-800 dark:text-amber-400 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-amber-400/20 blur-2xl rounded-full pointer-events-none" />

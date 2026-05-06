@@ -4,7 +4,7 @@ import { StashEntry } from '../../../domain/entities/GitEntities';
 import { useGitActions } from '../../hooks/useGitActions';
 import { useDialog } from '../../context/DialogContext';
 import { useTranslation } from "react-i18next";
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from '../../../utils/AppLogger';
 
 interface StashesSidebarProps {
   repoPath: string | null;
@@ -176,12 +176,6 @@ export function StashesSidebar({ repoPath, onRefreshGraph, onSelectStash }: Stas
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
-        {error && (
-            <div className="p-2 mb-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-200 text-xs rounded break-all">
-                {error}
-            </div>
-        )}
-
         {!loading && stashes.length === 0 ? (
             <div className="text-center py-12 text-slate-500 dark:text-slate-400 text-xs">
               <Archive className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-2" />

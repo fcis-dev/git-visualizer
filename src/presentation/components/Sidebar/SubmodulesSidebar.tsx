@@ -62,12 +62,6 @@ export function SubmodulesSidebar({ repoPath, onOpenSubmodule, onRefreshGraph }:
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
-        {state.error && (
-            <div className="p-2 mb-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-200 text-xs rounded break-all">
-                {state.error}
-            </div>
-        )}
-
         {!state.submodulesLoading && state.submodules.length === 0 && !state.isAddingSubmodule ? (
             <div className="text-center py-12 text-slate-500 dark:text-slate-400 text-xs">
               <Box className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600 mb-2" />

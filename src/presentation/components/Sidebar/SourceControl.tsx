@@ -101,11 +101,7 @@ export function SourceControl({
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-4">
-        {state.error && (
-          <div className="p-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-200 text-xs rounded break-all">
-            {state.error}
-          </div>
-        )}
+        {/* Removed inline error rendering */}
 
         {state.isRebasing && (
           <div className="flex flex-col p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-lg">

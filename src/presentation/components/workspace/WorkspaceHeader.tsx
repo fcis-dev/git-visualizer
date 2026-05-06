@@ -12,7 +12,8 @@ import {
   Check,
   Settings,
   ExternalLink,
-  Trash2
+  Trash2,
+  Terminal
 } from "lucide-react";
 import { buildBranchTree, sortTreeNodes, BranchTreeNode } from "../../utils/branchTreeUtils";
 import { useTranslation } from "react-i18next";
@@ -46,6 +47,8 @@ interface WorkspaceHeaderProps {
   hasRemote: boolean;
   activeSidebarTab: string;
   onToggleProjectsSidebar: () => void;
+  onToggleLogPanel: () => void;
+  isLogPanelOpen: boolean;
 }
 
 export function WorkspaceHeader({
@@ -75,6 +78,8 @@ export function WorkspaceHeader({
   setIsProjectSettingsModalOpen,
   activeSidebarTab,
   onToggleProjectsSidebar,
+  onToggleLogPanel,
+  isLogPanelOpen,
 }: WorkspaceHeaderProps) {
   const { t } = useTranslation();
   return (
@@ -212,6 +217,21 @@ export function WorkspaceHeader({
           <Settings className="w-4 h-4" />
         </button>
         
+        <div className="w-px h-5 bg-slate-200 dark:bg-slate-800 mx-1" />
+
+        {/* Log Panel Toggle */}
+        <button
+          onClick={onToggleLogPanel}
+          className={`flex flex-col items-center justify-center p-1.5 rounded transition-colors ${
+            isLogPanelOpen 
+              ? "bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shadow-inner" 
+              : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
+          title={t("workspace.header.toggleLogs")}
+        >
+          <Terminal className="w-4 h-4" />
+        </button>
+
         <div className="w-px h-5 bg-slate-200 dark:bg-slate-800 mx-1" />
 
         {/* Sync Actions (Fetch, Pull, Push) */}

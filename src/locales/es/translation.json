@@ -54,7 +54,8 @@
       "pushAhead": "Push ({{count}} adelante)",
       "settings": "Configuración",
       "openNewWindow": "Abrir en nueva ventana",
-      "removeProject": "Eliminar proyecto"
+      "removeProject": "Eliminar proyecto",
+      "toggleLogs": "Mostrar/Ocultar Registros"
     },
     "search": {
       "allBranches": "Todas las ramas",
@@ -561,5 +562,15 @@
     "branchDeleted": "Rama {{name}} eliminada",
     "branchCreated": "Rama {{name}} creada desde {{from}}",
     "rebaseOnto": "rebase (sobre {{target}})"
+  },
+  "bottomPanel": {
+    "output": "Salida",
+    "clearLogs": "Limpiar registros",
+    "noLogs": "No hay registros todavía...",
+    "noLogsMatch": "Ningún registro coincide con el filtro."
+  },
+  "globalErrorToast": {
+    "errorTitle": "Error ejecutando comando",
+    "clickToView": "Clic para ver en los registros"
   }
 }

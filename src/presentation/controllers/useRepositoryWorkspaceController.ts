@@ -6,7 +6,7 @@ import { useGitActions } from "../hooks/useGitActions";
 import { useDialog } from "../context/DialogContext";
 import { SearchCommitsUseCase } from "../../domain/usecases/SearchCommitsUseCase";
 import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "../../utils/AppLogger";
 import { useTranslation } from "react-i18next";
 
 type SidebarTab = "changes" | "branches" | "tags" | "rescue" | "worktrees" | "stashes" | "submodules" | "projects";

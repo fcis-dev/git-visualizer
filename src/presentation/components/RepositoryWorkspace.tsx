@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "../../utils/AppLogger";
 import { ArrowLeft } from "lucide-react";
 import { SourceControl } from "./Sidebar/SourceControl";
 import { BranchesSidebar } from "./Sidebar/BranchesSidebar";
@@ -23,6 +23,8 @@ import { WorkspaceActivityBar } from "./workspace/WorkspaceActivityBar";
 import { WorkspaceSearchBar } from "./workspace/WorkspaceSearchBar";
 import { GraphBranchContextMenu } from "./workspace/GraphBranchContextMenu";
 import { DragDropActionModal } from "./DragDropActionModal";
+import { BottomPanel } from "./BottomPanel";
+import { GlobalErrorToast } from "./GlobalErrorToast";
 import { useGitActions } from "../hooks/useGitActions";
 import { useDialog } from "../context/DialogContext";
 import {
@@ -145,6 +147,8 @@ export function RepositoryWorkspace({
   const graphRef = useRef<GraphHandle>(null);
   const leftSidebarRef = useRef<HTMLDivElement>(null);
   const rightSidebarRef = useRef<HTMLDivElement>(null);
+
+  const [isLogPanelOpen, setIsLogPanelOpen] = useState(false);
 
   const [dragDropModal, setDragDropModal] = useState<{
     visible: boolean;
@@ -347,6 +351,8 @@ export function RepositoryWorkspace({
             actions.setIsLeftSidebarVisible(true);
           }
         }}
+        onToggleLogPanel={() => setIsLogPanelOpen(!isLogPanelOpen)}
+        isLogPanelOpen={isLogPanelOpen}
       />
 
       {/* Main Content (Activity Bar + Sidebar + Main Area) */}
@@ -693,6 +699,9 @@ export function RepositoryWorkspace({
           </div>
         )}
       </main>
+
+      <GlobalErrorToast onOpenLogPanel={() => setIsLogPanelOpen(true)} />
+      <BottomPanel isOpen={isLogPanelOpen} onClose={() => setIsLogPanelOpen(false)} />
 
       {/* Overlays */}
       {createBranchTarget && (

@@ -142,12 +142,7 @@ export function TagsSidebar({ repoPath, onRefreshGraph, hasRemote, refreshTrigge
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-4 custom-scrollbar">
-        {error && (
-            <div className="p-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-200 text-xs rounded break-all">
-                {error}
-            </div>
-        )}
-
+        {/* Removed inline error rendering */}
         <div className="space-y-1 mt-2">
             <div 
                 className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 py-1.5 bg-slate-100/50 dark:bg-slate-800/30 rounded-md cursor-pointer select-none transition-colors"

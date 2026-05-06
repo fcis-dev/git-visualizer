@@ -164,13 +164,8 @@ export function WorktreesSidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-4 custom-scrollbar">
-        {error && (
-          <div className="p-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-200 text-xs rounded break-all">
-            {error}
-          </div>
-        )}
-
-        <div className="px-2 pt-2">
+        {/* Removed inline error rendering */}
+        <div className="space-y-2">
           <form
             onSubmit={handleAdd}
             className="p-3 border border-slate-200/50 dark:border-slate-700/50 rounded-xl bg-slate-50/50 dark:bg-slate-800/30 flex flex-col space-y-2 shadow-sm"

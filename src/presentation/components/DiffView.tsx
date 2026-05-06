@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, memo, useCallback, startTransition } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "../../utils/AppLogger";
 import { X, Play, RotateCcw, Search, ArrowLeft } from "lucide-react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight, oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
