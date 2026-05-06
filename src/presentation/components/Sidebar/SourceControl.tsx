@@ -47,6 +47,8 @@ export function SourceControl({
   const { t } = useTranslation();
   const { state, actions } = useSourceControlController(repoPath, onCommit, refreshTrigger);
   const [showCommitOptions, setShowCommitOptions] = useState(false);
+  const [isStagedExpanded, setIsStagedExpanded] = useState(true);
+  const [isChangesExpanded, setIsChangesExpanded] = useState(true);
 
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
@@ -224,9 +226,15 @@ export function SourceControl({
 
         {/* Staged Changes */}
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 py-1.5 bg-slate-100/50 dark:bg-slate-800/30 rounded-md">
-            <span>{t("sidebar.sourceControl.stagedChanges")}</span>
-            <div className="flex items-center space-x-2">
+          <div 
+            className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 py-1.5 bg-slate-100/50 dark:bg-slate-800/30 rounded-md cursor-pointer select-none hover:bg-slate-200/50 dark:hover:bg-slate-700/30 transition-colors"
+            onClick={() => setIsStagedExpanded(!isStagedExpanded)}
+          >
+            <div className="flex items-center gap-1.5">
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${!isStagedExpanded ? "-rotate-90" : ""}`} />
+              <span>{t("sidebar.sourceControl.stagedChanges")}</span>
+            </div>
+            <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
               <span className="bg-white dark:bg-slate-700 px-1.5 py-0.5 rounded-full text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-600 leading-none">
                 {state.stagedFiles.length}
               </span>
@@ -241,7 +249,8 @@ export function SourceControl({
               )}
             </div>
           </div>
-          <div className="pl-1">
+          {isStagedExpanded && (
+            <div className="pl-1">
             {state.stagedFiles.map((file) => {
               const parts = file.path.split(/[/\\]/);
               const fileName = parts.pop();
@@ -277,13 +286,20 @@ export function SourceControl({
               );
             })}
           </div>
+          )}
         </div>
 
         {/* Changes */}
         <div className="space-y-1">
-          <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 py-1.5 bg-slate-100/50 dark:bg-slate-800/30 rounded-md mt-4">
-            <span>{t("sidebar.sourceControl.changes")}</span>
-            <div className="flex items-center space-x-2">
+          <div 
+            className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 py-1.5 bg-slate-100/50 dark:bg-slate-800/30 rounded-md mt-4 cursor-pointer select-none hover:bg-slate-200/50 dark:hover:bg-slate-700/30 transition-colors"
+            onClick={() => setIsChangesExpanded(!isChangesExpanded)}
+          >
+            <div className="flex items-center gap-1.5">
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${!isChangesExpanded ? "-rotate-90" : ""}`} />
+              <span>{t("sidebar.sourceControl.changes")}</span>
+            </div>
+            <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
               <span className="bg-white dark:bg-slate-700 px-1.5 py-0.5 rounded-full text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-600 leading-none">
                 {state.changes.length}
               </span>
@@ -307,7 +323,8 @@ export function SourceControl({
               )}
             </div>
           </div>
-          <div className="pl-1">
+          {isChangesExpanded && (
+            <div className="pl-1">
             {state.changes.map((file) => {
               const parts = file.path.split(/[/\\]/);
               const fileName = parts.pop();
@@ -393,6 +410,7 @@ export function SourceControl({
               );
             })}
           </div>
+          )}
         </div>
       </div>
       {/* File History Context Menu */}

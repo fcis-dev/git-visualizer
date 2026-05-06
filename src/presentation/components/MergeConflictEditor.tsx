@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Edit2, Save, AlertTriangle, RotateCcw } from "lucide-react";
+import { Edit2, Save, AlertTriangle, RotateCcw, ChevronDown } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import {
   vs,
@@ -120,6 +120,38 @@ export function MergeConflictEditor({
   const [saving, setSaving] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { t } = useTranslation();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const totalLines = useMemo(() => {
+    if (parsedBlocks.length === 0) return 1;
+    const lastBlock = parsedBlocks[parsedBlocks.length - 1];
+    let lines = lastBlock.currentStartLine;
+    if (lastBlock.type === "text") {
+      lines += countLines(lastBlock.content);
+    } else {
+      lines += Math.max(countLines(lastBlock.currentContent), countLines(lastBlock.incomingContent));
+    }
+    return Math.max(lines, 1);
+  }, [parsedBlocks]);
+
+  const scrollToNextConflict = () => {
+    if (!scrollContainerRef.current) return;
+    const scrollContainer = scrollContainerRef.current;
+    const unresolvedElements = Array.from(scrollContainer.querySelectorAll('[data-unresolved="true"]')) as HTMLElement[];
+    if (unresolvedElements.length === 0) return;
+
+    const currentScroll = scrollContainer.scrollTop;
+    
+    // Find the first one below current scroll position (with a small buffer)
+    let nextEl = unresolvedElements.find(el => el.offsetTop > currentScroll + 50);
+    if (!nextEl) {
+      nextEl = unresolvedElements[0]; // wrap around
+    }
+
+    if (nextEl) {
+      nextEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
 
   useEffect(() => {
     const checkDarkMode = () =>
@@ -364,6 +396,16 @@ export function MergeConflictEditor({
               {t('mergeConflictEditor.remaining', { count: remainingConflicts })}
             </span>
           )}
+          {remainingConflicts > 0 && (
+            <button
+              onClick={scrollToNextConflict}
+              className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 dark:bg-amber-900/50 dark:hover:bg-amber-900 dark:text-amber-400 text-xs rounded-md transition-colors font-semibold border border-amber-200 dark:border-amber-800 ml-2 flex items-center gap-1"
+              title="Next Conflict"
+            >
+              <span>Next</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
         <div className="flex space-x-2">
           <button
@@ -389,15 +431,16 @@ export function MergeConflictEditor({
         </div>
       )}
 
-      <div className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-900 p-4">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-500">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-500 mb-4"></div>
-            <p>{t('mergeConflictEditor.loading')}</p>
-          </div>
-        ) : (
-          <div className="font-mono text-[13px] max-w-5xl mx-auto bg-white dark:bg-slate-950 rounded border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden pb-10">
-            {parsedBlocks.map((block, index) => {
+      <div className="flex-1 flex overflow-hidden bg-slate-50 dark:bg-slate-900">
+        <div ref={scrollContainerRef} className="flex-1 overflow-auto p-4 custom-scrollbar">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-full text-slate-500">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-500 mb-4"></div>
+              <p>{t('mergeConflictEditor.loading')}</p>
+            </div>
+          ) : (
+            <div className="font-mono text-[13px] max-w-5xl mx-auto bg-white dark:bg-slate-950 rounded border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden pb-10">
+              {parsedBlocks.map((block, index) => {
               if (block.type === "text") {
                 return (
                   <div
@@ -536,7 +579,9 @@ export function MergeConflictEditor({
               return (
                 <div
                   key={block.id}
-                  className="border-y-2 border-slate-300 dark:border-slate-700 my-4 shadow-sm bg-white dark:bg-slate-950"
+                  data-conflict-id={block.id}
+                  data-unresolved="true"
+                  className="border-y-2 border-slate-300 dark:border-slate-700 my-4 shadow-sm bg-white dark:bg-slate-950 relative"
                 >
                   <div className="flex items-center p-2 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-xs space-x-2">
                     <span className="font-bold text-slate-700 dark:text-slate-300 uppercase">
@@ -647,6 +692,28 @@ export function MergeConflictEditor({
                   </div>
                 </div>
               );
+            })}
+            </div>
+          )}
+        </div>
+
+        {/* Minimap */}
+        {totalLines > 0 && !isLoading && (
+          <div className="w-3 shrink-0 border-l border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 relative">
+            {parsedBlocks.map((block, idx) => {
+              if (block.type === "conflict" && block.resolutionType === null) {
+                const topPercent = (block.currentStartLine / totalLines) * 100;
+                const heightPercent = Math.max(1, (Math.max(countLines(block.currentContent), countLines(block.incomingContent)) / totalLines) * 100);
+                return (
+                  <div 
+                    key={`marker-${idx}`}
+                    className="absolute w-full bg-amber-500/80 dark:bg-amber-500/60"
+                    style={{ top: `${topPercent}%`, height: `${heightPercent}%`, minHeight: '3px' }}
+                    title="Unresolved Conflict"
+                  />
+                );
+              }
+              return null;
             })}
           </div>
         )}
