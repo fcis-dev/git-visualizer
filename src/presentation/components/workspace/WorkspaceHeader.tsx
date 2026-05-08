@@ -83,7 +83,7 @@ export function WorkspaceHeader({
 }: WorkspaceHeaderProps) {
   const { t } = useTranslation();
   return (
-    <header className="relative h-14 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 bg-white dark:bg-slate-950 z-20">
+    <header className="relative h-14 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 bg-white dark:bg-slate-950 z-40">
       <div className="flex items-center space-x-4">
         <button
           onClick={onToggleProjectsSidebar}

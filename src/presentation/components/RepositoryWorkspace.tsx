@@ -584,8 +584,6 @@ export function RepositoryWorkspace({
             />
           </div>
 
-
-
           {/* Historical File Content View Overlay */}
           {contentTarget && (
             <HistoricalFileContentView
