@@ -392,7 +392,17 @@ fn run_git_cmd(path: &str, args: &[&str]) -> Result<String, String> {
 }
 
 pub fn git_push(path: &str) -> Result<String, String> {
-    run_git_cmd(path, &["push"])
+    match run_git_cmd(path, &["push"]) {
+        Ok(out) => Ok(out),
+        Err(err) => {
+            if err.contains("--set-upstream") {
+                if let Ok(branch) = get_current_branch(path) {
+                    return run_git_cmd(path, &["push", "--set-upstream", "origin", &branch]);
+                }
+            }
+            Err(err)
+        }
+    }
 }
 
 pub fn git_push_tags(path: &str) -> Result<String, String> {
@@ -400,7 +410,18 @@ pub fn git_push_tags(path: &str) -> Result<String, String> {
 }
 
 pub fn git_pull(path: &str) -> Result<String, String> {
-    run_git_cmd(path, &["pull"])
+    match run_git_cmd(path, &["pull"]) {
+        Ok(out) => Ok(out),
+        Err(err) => {
+            // Git pull fails if the branch has no upstream branch configured
+            if err.contains("no tracking information") || err.contains("no tiene información de seguimiento") || err.contains("--set-upstream-to") {
+                if let Ok(branch) = get_current_branch(path) {
+                    return run_git_cmd(path, &["pull", "origin", &branch]);
+                }
+            }
+            Err(err)
+        }
+    }
 }
 
 pub fn git_fetch_prune(path: &str) -> Result<String, String> {

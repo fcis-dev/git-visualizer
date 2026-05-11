@@ -383,7 +383,7 @@ export function RepositoryWorkspace({
               }}
               onViewFileHistory={handleViewFileHistory}
               onOpenSubmodule={onOpenSubmodule}
-              onCommit={loadCommits}
+              onCommit={onActionSuccess}
               isAutoFetching={isAutoFetching || isFetchingManual}
               onFetch={handleFetch}
               onResolveConflict={(path) => setConflictTarget(path)}
@@ -395,20 +395,20 @@ export function RepositoryWorkspace({
             <BranchesSidebar
               repoPath={repoPath}
               currentBranch={branchName}
-              onRefreshGraph={loadCommits}
+              onRefreshGraph={onActionSuccess}
               refreshTrigger={refreshDate}
               onCreateBranch={actions.setCreateBranchTarget}
             />
           )}
 
           {activeSidebarTab === "tags" && (
-            <TagsSidebar repoPath={repoPath} onRefreshGraph={loadCommits} hasRemote={hasRemote} refreshTrigger={refreshDate} />
+            <TagsSidebar repoPath={repoPath} onRefreshGraph={onActionSuccess} hasRemote={hasRemote} refreshTrigger={refreshDate} />
           )}
 
           {activeSidebarTab === "rescue" && (
             <RescueSidebar 
               repoPath={repoPath} 
-              onRestore={loadCommits} 
+              onRestore={onActionSuccess} 
               onSelect={async (hash) => {
                   try {
                       setDetailsLoading(true);
@@ -428,7 +428,7 @@ export function RepositoryWorkspace({
           {activeSidebarTab === "worktrees" && !isWorktree && (
             <WorktreesSidebar
                repoPath={repoPath}
-               onRefreshGraph={loadCommits}
+               onRefreshGraph={onActionSuccess}
                onOpenWorktree={onOpenSubmodule}
             />
           )}
@@ -436,7 +436,7 @@ export function RepositoryWorkspace({
           {activeSidebarTab === "stashes" && (
             <StashesSidebar
               repoPath={repoPath}
-              onRefreshGraph={loadCommits}
+              onRefreshGraph={onActionSuccess}
               onSelectStash={(index, rawDiff) => {
                 setDiffTarget({ path: "Stash Content", stashIndex: index, rawDiff });
               }}
@@ -447,7 +447,7 @@ export function RepositoryWorkspace({
             <SubmodulesSidebar
               repoPath={repoPath}
               onOpenSubmodule={onOpenSubmodule}
-              onRefreshGraph={loadCommits}
+              onRefreshGraph={onActionSuccess}
             />
           )}
 
