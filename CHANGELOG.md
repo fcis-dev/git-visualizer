@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-05-12
+### Added
+- Redesigned workspace layout with a three-column structure for better multitasking.
+- Added a permanent, toggleable Source Control panel on the right side of the workspace.
+- Moved the Projects list into a dedicated floating modal window.
+- Added collapsible sections for staged and unstaged files in the Source Control panel.
+- Added a scroll minimap to the Merge Conflict Editor to highlight unresolved conflicts.
+- Added a navigation button within the Merge Conflict Editor to jump between conflicts.
+- Implemented loading state and visual feedback on the commit button.
+### Changed
+- Optimized the Commit Details view to a 33%/66% width split for better file list visibility.
+- Standardized icon positioning in the header navigation for a more consistent layout.
+- Refactored workspace layout to support multiple tool panels displayed simultaneously.
+### Fixed
+- Fixed incorrect ahead/behind status checks triggered when creating a new branch.
+- Fixed push counter not updating correctly after Git operations.
+- Fixed z-index layering issue where DiffView appeared above the branch selector header.
+- Fixed sidebar resizer overlapping the scrollbar in the Source Control panel.
+- Resolved spurious error notifications after successful branch creation or merge operations.
+
 ## [0.1.14] - 2026-05-06
 ### Added
 - Added standard Open Source License file (LICENSE).
