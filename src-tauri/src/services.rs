@@ -693,17 +693,21 @@ pub fn git_remote_remove(path: &str, name: &str) -> Result<String, String> {
 }
 
 /// Returns the number of commits the current branch is behind its upstream (0 = up to date).
-/// Returns Err if the branch has no upstream configured.
+/// Returns 0 if the branch has no upstream configured or an error occurs.
 pub fn git_check_behind(path: &str) -> Result<u32, String> {
-    let out = run_git_cmd(path, &["rev-list", "--count", "HEAD..@{u}"])?;
-    Ok(out.trim().parse::<u32>().unwrap_or(0))
+    match run_git_cmd(path, &["rev-list", "--count", "HEAD..@{u}"]) {
+        Ok(out) => Ok(out.trim().parse::<u32>().unwrap_or(0)),
+        Err(_) => Ok(0),
+    }
 }
 
 /// Returns the number of commits the current branch is ahead of its upstream (0 = up to date).
-/// Returns Err if the branch has no upstream configured.
+/// Returns 0 if the branch has no upstream configured or an error occurs.
 pub fn git_check_ahead(path: &str) -> Result<u32, String> {
-    let out = run_git_cmd(path, &["rev-list", "--count", "@{u}..HEAD"])?;
-    Ok(out.trim().parse::<u32>().unwrap_or(0))
+    match run_git_cmd(path, &["rev-list", "--count", "@{u}..HEAD"]) {
+        Ok(out) => Ok(out.trim().parse::<u32>().unwrap_or(0)),
+        Err(_) => Ok(0),
+    }
 }
 
 /// Returns local branch names whose remote-tracking ref is marked as ': gone]'

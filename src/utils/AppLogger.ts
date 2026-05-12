@@ -55,7 +55,15 @@ function formatGitCommand(cmd: string, args?: any): string | null {
   let baseCmd = cmd.replace(/^(get_)?git_/, "").replace(/_/g, "-");
   
   // Ignore polling / read-only aggregated commands so they don't spam the log
-  if (cmd === "get_initial_repo_data" || cmd === "get_branches_and_remotes" || cmd === "get_source_control_status" || cmd === "get_git_hooks") {
+  if (
+    cmd === "get_initial_repo_data" ||
+    cmd === "get_branches_and_remotes" ||
+    cmd === "get_source_control_status" ||
+    cmd === "get_git_hooks" ||
+    cmd === "git_check_ahead" ||
+    cmd === "git_check_behind" ||
+    cmd === "git_get_pruned_branches"
+  ) {
     return null;
   }
 

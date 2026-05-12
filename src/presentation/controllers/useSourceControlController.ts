@@ -22,6 +22,7 @@ export function useSourceControlController(
   const [lastMergeMsg, setLastMergeMsg] = useState("");
   const [stashLoading, setStashLoading] = useState(false);
   const [rebaseLoading, setRebaseLoading] = useState(false);
+  const [commitLoading, setCommitLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submodules, setSubmodules] = useState<SubmoduleInfo[]>([]);
   const [submodulesLoading, setSubmodulesLoading] = useState(false);
@@ -200,6 +201,7 @@ export function useSourceControlController(
 
   const handleCommit = async (noVerify?: boolean) => {
     if (!repoPath || !commitMessage) return;
+    setCommitLoading(true);
     try {
       if (isAmend) {
         await sourceControlUseCases.commitAmend(repoPath, commitMessage);
@@ -220,6 +222,8 @@ export function useSourceControlController(
         errMsg = t('sidebar.sourceControl.commitErrorConflicts');
       }
       setError(errMsg);
+    } finally {
+      setCommitLoading(false);
     }
   };
 
@@ -405,6 +409,7 @@ export function useSourceControlController(
       isRebasing,
       isLfsInstalled,
       lfsFiles,
+      commitLoading,
     },
     actions: {
       setCommitMessage,

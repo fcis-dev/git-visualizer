@@ -179,17 +179,23 @@ export function SourceControl({
             <button
               onClick={() => actions.handleCommit(false)}
               disabled={
+                state.commitLoading ||
                 !state.commitMessage ||
                 (!state.isAmend && state.stagedFiles.length === 0 && !state.lastMergeMsg)
               }
               className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-500 disabled:cursor-not-allowed text-white py-2 rounded-l-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm disabled:shadow-none"
             >
-              <Check className="w-4 h-4" />
+              {state.commitLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4" />
+              )}
               {state.isAmend ? t("sidebar.sourceControl.commitAmendButton") : t("sidebar.sourceControl.commitButton")}
             </button>
             <button
               onClick={() => setShowCommitOptions(!showCommitOptions)}
               disabled={
+                state.commitLoading ||
                 !state.commitMessage ||
                 (!state.isAmend && state.stagedFiles.length === 0 && !state.lastMergeMsg)
               }
