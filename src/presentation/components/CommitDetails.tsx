@@ -87,31 +87,31 @@ export function CommitDetails({
 
     return (
         <>
-        <div className="h-full flex flex-col bg-slate-50/50 dark:bg-slate-900/50 border-l border-slate-200 dark:border-slate-800">
+        <div className="h-full flex flex-col bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800">
             {/* Header / Title */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between">
-                 <div className="flex-1 min-w-0 mr-4">
-                     <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 leading-snug">
-                         {t('commitDetails.title')}
-                     </h2>
-                 </div>
+            <div className="p-2.5 px-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
+                 <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 leading-snug">
+                     {t('commitDetails.title')}
+                 </h2>
                  <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded transition-colors text-slate-500">
                      <X className="w-5 h-5" />
                  </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
-                
+            <div className="flex-1 flex flex-row overflow-hidden">
+                {/* Left side: Commit Details */}
+                <div className="w-1/3 min-w-[300px] border-r border-slate-200 dark:border-slate-800 overflow-y-auto p-4 space-y-4 custom-scrollbar shrink-0">
+
                 {/* Premium Commit Info Card */}
                 <div className="relative bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 rounded-xl p-5 shadow-sm overflow-hidden group">
                     {/* Subtle background decoration */}
-                    <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-full blur-3xl opacity-60 pointer-events-none transition-opacity duration-500 group-hover:opacity-100" />
+                    <div className="absolute top-0 right-0 -mt-6 -mr-6 w-32 h-32 bg-linear-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-full blur-3xl opacity-60 pointer-events-none transition-opacity duration-500 group-hover:opacity-100" />
 
                     {/* Author & Date Header */}
                     <div className="flex items-center justify-between mb-4 relative z-10">
                         <div className="flex items-center space-x-3">
                             {/* Avatar */}
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shadow-sm ring-2 ring-white dark:ring-slate-950">
+                            <div className="w-9 h-9 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shadow-sm ring-2 ring-white dark:ring-slate-950">
                                 {commit.author ? commit.author.charAt(0).toUpperCase() : '?'}
                             </div>
                             <div className="flex flex-col">
@@ -173,9 +173,10 @@ export function CommitDetails({
                         </div>
                     )}
                 </div>
+                </div>
 
-
-
+                {/* Right side: Files */}
+                <div className="flex-1 overflow-hidden flex flex-col bg-white dark:bg-slate-950/50">
                 {/* FileFilter Banner */}
                 {fileFilter && (
                     <div className="mx-4 mb-4 bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded flex flex-col p-3">
@@ -223,7 +224,7 @@ export function CommitDetails({
 
                 {/* Tab Content */}
                 {activeTab === 'changes' ? (
-                    <div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-4">
                         {detailsLoading ? (
                             <div className="flex justify-center py-4">
                                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500"></div>
@@ -273,13 +274,14 @@ export function CommitDetails({
                         )}
                     </div>
                 ) : (
-                    <div>
+                    <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-4">
                         {treeLoading ? null : (
                             <FileTreeViewer files={treeFiles} onSelectFile={onViewHistoricalFile} onViewFileHistory={onViewFileHistory} />
                         )}
                     </div>
                 )}
 
+                </div>
             </div>
         </div>
 

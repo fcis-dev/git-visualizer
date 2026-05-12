@@ -32,7 +32,7 @@ export function useRepositoryWorkspaceController(
   const [contentTarget, setContentTarget] = useState<{ path: string; commitHash: string; } | null>(null);
   const [conflictTarget, setConflictTarget] = useState<string | null>(null);
   
-  const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>("changes");
+  const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>("branches");
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(320); // default 320px
   const [rightSidebarWidth, setRightSidebarWidth] = useState(384); // default 384px
   const [isLeftSidebarVisible, setIsLeftSidebarVisible] = useState(true);

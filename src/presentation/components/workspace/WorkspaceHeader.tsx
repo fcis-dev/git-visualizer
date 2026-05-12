@@ -13,7 +13,9 @@ import {
   Settings,
   ExternalLink,
   Trash2,
-  Terminal
+  Terminal,
+  PanelLeft,
+  FolderGit2
 } from "lucide-react";
 import { buildBranchTree, sortTreeNodes, BranchTreeNode } from "../../utils/branchTreeUtils";
 import { useTranslation } from "react-i18next";
@@ -46,9 +48,14 @@ interface WorkspaceHeaderProps {
   onPush: () => void;
   hasRemote: boolean;
   activeSidebarTab: string;
+  isProjectsModalOpen: boolean;
   onToggleProjectsSidebar: () => void;
   onToggleLogPanel: () => void;
   isLogPanelOpen: boolean;
+  isLeftSidebarVisible: boolean;
+  onToggleLeftSidebar: () => void;
+  isRightSidebarVisible: boolean;
+  onToggleRightSidebar: () => void;
 }
 
 export function WorkspaceHeader({
@@ -77,9 +84,14 @@ export function WorkspaceHeader({
   hasRemote,
   setIsProjectSettingsModalOpen,
   activeSidebarTab,
+  isProjectsModalOpen,
   onToggleProjectsSidebar,
   onToggleLogPanel,
   isLogPanelOpen,
+  isLeftSidebarVisible,
+  onToggleLeftSidebar,
+  isRightSidebarVisible,
+  onToggleRightSidebar,
 }: WorkspaceHeaderProps) {
   const { t } = useTranslation();
   return (
@@ -88,7 +100,7 @@ export function WorkspaceHeader({
         <button
           onClick={onToggleProjectsSidebar}
           className={`p-2 rounded-lg transition-colors ${
-             activeSidebarTab === "projects"
+             isProjectsModalOpen
                ? "bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400"
                : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white"
           }`}
@@ -219,6 +231,19 @@ export function WorkspaceHeader({
         
         <div className="w-px h-5 bg-slate-200 dark:bg-slate-800 mx-1" />
 
+        {/* Left Sidebar Toggle */}
+        <button
+          onClick={onToggleLeftSidebar}
+          className={`flex flex-col items-center justify-center p-1.5 rounded transition-colors ${
+            isLeftSidebarVisible 
+              ? "bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shadow-inner" 
+              : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
+          title={t("workspace.header.toggleLeftSidebar")}
+        >
+          <PanelLeft className="w-4 h-4" />
+        </button>
+
         {/* Log Panel Toggle */}
         <button
           onClick={onToggleLogPanel}
@@ -230,6 +255,19 @@ export function WorkspaceHeader({
           title={t("workspace.header.toggleLogs")}
         >
           <Terminal className="w-4 h-4" />
+        </button>
+
+        {/* Source Control Toggle */}
+        <button
+          onClick={onToggleRightSidebar}
+          className={`flex flex-col items-center justify-center p-1.5 rounded transition-colors ${
+            isRightSidebarVisible 
+              ? "bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 shadow-inner" 
+              : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
+          title={t("sidebar.sourceControl.title")}
+        >
+          <FolderGit2 className="w-4 h-4" />
         </button>
 
         <div className="w-px h-5 bg-slate-200 dark:bg-slate-800 mx-1" />

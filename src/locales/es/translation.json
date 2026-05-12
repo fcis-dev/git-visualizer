@@ -90,13 +90,13 @@
       "message": "Las siguientes ramas locales rastrean refs remotas ya borradas:\n\n{{branches}}\n\n¿Eliminarlas localmente?"
     },
     "projects": {
-      "title": "PROYECTOS",
+      "title": "Proyectos",
       "closeProject": "Cerrar Proyecto"
     }
   },
   "sidebar": {
     "sourceControl": {
-      "title": "CONTROL DE CÓDIGO FUENTE",
+      "title": "Control de código fuente",
       "noRepo": "No hay ningún repositorio abierto.",
       "rebaseInProgress": "Rebase en progreso",
       "rebaseInstructions": "Resuelve los conflictos a continuación, añádelos al stage y continúa. O aborta para cancelar.",

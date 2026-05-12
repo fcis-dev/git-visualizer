@@ -90,13 +90,13 @@
       "message": "The following local branches track removed remote refs:\n\n{{branches}}\n\nDelete them locally?"
     },
     "projects": {
-      "title": "PROJECTS",
+      "title": "Projects",
       "closeProject": "Close Project"
     }
   },
   "sidebar": {
     "sourceControl": {
-      "title": "SOURCE CONTROL",
+      "title": "Source control",
       "noRepo": "No repository open.",
       "rebaseInProgress": "Rebase in Progress",
       "rebaseInstructions": "Resolve any conflicts below, stage them, and then continue. Or abort to cancel.",

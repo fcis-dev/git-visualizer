@@ -21,31 +21,14 @@ export function WorkspaceActivityBar({
   const { t } = useTranslation();
 
   const handleTabClick = (tab: string) => {
-    if (activeSidebarTab === tab) {
-      setIsLeftSidebarVisible(!isLeftSidebarVisible);
-    } else {
-      setActiveSidebarTab(tab);
-      setIsLeftSidebarVisible(true);
-    }
+    setActiveSidebarTab(tab);
+    setIsLeftSidebarVisible(true);
   };
 
   return (
     <div className="w-14 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col items-center py-4 z-20 space-y-4">
       <div className="flex-1 w-full flex flex-col items-center space-y-4">
-        <button
-          onClick={() => handleTabClick("changes")}
-          className={`p-3 rounded-xl transition-all relative ${
-            activeSidebarTab === "changes"
-              ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 shadow-sm"
-              : "text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-          }`}
-          title={t("workspace.activityBar.changes")}
-        >
-          <FolderGit2 className="w-6 h-6 stroke-[1.5]" />
-          {activeSidebarTab === "changes" && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-r-full -ml-[9px]"></div>
-          )}
-        </button>
+
 
         <button
           onClick={() => handleTabClick("branches")}

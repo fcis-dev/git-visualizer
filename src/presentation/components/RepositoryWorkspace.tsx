@@ -17,7 +17,7 @@ import { MergeConflictEditor } from "./MergeConflictEditor";
 import { WorktreesSidebar } from "./Sidebar/WorktreesSidebar";
 import { StashesSidebar } from "./Sidebar/StashesSidebar";
 import { SubmodulesSidebar } from "./Sidebar/SubmodulesSidebar";
-import { ProjectsSidebar } from "./Sidebar/ProjectsSidebar";
+import { ProjectsModal } from "./ProjectsModal";
 import { WorkspaceHeader } from "./workspace/WorkspaceHeader";
 import { WorkspaceActivityBar } from "./workspace/WorkspaceActivityBar";
 import { WorkspaceSearchBar } from "./workspace/WorkspaceSearchBar";
@@ -149,6 +149,8 @@ export function RepositoryWorkspace({
   const rightSidebarRef = useRef<HTMLDivElement>(null);
 
   const [isLogPanelOpen, setIsLogPanelOpen] = useState(false);
+  const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
+  const [isRightSidebarVisible, setIsRightSidebarVisible] = useState(true);
 
   const [dragDropModal, setDragDropModal] = useState<{
     visible: boolean;
@@ -343,21 +345,21 @@ export function RepositoryWorkspace({
         hasRemote={hasRemote}
         setIsProjectSettingsModalOpen={setIsProjectSettingsModalOpen}
         activeSidebarTab={activeSidebarTab}
-        onToggleProjectsSidebar={() => {
-          if (activeSidebarTab === "projects") {
-            actions.setIsLeftSidebarVisible(!isLeftSidebarVisible);
-          } else {
-            actions.setActiveSidebarTab("projects");
-            actions.setIsLeftSidebarVisible(true);
-          }
-        }}
+        isProjectsModalOpen={isProjectsModalOpen}
+        onToggleProjectsSidebar={() => setIsProjectsModalOpen(!isProjectsModalOpen)}
         onToggleLogPanel={() => setIsLogPanelOpen(!isLogPanelOpen)}
         isLogPanelOpen={isLogPanelOpen}
+        isLeftSidebarVisible={isLeftSidebarVisible}
+        onToggleLeftSidebar={() => actions.setIsLeftSidebarVisible(!isLeftSidebarVisible)}
+        isRightSidebarVisible={isRightSidebarVisible}
+        onToggleRightSidebar={() => setIsRightSidebarVisible(!isRightSidebarVisible)}
       />
 
       {/* Main Content (Activity Bar + Sidebar + Main Area) */}
       <main className="flex-1 overflow-hidden relative flex bg-slate-50 dark:bg-slate-900">
-        {/* Activity Bar (Leftmost Column) */}
+        {isLeftSidebarVisible && (
+        <>
+          {/* Activity Bar (Leftmost Column) */}
         <WorkspaceActivityBar
           activeSidebarTab={activeSidebarTab}
           setActiveSidebarTab={setActiveSidebarTab}
@@ -368,29 +370,11 @@ export function RepositoryWorkspace({
         />
 
         {/* Dynamic Sidebar (Changes / Branches / Rescue) */}
-        {isLeftSidebarVisible && (
         <div 
           ref={leftSidebarRef}
           style={{ width: leftSidebarWidth }} 
           className="shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col z-10 relative"
         >
-          {activeSidebarTab === "changes" && (
-            <SourceControl
-              repoPath={repoPath}
-              latestCommit={commits.length > 0 ? commits[0] : null}
-              onSelectFile={(file, cached) => {
-                setDiffTarget({ path: file, cached });
-              }}
-              onViewFileHistory={handleViewFileHistory}
-              onOpenSubmodule={onOpenSubmodule}
-              onCommit={onActionSuccess}
-              isAutoFetching={isAutoFetching || isFetchingManual}
-              onFetch={handleFetch}
-              onResolveConflict={(path) => setConflictTarget(path)}
-              refreshTrigger={refreshDate}
-            />
-          )}
-
           {activeSidebarTab === "branches" && (
             <BranchesSidebar
               repoPath={repoPath}
@@ -451,12 +435,6 @@ export function RepositoryWorkspace({
             />
           )}
 
-          {activeSidebarTab === "projects" && (
-            <ProjectsSidebar
-              repoPath={repoPath}
-            />
-          )}
-
           {/* Resize Handle */}
           <div
             className="absolute -right-1 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 z-50 transition-colors"
@@ -496,6 +474,7 @@ export function RepositoryWorkspace({
             }}
           />
         </div>
+        </>
         )}
 
         {/* Middle Column: History Graph & Search (and Overlay Diff) */}
@@ -623,12 +602,11 @@ export function RepositoryWorkspace({
           )}
         </div>
 
-        {/* Right Column: Commit Details */}
-        {selectedCommit && (
-          <div 
-            ref={rightSidebarRef}
-            style={{ width: rightSidebarWidth }} 
-            className="shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 animate-in slide-in-from-right duration-200 z-10 shadow-xl overflow-y-auto relative"
+        {/* Right Column: Source Control (permanent, toggleable) */}
+        {isRightSidebarVisible && (
+          <div
+            style={{ width: rightSidebarWidth }}
+            className="shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-col z-10 relative"
           >
             {/* Resize Handle */}
             <div
@@ -640,18 +618,12 @@ export function RepositoryWorkspace({
                 const startWidth = rightSidebarRef.current ? rightSidebarRef.current.getBoundingClientRect().width : rightSidebarWidth;
                 let currentWidth = startWidth;
                 let animationFrameId: number | null = null;
-                
-                if (rightSidebarRef.current) {
-                  rightSidebarRef.current.style.transition = 'none';
-                }
-                
+                if (rightSidebarRef.current) rightSidebarRef.current.style.transition = 'none';
                 const onMouseMove = (moveEvent: globalThis.MouseEvent) => {
                   if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
                   animationFrameId = requestAnimationFrame(() => {
                     currentWidth = Math.max(250, Math.min(800, startWidth - (moveEvent.clientX - startX)));
-                    if (rightSidebarRef.current) {
-                      rightSidebarRef.current.style.width = `${currentWidth}px`;
-                    }
+                    if (rightSidebarRef.current) rightSidebarRef.current.style.width = `${currentWidth}px`;
                     animationFrameId = null;
                   });
                 };
@@ -659,15 +631,35 @@ export function RepositoryWorkspace({
                   if (animationFrameId !== null) cancelAnimationFrame(animationFrameId);
                   document.removeEventListener('mousemove', onMouseMove);
                   document.removeEventListener('mouseup', onMouseUp);
-                  if (rightSidebarRef.current) {
-                    rightSidebarRef.current.style.transition = '';
-                  }
+                  if (rightSidebarRef.current) rightSidebarRef.current.style.transition = '';
                   setRightSidebarWidth(currentWidth);
                 };
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', onMouseUp);
               }}
             />
+            <SourceControl
+              repoPath={repoPath}
+              latestCommit={commits.length > 0 ? commits[0] : null}
+              onSelectFile={(file, cached) => setDiffTarget({ path: file, cached })}
+              onViewFileHistory={handleViewFileHistory}
+              onOpenSubmodule={onOpenSubmodule}
+              onCommit={onActionSuccess}
+              isAutoFetching={isAutoFetching || isFetchingManual}
+              onFetch={handleFetch}
+              onResolveConflict={(path) => setConflictTarget(path)}
+              refreshTrigger={refreshDate}
+            />
+          </div>
+        )}
+
+        {/* Right Column: Commit Details */}
+        {selectedCommit && (
+          <div 
+            ref={rightSidebarRef}
+            style={{ width: rightSidebarWidth }} 
+            className="shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 animate-in slide-in-from-right duration-200 z-20 shadow-xl overflow-y-auto relative"
+          >
             <CommitDetails
               repoPath={repoPath}
               commit={selectedCommit}
@@ -817,6 +809,13 @@ export function RepositoryWorkspace({
         );
       })()}
 
+      {/* Projects Modal */}
+      {isProjectsModalOpen && (
+        <ProjectsModal
+          repoPath={repoPath}
+          onClose={() => setIsProjectsModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
