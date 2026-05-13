@@ -91,7 +91,11 @@
     },
     "projects": {
       "title": "Projects",
-      "closeProject": "Close Project"
+      "closeProject": "Close Project",
+      "pull": "Pull",
+      "pulling": "Pulling...",
+      "behind": "{{count}} behind",
+      "loadingInfo": "Loading..."
     }
   },
   "sidebar": {

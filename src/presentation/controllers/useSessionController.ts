@@ -69,6 +69,24 @@ export function useSessionController() {
     }
   };
 
+  /**
+   * If the given path is already open in another window, focus that window and return true.
+   * Otherwise return false (caller should switch in the current window).
+   */
+  const focusProjectIfOpen = async (path: string): Promise<boolean> => {
+    const sessions = await useCases.getAllWindows();
+    const allSessions = await repository.getSessions();
+    const currentLabel = repository.getCurrentWindowLabel();
+    const existing = allSessions.find(
+      (s) => s.path === path && s.label !== currentLabel
+    );
+    if (existing && sessions.some((w) => w.label === existing.label)) {
+      await repository.focusWindow(existing.label);
+      return true;
+    }
+    return false;
+  };
+
   return {
     registerCurrentWindow,
     launchProject,
@@ -79,5 +97,6 @@ export function useSessionController() {
     removeProject,
     switchProject,
     closeCurrentProject,
+    focusProjectIfOpen,
   };
 }
