@@ -151,6 +151,17 @@ export function RepositoryWorkspace({
   const [isLogPanelOpen, setIsLogPanelOpen] = useState(false);
   const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
   const [isRightSidebarVisible, setIsRightSidebarVisible] = useState(true);
+  const [commitDetailsHeight, setCommitDetailsHeight] = useState(300);
+
+  // Helpers that mutually clear competing overlays
+  const openDiff = (target: Parameters<typeof setDiffTarget>[0]) => {
+    setContentTarget(null);
+    setDiffTarget(target);
+  };
+  const openFileContent = (target: Parameters<typeof setContentTarget>[0]) => {
+    setDiffTarget(null);
+    setContentTarget(target);
+  };
 
   const [dragDropModal, setDragDropModal] = useState<{
     visible: boolean;
@@ -477,128 +488,181 @@ export function RepositoryWorkspace({
         </>
         )}
 
-        {/* Middle Column: History Graph & Search (and Overlay Diff) */}
+        {/* Middle Column: History Graph & Search + Commit Details below */}
         <div className="flex-1 flex flex-col relative overflow-hidden bg-white dark:bg-slate-950">
-          {/* Search Bar — includes branch filter button */}
-          <WorkspaceSearchBar
-            graphBranches={graphBranches}
-            setGraphBranches={setGraphBranches}
-            isBranchFilterOpen={isBranchFilterOpen}
-            setIsBranchFilterOpen={setIsBranchFilterOpen}
-            availableBranches={availableBranches}
-            branchName={branchName}
-            commitSearchQuery={commitSearchQuery}
-            setCommitSearchQuery={setCommitSearchQuery}
-            searchType={searchType}
-            setSearchType={setSearchType}
-            isSearching={isSearching}
-            onClearSearch={() => {
-              setSelectedCommit(null);
-              setCommitSearchQuery("");
-            }}
-          />
-
-          {/* Graph */}
-          <div className="flex-1 overflow-hidden flex flex-col relative">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={repoPath}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="flex-1 overflow-hidden flex flex-col"
-              >
-                <Graph
-                  ref={graphRef}
-                  commits={displayCommits}
-                  selectedCommit={selectedCommit}
-                  onSelectCommit={setSelectedCommit}
-                  onLoadMore={
-                    commitSearchQuery.trim().length > 0
-                      ? hasMoreSearch
-                        ? loadMoreSearchResults
-                        : undefined
-                      : loadMoreCommits
-                  }
-                  isLoadingMore={
-                    commitSearchQuery.trim().length > 0
-                      ? isLoadingMoreSearch
-                      : isLoadingMore
-                  }
-                  hasMore={
-                    commitSearchQuery.trim().length > 0 ? hasMoreSearch : hasMore
-                  }
-                  isSearchResult={commitSearchQuery.trim().length > 0}
-                  onBranchContextMenu={(refName, x, y) => {
-                    setGraphBranchContextMenu({ visible: true, x, y, refName });
-                  }}
-                  onDropCommit={(sourceCommit, targetCommit, x, y) => {
-                    setDragDropModal({
-                      visible: true,
-                      x,
-                      y,
-                      sourceCommit,
-                      targetCommit,
-                    });
-                  }}
-                />
-              </motion.div>
-            </AnimatePresence>
-
-
-            <GraphBranchContextMenu
-              contextMenu={graphBranchContextMenu}
-              onClose={() => setGraphBranchContextMenu(prev => ({ ...prev, visible: false }))}
+          {/* Graph + SearchBar wrapper — overlays cover this entire area */}
+          <div className="flex-1 flex flex-col overflow-hidden relative">
+            {/* Search Bar */}
+            <WorkspaceSearchBar
+              graphBranches={graphBranches}
+              setGraphBranches={setGraphBranches}
+              isBranchFilterOpen={isBranchFilterOpen}
+              setIsBranchFilterOpen={setIsBranchFilterOpen}
+              availableBranches={availableBranches}
               branchName={branchName}
-              onCheckout={handleGraphBranchCheckout}
-              onCreateFrom={handleGraphBranchCreateFrom}
-              onCreateTag={handleGraphBranchCreateTag}
-              onMerge={handleGraphBranchMerge}
-              onRebase={handleGraphBranchRebase}
-              onCherryPick={handleGraphBranchCherryPick}
-              onRevert={handleGraphBranchRevert}
-              onReset={handleGraphBranchReset}
-              onDelete={handleGraphBranchDelete}
+              commitSearchQuery={commitSearchQuery}
+              setCommitSearchQuery={setCommitSearchQuery}
+              searchType={searchType}
+              setSearchType={setSearchType}
+              isSearching={isSearching}
+              onClearSearch={() => {
+                setSelectedCommit(null);
+                setCommitSearchQuery("");
+              }}
             />
+
+            {/* Graph */}
+            <div className="flex-1 overflow-hidden flex flex-col">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={repoPath}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 overflow-hidden flex flex-col"
+                >
+                  <Graph
+                    ref={graphRef}
+                    commits={displayCommits}
+                    selectedCommit={selectedCommit}
+                    onSelectCommit={setSelectedCommit}
+                    onLoadMore={
+                      commitSearchQuery.trim().length > 0
+                        ? hasMoreSearch
+                          ? loadMoreSearchResults
+                          : undefined
+                        : loadMoreCommits
+                    }
+                    isLoadingMore={
+                      commitSearchQuery.trim().length > 0
+                        ? isLoadingMoreSearch
+                        : isLoadingMore
+                    }
+                    hasMore={
+                      commitSearchQuery.trim().length > 0 ? hasMoreSearch : hasMore
+                    }
+                    isSearchResult={commitSearchQuery.trim().length > 0}
+                    onBranchContextMenu={(refName, x, y) => {
+                      setGraphBranchContextMenu({ visible: true, x, y, refName });
+                    }}
+                    onDropCommit={(sourceCommit, targetCommit, x, y) => {
+                      setDragDropModal({
+                        visible: true,
+                        x,
+                        y,
+                        sourceCommit,
+                        targetCommit,
+                      });
+                    }}
+                  />
+                </motion.div>
+              </AnimatePresence>
+
+              <GraphBranchContextMenu
+                contextMenu={graphBranchContextMenu}
+                onClose={() => setGraphBranchContextMenu(prev => ({ ...prev, visible: false }))}
+                branchName={branchName}
+                onCheckout={handleGraphBranchCheckout}
+                onCreateFrom={handleGraphBranchCreateFrom}
+                onCreateTag={handleGraphBranchCreateTag}
+                onMerge={handleGraphBranchMerge}
+                onRebase={handleGraphBranchRebase}
+                onCherryPick={handleGraphBranchCherryPick}
+                onRevert={handleGraphBranchRevert}
+                onReset={handleGraphBranchReset}
+                onDelete={handleGraphBranchDelete}
+              />
+            </div>
+
+            {/* Overlays — absolute inset-0, cover search bar + graph but NOT commit details */}
+            {contentTarget && (
+              <HistoricalFileContentView
+                repoPath={repoPath}
+                filePath={contentTarget.path}
+                commitHash={contentTarget.commitHash}
+                onClose={() => setContentTarget(null)}
+              />
+            )}
+
+            {diffTarget && (
+              <DiffView
+                  repoPath={repoPath}
+                  filePath={diffTarget.path}
+                  commitHash={diffTarget.commitHash}
+                  cached={diffTarget.cached}
+                  rawDiff={diffTarget.rawDiff}
+                  stashIndex={diffTarget.stashIndex}
+                  onClose={() => setDiffTarget(null)}
+                  onRefresh={onActionSuccess}
+              />
+            )}
+
+            {conflictTarget && (
+               <MergeConflictEditor
+                 repoPath={repoPath}
+                 filePath={conflictTarget}
+                 onResolved={() => {
+                   setConflictTarget(null);
+                   setRefreshDate(new Date());
+                   loadCommits();
+                 }}
+                 onCancel={() => setConflictTarget(null)}
+               />
+            )}
           </div>
 
-          {/* Historical File Content View Overlay */}
-          {contentTarget && (
-            <HistoricalFileContentView
-              repoPath={repoPath}
-              filePath={contentTarget.path}
-              commitHash={contentTarget.commitHash}
-              onClose={() => setContentTarget(null)}
-            />
-          )}
-
-          {/* Diff View Overlay */}
-          {diffTarget && (
-            <DiffView
-                repoPath={repoPath}
-                filePath={diffTarget.path}
-                commitHash={diffTarget.commitHash}
-                cached={diffTarget.cached}
-                rawDiff={diffTarget.rawDiff}
-                stashIndex={diffTarget.stashIndex}
-                onClose={() => setDiffTarget(null)}
-                onRefresh={onActionSuccess}
-            />
-          )}
-
-          {/* Merge Conflict Editor Overlay */}
-          {conflictTarget && (
-             <MergeConflictEditor
-               repoPath={repoPath}
-               filePath={conflictTarget}
-               onResolved={() => {
-                 setConflictTarget(null);
-                 setRefreshDate(new Date());
-                 loadCommits();
-               }}
-               onCancel={() => setConflictTarget(null)}
-             />
+          {/* Commit Details — bottom panel */}
+          {selectedCommit && (
+            <>
+              {/* Horizontal resize handle */}
+              <div
+                className="h-1 shrink-0 cursor-row-resize hover:bg-indigo-500/50 bg-slate-200 dark:bg-slate-800 transition-colors z-30"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  const startY = e.clientY;
+                  const startH = commitDetailsHeight;
+                  const onMouseMove = (me: MouseEvent) => {
+                    const newH = Math.max(150, Math.min(window.innerHeight * 0.7, startH - (me.clientY - startY)));
+                    setCommitDetailsHeight(newH);
+                  };
+                  const onMouseUp = () => {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                  };
+                  document.addEventListener('mousemove', onMouseMove);
+                  document.addEventListener('mouseup', onMouseUp);
+                }}
+              />
+              <div style={{ height: commitDetailsHeight }} className="shrink-0 overflow-hidden border-t border-slate-200 dark:border-slate-800">
+                <CommitDetails
+                  repoPath={repoPath}
+                  commit={selectedCommit}
+                  details={commitDetails}
+                  detailsLoading={detailsLoading}
+                  currentBranch={branchName}
+                  fileFilter={
+                    searchType === "file" && commitSearchQuery.trim().length > 0
+                      ? commitSearchQuery.trim()
+                      : undefined
+                  }
+                  onClose={() => setSelectedCommit(null)}
+                  onCopyHash={(h) => navigator.clipboard.writeText(h)}
+                  onSelectFile={(p) =>
+                    openDiff({
+                      path: p,
+                      commitHash: selectedCommit.hash,
+                      cached: false,
+                    })
+                  }
+                  onViewHistoricalFile={(p) =>
+                    openFileContent({ path: p, commitHash: selectedCommit.hash })
+                  }
+                  onViewFileHistory={handleViewFileHistory}
+                  onRefreshGraph={() => loadCommits()}
+                />
+              </div>
+            </>
           )}
         </div>
 
@@ -641,7 +705,7 @@ export function RepositoryWorkspace({
             <SourceControl
               repoPath={repoPath}
               latestCommit={commits.length > 0 ? commits[0] : null}
-              onSelectFile={(file, cached) => setDiffTarget({ path: file, cached })}
+              onSelectFile={(file, cached) => openDiff({ path: file, cached })}
               onViewFileHistory={handleViewFileHistory}
               onOpenSubmodule={onOpenSubmodule}
               onCommit={onActionSuccess}
@@ -653,41 +717,6 @@ export function RepositoryWorkspace({
           </div>
         )}
 
-        {/* Right Column: Commit Details */}
-        {selectedCommit && (
-          <div 
-            ref={rightSidebarRef}
-            style={{ width: rightSidebarWidth }} 
-            className="shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 animate-in slide-in-from-right duration-200 z-20 shadow-xl overflow-y-auto relative"
-          >
-            <CommitDetails
-              repoPath={repoPath}
-              commit={selectedCommit}
-              details={commitDetails}
-              detailsLoading={detailsLoading}
-              currentBranch={branchName}
-              fileFilter={
-                searchType === "file" && commitSearchQuery.trim().length > 0
-                  ? commitSearchQuery.trim()
-                  : undefined
-              }
-              onClose={() => setSelectedCommit(null)}
-              onCopyHash={(h) => navigator.clipboard.writeText(h)}
-              onSelectFile={(p) =>
-                setDiffTarget({
-                  path: p,
-                  commitHash: selectedCommit.hash,
-                  cached: false,
-                })
-              }
-              onViewHistoricalFile={(p) =>
-                setContentTarget({ path: p, commitHash: selectedCommit.hash })
-              }
-              onViewFileHistory={handleViewFileHistory}
-              onRefreshGraph={() => loadCommits()}
-            />
-          </div>
-        )}
       </main>
 
       <GlobalErrorToast onOpenLogPanel={() => setIsLogPanelOpen(true)} />
