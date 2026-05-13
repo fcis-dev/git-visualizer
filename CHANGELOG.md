@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.16] - 2026-05-13
+### Added
+- Added current branch name display for each project in the Projects modal.
+- Added pull status indicator (commits behind) for each project in the Projects modal.
+- Added a direct Pull button in the Projects modal to sync repositories without navigating into them.
+### Changed
+- Converted the Commit Details view from a side panel to a bottom-docked panel with a horizontal resizer for better vertical space utilization.
+- Refactored overlay components (DiffView, File History, Merge Editor) to be constrained to the graph area, preventing overlap with the commit details panel and workspace header.
+- Consolidated search, graph, and overlay management into a unified wrapper for consistent visual layering.
+### Fixed
+- Fixed Projects modal not dismissing automatically after navigating to a project.
+
 ## [0.1.15] - 2026-05-12
 ### Added
 - Redesigned workspace layout with a three-column structure for better multitasking.
