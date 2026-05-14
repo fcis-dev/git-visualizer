@@ -95,7 +95,8 @@
       "pull": "Pull",
       "pulling": "Pulling...",
       "behind": "{{count}} behind",
-      "loadingInfo": "Loading..."
+      "loadingInfo": "Loading...",
+      "fetchingInfo": "Checking remote..."
     }
   },
   "sidebar": {

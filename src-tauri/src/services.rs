@@ -428,6 +428,15 @@ pub fn git_fetch_prune(path: &str) -> Result<String, String> {
     run_git_cmd(path, &["fetch", "--prune", "--all", "--tags"])
 }
 
+/// Performs a lightweight `git fetch` (origin only, no prune/tags) and then
+/// returns the number of commits the current branch is behind its upstream.
+/// Returns 0 if the repo has no remote, no upstream, or any error occurs.
+pub fn git_fetch_and_check_behind(path: &str) -> Result<u32, String> {
+    // Silently fetch — ignore errors (no remote, no network, etc.)
+    let _ = run_git_cmd(path, &["fetch", "origin"]);
+    git_check_behind(path)
+}
+
 pub fn git_merge(path: &str, branch: &str) -> Result<String, String> {
     run_git_cmd(path, &["merge", branch])
 }

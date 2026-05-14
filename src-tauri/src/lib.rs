@@ -141,6 +141,7 @@ pub fn run() {
             commands::git_rebase_continue,
             commands::git_rebase_abort,
             commands::git_check_behind,
+            commands::git_fetch_and_check_behind,
             commands::git_check_ahead,
             commands::git_get_pruned_branches,
             commands::get_git_submodules,

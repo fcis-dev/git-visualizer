@@ -457,6 +457,17 @@ pub async fn git_check_behind(
 }
 
 #[tauri::command]
+pub async fn git_fetch_and_check_behind(
+    state: tauri::State<'_, AppState>,
+    path: String,
+) -> Result<u32, String> {
+    validate_path_in_workspace(&state, &path)?;
+    tauri::async_runtime::spawn_blocking(move || services::git_fetch_and_check_behind(&path))
+        .await
+        .map_err(|e| format!("Task panicked: {}", e))?
+}
+
+#[tauri::command]
 pub async fn git_check_ahead(state: tauri::State<'_, AppState>, path: &str) -> Result<u32, String> {
     validate_path_in_workspace(&state, path)?;
     services::git_check_ahead(path)

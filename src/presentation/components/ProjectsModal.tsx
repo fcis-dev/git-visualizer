@@ -40,7 +40,8 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ repoPath, onClose 
         try {
           const [branch, behind] = await Promise.all([
             invoke<string>('get_current_branch', { path }).catch(() => null),
-            invoke<number>('git_check_behind', { path }).catch(() => 0),
+            // Use fetch_and_check_behind so we get real remote state, not stale local refs
+            invoke<number>('git_fetch_and_check_behind', { path }).catch(() => 0),
           ]);
           setGitInfo((prev) => ({
             ...prev,
@@ -252,7 +253,7 @@ export const ProjectsModal: React.FC<ProjectsModalProps> = ({ repoPath, onClose 
                       {info?.loading ? (
                         <span className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-600 shrink-0">
                           <Loader2 className="w-3 h-3 animate-spin" />
-                          <span>{t('workspace.projects.loadingInfo')}</span>
+                          <span>{t('workspace.projects.fetchingInfo')}</span>
                         </span>
                       ) : info?.branch ? (
                         <span

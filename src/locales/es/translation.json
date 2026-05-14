@@ -95,7 +95,8 @@
       "pull": "Pull",
       "pulling": "Actualizando...",
       "behind": "{{count}} atrás",
-      "loadingInfo": "Cargando..."
+      "loadingInfo": "Cargando...",
+      "fetchingInfo": "Comprobando remoto..."
     }
   },
   "sidebar": {
