@@ -1,4 +1,4 @@
-import { repository } from "../../domain/di/Container";
+import { repository } from "../di/Container";
 
 export function useGitActions(repoPath: string, onSuccess?: () => void) {
 

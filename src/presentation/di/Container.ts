@@ -1,6 +1,6 @@
 import { TauriGitRepository } from "../../data/repositories/TauriGitRepository";
-import { SourceControlUseCases } from "../usecases/SourceControlUseCases";
-import { ExecuteGitActionUseCase } from "../usecases/ExecuteGitActionUseCase";
+import { SourceControlUseCases } from "../../domain/usecases/SourceControlUseCases";
+import { ExecuteGitActionUseCase } from "../../domain/usecases/ExecuteGitActionUseCase";
 
 // Concrete Data Implementation (Infrastructure)
 const gitRepository = new TauriGitRepository();

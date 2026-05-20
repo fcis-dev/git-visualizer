@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { sourceControlUseCases, repository } from "../../domain/di/Container";
+import { sourceControlUseCases, repository } from "../di/Container";
 import { SubmoduleInfo } from "../../domain/entities/GitEntities";
 import { useDialog } from "../context/DialogContext";
 import { useGitActions } from "../hooks/useGitActions";
