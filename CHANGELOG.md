@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.17] - 2026-05-20
+### Added
+- Added a development-specific application icon (`app-icon_dev.png`) displayed in Project Settings when running in dev mode.
+- Implemented a new Tauri/Rust backend command `git_fetch_and_check_behind` that triggers a lightweight remote fetch before evaluating commits behind status.
+### Changed
+- Replaced and modernized the application branding icons (`icon.icns`, `icon.ico`, `icon.png`) for production and development.
+- Removed unused and redundant Android and iOS launch assets to streamline the repository structure.
+### Fixed
+- Fixed outdated/stale behind-status indicators in the Projects Modal by querying remote repository states in the background.
+
 ## [0.1.16] - 2026-05-13
 ### Added
 - Added current branch name display for each project in the Projects modal.
