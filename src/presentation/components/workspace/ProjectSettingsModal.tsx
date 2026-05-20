@@ -662,7 +662,7 @@ export function ProjectSettingsModal({ repoPath, onClose }: ProjectSettingsModal
                 <div className="p-6 rounded-lg bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 text-center space-y-4">
                   <div className="space-y-2">
                     <div className="w-14 h-14 mx-auto flex items-center justify-center">
-                      <img src="/app-icon.png" alt="GitVi" className="w-full h-full object-contain" />
+                      <img src={import.meta.env.DEV ? "/app-icon_dev.png" : "/app-icon.png"} alt="GitVi" className="w-full h-full object-contain" />
                     </div>
                     <h4 className="font-bold text-slate-900 dark:text-white text-xl">GitVi</h4>
                     <p className="text-sm text-slate-600 dark:text-slate-300 max-w-xs mx-auto">
