@@ -72,10 +72,12 @@ export function WorktreesSidebar({
   const updateBranchAndPath = (value: string) => {
     if (repoPath) {
       const repoName = repoPath.split(/[\/\\]/).pop() || 'repo';
-      const expectedOldPath = newBranch ? `../${repoName}.worktrees/${newBranch}` : "";
+      const sanitizedOldBranch = newBranch ? newBranch.replace(/\//g, "-") : "";
+      const expectedOldPath = newBranch ? `../${repoName}.worktrees/${sanitizedOldBranch}` : "";
       
       if (!newPath || newPath === expectedOldPath) {
-        setNewPath(value ? `../${repoName}.worktrees/${value}` : "");
+        const sanitizedValue = value ? value.replace(/\//g, "-") : "";
+        setNewPath(value ? `../${repoName}.worktrees/${sanitizedValue}` : "");
       }
     }
     setNewBranch(value);
