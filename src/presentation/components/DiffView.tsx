@@ -75,21 +75,60 @@ const DiffLine = memo(function DiffLine({
   }
 
   const handleStageLine = () => {
-    const singleLineHunk: Hunk = {
-      header: hunk.header,
-      oldStart: hunk.oldStart,
-      oldCount: hunk.oldCount,
-      newStart: hunk.newStart,
-      newCount: hunk.newCount,
-      lines: hunk.lines.map((hLine) => {
-        if (hLine === line) return hLine;
-        if (hLine.type === "add")
-          return { content: hLine.content.substring(1), type: "context" as const };
-        if (hLine.type === "delete")
-          return { content: " " + hLine.content.substring(1), type: "context" as const };
+    const newLines = hunk.lines
+      .map((hLine) => {
+        if (hLine === line) {
+          return hLine;
+        }
+        if (hLine.type === "context") {
+          return hLine;
+        }
+        if (cached) {
+          // Unstaging (reverse patch):
+          // Other additions are already in the index, so they serve as context
+          if (hLine.type === "add") {
+            return {
+              ...hLine,
+              content: " " + hLine.content.substring(1),
+              type: "context" as const,
+            };
+          }
+          // Other deletions are already missing from the index, omit them
+          if (hLine.type === "delete") {
+            return null;
+          }
+        } else {
+          // Staging (forward patch):
+          // Other deletions are still in the index, so they serve as context
+          if (hLine.type === "delete") {
+            return {
+              ...hLine,
+              content: " " + hLine.content.substring(1),
+              type: "context" as const,
+            };
+          }
+          // Other additions are not in the index yet, omit them
+          if (hLine.type === "add") {
+            return null;
+          }
+        }
         return hLine;
-      }),
+      })
+      .filter((hLine): hLine is HunkLine => hLine !== null);
+
+    const isNoNewline = (l: HunkLine) => l.content.startsWith('\\ No newline');
+    const calculatedOldCount = newLines.filter(l => (l.type === "context" || l.type === "delete") && !isNoNewline(l)).length;
+    const calculatedNewCount = newLines.filter(l => (l.type === "context" || l.type === "add") && !isNoNewline(l)).length;
+
+    const singleLineHunk: Hunk = {
+      header: `@@ -${hunk.oldStart},${calculatedOldCount} +${hunk.newStart},${calculatedNewCount} @@`,
+      oldStart: hunk.oldStart,
+      oldCount: calculatedOldCount,
+      newStart: hunk.newStart,
+      newCount: calculatedNewCount,
+      lines: newLines,
     };
+    
     onStageHunk(singleLineHunk);
   };
 
@@ -309,6 +348,10 @@ export function DiffView({
         cached: commitHash ? null : cached,
       })
         .then((d) => {
+          if (d.trim() === "") {
+            onClose();
+            return;
+          }
           parseDiff(d);
           setLoading(false);
         })
@@ -351,12 +394,15 @@ export function DiffView({
 
   const handleStageHunk = useCallback(async (hunk: Hunk) => {
       try {
+          setLoading(true);
+          setError(null);
           const patch = generatePatchForHunk(hunk);
           await gitActions.applyPatch(patch, cached);
           loadDiff();
           onRefresh?.();
       } catch (err: any) {
           setError(t('diffView.errorApplyPatchFailed', { error: err.toString() }));
+          setLoading(false);
       }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generatePatchForHunk, cached]);

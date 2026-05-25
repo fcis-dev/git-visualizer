@@ -617,18 +617,30 @@ pub fn git_diff(
         if let Ok(diff_output) = &result {
             if diff_output.trim().is_empty() {
                 if let Some(f) = &normalized_file {
-                    let full_path = std::path::Path::new(path).join(f);
-                    if let Ok(content) = std::fs::read_to_string(full_path) {
-                        let lines: Vec<&str> = content.lines().collect();
-                        let line_count = if lines.is_empty() { 0 } else { lines.len() };
-                        let mut synthetic_diff = format!(
-                            "diff --git a/{0} b/{0}\nnew file mode 100644\nindex 0000000..0000000\n--- /dev/null\n+++ b/{0}\n@@ -0,0 +1,{1} @@\n",
-                            f, line_count
-                        );
-                        for line in lines {
-                            synthetic_diff.push_str(&format!("+{}\n", line));
+                    let should_generate = if cached == Some(true) {
+                        false
+                    } else {
+                        if let Ok(status) = run_git_cmd(path, &["status", "--porcelain", "--", f]) {
+                            status.trim_start().starts_with("??")
+                        } else {
+                            false
                         }
-                        return Ok(synthetic_diff);
+                    };
+
+                    if should_generate {
+                        let full_path = std::path::Path::new(path).join(f);
+                        if let Ok(content) = std::fs::read_to_string(full_path) {
+                            let lines: Vec<&str> = content.lines().collect();
+                            let line_count = if lines.is_empty() { 0 } else { lines.len() };
+                            let mut synthetic_diff = format!(
+                                "diff --git a/{0} b/{0}\nnew file mode 100644\nindex 0000000..0000000\n--- /dev/null\n+++ b/{0}\n@@ -0,0 +1,{1} @@\n",
+                                f, line_count
+                            );
+                            for line in lines {
+                                synthetic_diff.push_str(&format!("+{}\n", line));
+                            }
+                            return Ok(synthetic_diff);
+                        }
                     }
                 }
             }
