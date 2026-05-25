@@ -5,33 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
 ## [0.1.18] - 2026-05-25
-## [0.1.17] - 2026-05-20
+
 ### Added
+
+- Updated all application branding icons across platforms (macOS, Windows, Linux) for both production and development environments.
+- Added structured AI agent rules (`clean-architecture-rules.md` and `bump-version.md`) to define the project's architecture guidelines and version bumping procedure.
+
+### Changed
+
+- Moved the Dependency Injection (DI) Container from the Domain layer to the Presentation layer to strictly adhere to Clean Architecture principles.
+
+### Fixed
+
+- Fixed the diff view logic when staging or unstaging specific lines, ensuring the generated patch calculates the correct context lines to apply cleanly.
+- Fixed an issue when creating a Git worktree where branch names containing slashes (e.g., `feature/branch`) would generate invalid folder paths by correctly sanitizing them.
+- Prevented a visual white flash on macOS when waking or resuming the application by dynamically setting the native Tauri window background color based on the active theme.
+
+## [0.1.17] - 2026-05-20
+
+### Added
+
 - Added a development-specific application icon (`app-icon_dev.png`) displayed in Project Settings when running in dev mode.
 - Implemented a new Tauri/Rust backend command `git_fetch_and_check_behind` that triggers a lightweight remote fetch before evaluating commits behind status.
+
 ### Changed
+
 - Replaced and modernized the application branding icons (`icon.icns`, `icon.ico`, `icon.png`) for production and development.
 - Removed unused and redundant Android and iOS launch assets to streamline the repository structure.
+
 ### Fixed
+
 - Fixed outdated/stale behind-status indicators in the Projects Modal by querying remote repository states in the background.
 
 ## [0.1.16] - 2026-05-13
+
 ### Added
+
 - Added current branch name display for each project in the Projects modal.
 - Added pull status indicator (commits behind) for each project in the Projects modal.
 - Added a direct Pull button in the Projects modal to sync repositories without navigating into them.
+
 ### Changed
+
 - Converted the Commit Details view from a side panel to a bottom-docked panel with a horizontal resizer for better vertical space utilization.
 - Refactored overlay components (DiffView, File History, Merge Editor) to be constrained to the graph area, preventing overlap with the commit details panel and workspace header.
 - Consolidated search, graph, and overlay management into a unified wrapper for consistent visual layering.
+
 ### Fixed
+
 - Fixed Projects modal not dismissing automatically after navigating to a project.
 
 ## [0.1.15] - 2026-05-12
+
 ### Added
+
 - Redesigned workspace layout with a three-column structure for better multitasking.
 - Added a permanent, toggleable Source Control panel on the right side of the workspace.
 - Moved the Projects list into a dedicated floating modal window.
@@ -39,11 +67,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a scroll minimap to the Merge Conflict Editor to highlight unresolved conflicts.
 - Added a navigation button within the Merge Conflict Editor to jump between conflicts.
 - Implemented loading state and visual feedback on the commit button.
+
 ### Changed
+
 - Optimized the Commit Details view to a 33%/66% width split for better file list visibility.
 - Standardized icon positioning in the header navigation for a more consistent layout.
 - Refactored workspace layout to support multiple tool panels displayed simultaneously.
+
 ### Fixed
+
 - Fixed incorrect ahead/behind status checks triggered when creating a new branch.
 - Fixed push counter not updating correctly after Git operations.
 - Fixed z-index layering issue where DiffView appeared above the branch selector header.
@@ -51,70 +83,102 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resolved spurious error notifications after successful branch creation or merge operations.
 
 ## [0.1.14] - 2026-05-06
+
 ### Added
+
 - Added standard Open Source License file (LICENSE).
 - Added an interactive Log Panel to the interface.
+
 ### Fixed
+
 - Polished minor UI details for better consistency.
 - Corrected the display name for worktree paths.
 
 ## [0.1.13] - 2026-05-03
+
 ### Added
+
 - Implemented minor design improvements to the commit graph.
 - Added a local branch selector for Git worktrees.
+
 ### Fixed
+
 - Resolved various minor errors and stability issues.
 
 ## [0.1.12] - 2026-04-26
+
 ### Added
+
 - Introduced debugging configurations for development.
+
 ### Fixed
+
 - Fixed a bug related to the Git commit command execution.
 
 ## [0.1.11] - 2026-04-21
+
 ### Added
+
 - Improved the Reflog user interface.
 - Added support for Git Large File Storage (LFS).
 - Introduced support for managing Git hooks.
 - Added drag-and-drop functionality to the commit graph.
 - Implemented features to view and manage stash content.
+
 ### Fixed
+
 - Fixed an issue with unstaged folders in source control.
 - Corrected a bug causing wrong branch names to be displayed.
 - Adjusted the width of design buttons in the branch sidebar.
 
 ## [0.1.10] - 2026-04-02
+
 ### Fixed
+
 - Fixed an opacity bug in the commit graph on macOS.
 
 ## [0.1.10-1] - 2026-04-01
+
 ### Fixed
+
 - General minor stability improvements.
 - Fixed an unspecified bug on macOS.
 
 ## [0.1.9] - 2026-03-31
+
 ### Fixed
+
 - Fixed graph rendering issues specific to macOS.
 
 ## [0.1.8] - 2026-03-30
+
 ### Fixed
+
 - Addressed various macOS bugs and introduced general improvements.
 
 ## [0.1.7] - 2026-03-29
+
 ### Added
+
 - Added an empty project placeholder window.
 - Introduced a Project Settings panel.
+
 ### Fixed
+
 - Fixed width issues in the project workspace header selector.
 - Resolved issues related to graph loading states.
 - Improved graph design and contextual menus.
 
 ## [0.1.6] - 2026-03-26
+
 ### Added
+
 - Enabled sorting branch lists by folder structure.
 - Added an option to checkout a branch immediately upon creation.
 - Removed background blur from dialogs and made them draggable.
+
 ### Fixed
+
 - Fixed theme changing behavior across all open windows.
 - Resolved multi-window synchronization issues.
 - Fixed display issues in the diff and blame windows.
@@ -124,22 +188,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Normalized UI CSS for cross-platform consistency.
 
 ## [0.1.5] - 2026-03-24
+
 ### Fixed
+
 - Addressed minor user interface visual bugs.
 
 ## [0.1.4-1] - 2026-03-23
+
 ### Fixed
+
 - Resolved a security issue related to path handling.
 
 ## [0.1.4] - 2026-03-22
+
 ### Added
+
 - Added support for movable and resizable sidebars.
 - Introduced full multi-window support.
 - Added project persistence to remember previously opened projects.
+
 ### Changed
+
 - Refactored the internal get language functionality.
 - Refactored the source control sidebar controller.
+
 ### Fixed
+
 - Fixed a security issue related to path traversal.
 - Corrected file paths in the source control view.
 - Fixed text ellipsis for long path names.
@@ -149,38 +223,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed graph rendering issues for staged files in the source tree.
 
 ## [0.1.3-3] - 2026-03-16
+
 ### Fixed
+
 - Fixed application compilation errors.
 
 ## [0.1.3-2] - 2026-03-16
+
 ### Fixed
+
 - Fixed issues when deleting remote branches.
 - Corrected GitHub Actions CI/CD workflows.
 - Improved and corrected language translations.
 
 ## [0.1.3-1] - 2026-03-13
+
 ### Fixed
+
 - Released version 0.1.3-1 to address critical hotfixes.
 
 ## [0.1.3] - 2026-03-13
+
 ### Fixed
+
 - Ensured the UI refreshes properly when a new branch or tag is created.
 
 ## [0.1.2] - 2026-03-12
+
 ### Added
+
 - Redesigned the settings interface.
 - Added a file search functionality.
 - Implemented text syntax highlighting.
 - Applied general UI redesigns across the application.
+
 ### Fixed
+
 - Fixed the counter badge for push/pull actions.
 - Addressed various application warnings.
 
 ## [0.1.1] - 2026-03-11
+
 ### Added
+
 - Added the ability to delete remote tags.
 - Introduced an auto-update feature to search for new releases.
+
 ### Fixed
+
 - Fixed issues with the Tauri updater system.
 - Corrected the layout of the settings modal and fetch buttons.
 - Updated the Tauri updater public key.
@@ -190,7 +280,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resolved WebKit-related rendering errors.
 
 ## [0.1.0] - 2026-03-07
+
 ### Added
+
 - Initial setup for release configurations.
 - Added application language translations.
 - Improved overall rendering and performance.
@@ -216,11 +308,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added more general functionalities and updated application icons.
 - Added a project sidebar with local preferences support.
 - Initial public release of Git Visualizer.
+
 ### Changed
+
 - Extensive internal refactoring for better maintainability.
 - Refactored the architecture of the commit tree design.
 - Cleaned up overall application architecture.
+
 ### Fixed
+
 - Fixed project compilation errors.
 - Disabled remote action buttons when no remote is available.
 - Fixed the counter badge on the stash button.
