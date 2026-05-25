@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 type Theme = "light" | "dark";
 
@@ -26,6 +27,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.remove("light", "dark");
     root.classList.add(theme);
     localStorage.setItem("theme", theme);
+
+    // Dynamically set native window background color to prevent macOS white flash on wake/resume
+    try {
+      const win = getCurrentWindow();
+      const nativeBgColor = theme === "dark" ? "#060913" : "#ffffff";
+      win.setBackgroundColor(nativeBgColor).catch((err) => {
+        console.error("Failed to set native window background color:", err);
+      });
+    } catch (e) {
+      console.warn("Tauri getCurrentWindow is not available in this environment:", e);
+    }
   }, [theme]);
 
   useEffect(() => {
