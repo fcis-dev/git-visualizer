@@ -177,7 +177,13 @@ pub fn run() {
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
+                use tauri_plugin_window_state::{StateFlags, AppHandleExt};
+                
                 let app = window.app_handle();
+                
+                // Force save the window state (size and position) right before it closes.
+                // This fixes an issue on Windows where resizing without moving wouldn't save.
+                let _ = app.save_window_state(StateFlags::all());
                 let windows = app.webview_windows();
                 let label = window.label().to_string();
                 let state = app.state::<config::AppState>();
