@@ -530,6 +530,8 @@
   "worktreesSidebar": {
     "removeTitle": "Remove Worktree",
     "removeConfirm": "Are you sure you want to remove the worktree at {{path}}? This will not delete the folder if there are untracked files unless forced.",
+    "overwriteTitle": "Directory Exists",
+    "overwriteConfirm": "The directory {{path}} already exists. Do you want to forcefully overwrite it and delete its current contents?",
     "pruneTitle": "Prune Worktrees",
     "pruneConfirm": "Are you sure you want to prune worktrees? This clears administrative information for worktrees that no longer exist.",
     "noRepo": "No repository open.",

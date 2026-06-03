@@ -318,8 +318,8 @@ export class TauriGitRepository implements IGitRepository {
     return await invoke<import("../../domain/entities/GitEntities").WorktreeData[]>("git_worktree_list", { path });
   }
 
-  async addWorktree(path: string, newPath: string, branch: string): Promise<string> {
-    return await invoke<string>("git_worktree_add", { path, newPath, branch });
+  async addWorktree(path: string, newPath: string, branch: string, force: boolean = false): Promise<string> {
+    return await invoke<string>("git_worktree_add", { path, newPath, branch, force });
   }
 
   async removeWorktree(path: string, worktreePath: string): Promise<string> {

@@ -774,9 +774,10 @@ pub async fn git_worktree_add(
     path: &str,
     new_path: &str,
     branch: &str,
+    force: bool,
 ) -> Result<String, String> {
     validate_path_in_workspace(&state, path)?;
-    services::git_worktree_add(path, new_path, branch)
+    services::git_worktree_add(path, new_path, branch, force)
 }
 
 #[tauri::command]

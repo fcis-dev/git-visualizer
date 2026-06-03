@@ -530,6 +530,8 @@
   "worktreesSidebar": {
     "removeTitle": "Eliminar Worktree",
     "removeConfirm": "¿Estás seguro de que quieres eliminar el worktree en {{path}}? Esto no eliminará la carpeta si hay archivos sin seguimiento, a menos que se fuerce.",
+    "overwriteTitle": "Directorio Existente",
+    "overwriteConfirm": "El directorio {{path}} ya existe. ¿Quieres sobrescribirlo forzosamente y borrar su contenido actual?",
     "pruneTitle": "Podar Worktrees (Prune)",
     "pruneConfirm": "¿Estás seguro de que quieres podar los worktrees? Esto limpiará la información administrativa de los worktrees que ya no existen.",
     "noRepo": "No hay ningún repositorio abierto.",

@@ -88,19 +88,30 @@ export function WorktreesSidebar({
     setIsDropdownOpen(true);
   };
 
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAdd = async (e: React.FormEvent, force: boolean = false) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (!newPath.trim() || !repoPath) return;
 
     setIsAdding(true);
     setError(null);
     try {
-      await gitActions.addWorktree(newPath.trim(), newBranch.trim());
+      await gitActions.addWorktree(newPath.trim(), newBranch.trim(), force);
       setNewPath("");
       setNewBranch("");
       loadWorktrees();
     } catch (e: any) {
-      setError(e.toString());
+      const errorStr = e.toString();
+      if (!force && errorStr.toLowerCase().includes("already exists")) {
+        showConfirm(
+          t('worktreesSidebar.overwriteTitle') || "Directory Exists",
+          t('worktreesSidebar.overwriteConfirm', { path: newPath.trim() }) || `The directory ${newPath.trim()} already exists. Do you want to forcefully overwrite it?`,
+          () => {
+            handleAdd(e, true);
+          }
+        );
+      } else {
+        setError(errorStr);
+      }
     } finally {
       setIsAdding(false);
     }

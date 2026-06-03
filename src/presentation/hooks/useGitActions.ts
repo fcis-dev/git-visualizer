@@ -267,9 +267,9 @@ export function useGitActions(repoPath: string, onSuccess?: () => void) {
 
         // Worktrees
         getWorktrees: async () => repoPath ? await repository.getWorktrees(repoPath) : [],
-        addWorktree: async (newPath: string, branch: string) => {
+        addWorktree: async (newPath: string, branch: string, force?: boolean) => {
              if (repoPath) {
-                 await repository.addWorktree(repoPath, newPath, branch);
+                 await repository.addWorktree(repoPath, newPath, branch, force);
                  onSuccess?.();
              }
         },

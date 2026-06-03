@@ -92,7 +92,7 @@ export interface IGitRepository {
   getRepositoryStats(path: string): Promise<import("../entities/GitEntities").RepositoryStats>;
 
   getWorktrees(path: string): Promise<import("../entities/GitEntities").WorktreeData[]>;
-  addWorktree(path: string, newPath: string, branch: string): Promise<string>;
+  addWorktree(path: string, newPath: string, branch: string, force?: boolean): Promise<string>;
   removeWorktree(path: string, worktreePath: string): Promise<string>;
   pruneWorktrees(path: string): Promise<string>;
 

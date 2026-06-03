@@ -1753,7 +1753,15 @@ pub fn git_worktree_list(path: &str) -> Result<Vec<WorktreeData>, String> {
     Ok(worktrees)
 }
 
-pub fn git_worktree_add(path: &str, new_path: &str, branch: &str) -> Result<String, String> {
+pub fn git_worktree_add(path: &str, new_path: &str, branch: &str, force: bool) -> Result<String, String> {
+    if force {
+        let wt_path = std::path::Path::new(new_path);
+        // Ensure we are somewhat safe: only delete if it's not a git repository itself.
+        if wt_path.exists() && !wt_path.join(".git").exists() {
+            let _ = std::fs::remove_dir_all(wt_path);
+        }
+    }
+
     if branch.is_empty() {
         run_git_cmd(path, &["worktree", "add", "-d", new_path])
     } else {
@@ -1762,7 +1770,24 @@ pub fn git_worktree_add(path: &str, new_path: &str, branch: &str) -> Result<Stri
 }
 
 pub fn git_worktree_remove(path: &str, worktree_path: &str) -> Result<String, String> {
-    run_git_cmd(path, &["worktree", "remove", "--force", worktree_path])
+    let result = run_git_cmd(path, &["worktree", "remove", "--force", worktree_path]);
+
+    let wt_path = std::path::Path::new(worktree_path);
+    if wt_path.exists() {
+        let _ = std::fs::remove_dir_all(wt_path);
+    }
+
+    if result.is_err() {
+        // If git failed but we managed to delete the directory (e.g. it was just complaining about untracked files),
+        // we should prune to clean up git's internal state.
+        let _ = git_worktree_prune(path);
+        
+        if !wt_path.exists() {
+            return Ok("Worktree directory force-deleted and pruned".to_string());
+        }
+    }
+
+    result
 }
 
 pub fn git_worktree_prune(path: &str) -> Result<String, String> {
