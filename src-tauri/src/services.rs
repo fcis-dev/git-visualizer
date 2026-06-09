@@ -590,6 +590,7 @@ pub fn git_diff(
         args.push("show");
         args.push("--pretty=format:");
         args.push("--patch");
+        args.push("-m");
         args.push("--no-color");
         args.push(h);
         if normalized_file.is_some() {

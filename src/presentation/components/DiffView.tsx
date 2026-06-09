@@ -348,10 +348,6 @@ export function DiffView({
         cached: commitHash ? null : cached,
       })
         .then((d) => {
-          if (d.trim() === "") {
-            onClose();
-            return;
-          }
           parseDiff(d);
           setLoading(false);
         })
