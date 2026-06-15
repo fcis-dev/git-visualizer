@@ -165,12 +165,11 @@ export function useRepositoryWorkspaceController(
           async () => {
             for (const branch of pruned) {
               try {
-                await gitActions.deleteBranch(branch, false);
-              } catch {
-                try {
-                  await gitActions.deleteBranch(branch, true);
-                } catch { /* ignore */ }
-              }
+                // Since the remote tracking branch was already deleted, the user intends 
+                // to remove this branch. Force delete to avoid showing unnecessary error toasts 
+                // if the branch isn't perfectly merged.
+                await gitActions.deleteBranch(branch, true);
+              } catch { /* ignore */ }
             }
             loadCommits();
           },
