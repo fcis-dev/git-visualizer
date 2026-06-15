@@ -53,7 +53,7 @@ pub fn run() {
                             .to_string_lossy()
                     );
 
-                    let _ = tauri::WebviewWindowBuilder::new(
+                    let window = tauri::WebviewWindowBuilder::new(
                         app,
                         &label,
                         tauri::WebviewUrl::App(url.into()),
@@ -62,6 +62,9 @@ pub fn run() {
                     .inner_size(1024.0, 768.0)
                     .build()
                     .map_err(|e| e.to_string())?;
+
+                    use tauri_plugin_window_state::{WindowExt, StateFlags};
+                    let _ = window.restore_state(StateFlags::all());
                 }
                 // The main window is hidden by default in tauri.conf.json.
                 // We close it if we restored actual project windows.
@@ -71,6 +74,8 @@ pub fn run() {
             } else {
                 // Show dashboard if no session
                 if let Some(main_win) = app.get_webview_window("main") {
+                    use tauri_plugin_window_state::{WindowExt, StateFlags};
+                    let _ = main_win.restore_state(StateFlags::all());
                     let _ = main_win.set_title(&product_name);
                     let _ = main_win.show();
                     let _ = main_win.unminimize();
