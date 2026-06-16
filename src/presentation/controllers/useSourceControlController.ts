@@ -64,7 +64,7 @@ export function useSourceControlController(
       const changed: { path: string; status: string }[] = [];
 
       status.files.forEach((s) => {
-        if (s.status === "staged") {
+        if (s.status.startsWith("staged_")) {
           staged.push(s);
         } else if (s.status === "conflicted") {
           changed.unshift(s);

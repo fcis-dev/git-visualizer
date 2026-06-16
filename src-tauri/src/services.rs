@@ -231,15 +231,20 @@ pub fn get_git_status(path: &str) -> Result<Vec<FileStatus>, String> {
         }
 
         // Check staged status
-        if status.is_index_new()
-            || status.is_index_modified()
-            || status.is_index_deleted()
-            || status.is_index_renamed()
-            || status.is_index_typechange()
-        {
+        if status.is_index_new() {
             statuses.push(FileStatus {
                 path: path.clone(),
-                status: "staged".to_string(),
+                status: "staged_new".to_string(),
+            });
+        } else if status.is_index_modified() || status.is_index_renamed() || status.is_index_typechange() {
+            statuses.push(FileStatus {
+                path: path.clone(),
+                status: "staged_modified".to_string(),
+            });
+        } else if status.is_index_deleted() {
+            statuses.push(FileStatus {
+                path: path.clone(),
+                status: "staged_deleted".to_string(),
             });
         }
 

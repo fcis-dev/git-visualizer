@@ -112,7 +112,7 @@ export function StashesSidebar({ repoPath, onRefreshGraph, onSelectStash }: Stas
         return;
       }
 
-      const hasStaged = status.some(s => s.status === "staged");
+      const hasStaged = status.some(s => s.status.startsWith("staged_"));
 
       const proceed = () => {
         showInput(t('sidebar.sourceControl.stashTitle'), t('sidebar.sourceControl.stashMsg'), async (msg) => {
