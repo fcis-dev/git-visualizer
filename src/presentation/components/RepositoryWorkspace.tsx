@@ -614,10 +614,10 @@ export function RepositoryWorkspace({
 
           {/* Commit Details — bottom panel */}
           {selectedCommit && (
-            <>
+            <div className="relative shrink-0 z-20">
               {/* Horizontal resize handle */}
               <div
-                className="h-1 shrink-0 cursor-row-resize hover:bg-indigo-500/50 bg-slate-200 dark:bg-slate-800 transition-colors z-30"
+                className="absolute -top-1 left-0 right-0 h-1 cursor-row-resize hover:bg-indigo-500/50 transition-colors z-50"
                 onMouseDown={(e) => {
                   e.preventDefault();
                   const startY = e.clientY;
@@ -634,7 +634,7 @@ export function RepositoryWorkspace({
                   document.addEventListener('mouseup', onMouseUp);
                 }}
               />
-              <div style={{ height: commitDetailsHeight }} className="shrink-0 overflow-hidden border-t border-slate-200 dark:border-slate-800">
+              <div style={{ height: commitDetailsHeight }} className="overflow-hidden border-t border-slate-200 dark:border-slate-800">
                 <CommitDetails
                   repoPath={repoPath}
                   commit={selectedCommit}
@@ -662,7 +662,7 @@ export function RepositoryWorkspace({
                   onRefreshGraph={() => loadCommits()}
                 />
               </div>
-            </>
+            </div>
           )}
         </div>
 
