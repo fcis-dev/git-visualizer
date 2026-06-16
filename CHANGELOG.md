@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.19] - 2026-06-16
+
+### Fixed
+
+- Adjusted the border size in the commit detail view for better visual consistency.
+- Fixed the staged files state to update and display correctly.
+- Fixed an issue with window sizing and ensured window size persists across application sessions.
+- Resolved an error that occurred when attempting to delete a local branch.
+- Fixed a bug that prevented certain files from opening properly.
+- Fixed errors encountered when adding or removing folders within Git worktrees.
+- Addressed issues related to the execution and configuration of agent skills.
+
 ## [0.1.18] - 2026-05-25
 
 ### Added
