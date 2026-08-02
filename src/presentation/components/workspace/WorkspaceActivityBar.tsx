@@ -43,7 +43,7 @@ export function WorkspaceActivityBar({
         >
           <GitBranch className="w-6 h-6 stroke-[1.5]" />
           {activeSidebarTab === "branches" && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-r-full -ml-[9px]"></div>
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-r-full -ml-2.25"></div>
           )}
         </button>
 
@@ -58,7 +58,7 @@ export function WorkspaceActivityBar({
         >
           <Tag className="w-6 h-6 stroke-[1.5]" />
           {activeSidebarTab === "tags" && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-600 dark:bg-emerald-500 rounded-r-full -ml-[9px]"></div>
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-600 dark:bg-emerald-500 rounded-r-full -ml-2.25"></div>
           )}
         </button>
       </div>
@@ -76,7 +76,7 @@ export function WorkspaceActivityBar({
           >
             <FolderTree className="w-6 h-6 stroke-[1.5]" />
             {activeSidebarTab === "worktrees" && (
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-r-full -ml-[9px]"></div>
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-r-full -ml-2.25"></div>
             )}
             {worktreeCount > 0 && (
               <span className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[1.2rem] text-[9px] font-bold rounded-full bg-indigo-500 text-white leading-none shadow-sm text-center">
@@ -97,7 +97,7 @@ export function WorkspaceActivityBar({
         >
           <Archive className="w-6 h-6 stroke-[1.5]" />
           {activeSidebarTab === "stashes" && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-r-full -ml-[9px]"></div>
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-r-full -ml-2.25"></div>
           )}
           {stashCount > 0 && (
             <span className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[1.2rem] text-[9px] font-bold rounded-full bg-indigo-500 text-white leading-none shadow-sm text-center">
@@ -117,7 +117,7 @@ export function WorkspaceActivityBar({
         >
           <Box className="w-6 h-6 stroke-[1.5]" />
           {activeSidebarTab === "submodules" && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-600 dark:bg-blue-500 rounded-r-full -ml-[9px]"></div>
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-600 dark:bg-blue-500 rounded-r-full -ml-2.25"></div>
           )}
         </button>
 
@@ -132,7 +132,7 @@ export function WorkspaceActivityBar({
         >
           <LifeBuoy className="w-6 h-6 stroke-[1.5]" />
           {activeSidebarTab === "rescue" && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-amber-500 rounded-r-full -ml-[9px]"></div>
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-amber-500 rounded-r-full -ml-2.25"></div>
           )}
         </button>
       </div>
