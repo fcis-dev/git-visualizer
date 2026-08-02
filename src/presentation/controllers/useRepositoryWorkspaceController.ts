@@ -73,6 +73,7 @@ export function useRepositoryWorkspaceController(
     isWorktree,
     worktreeCount,
     hasRemote,
+    stashCount,
   } = useGit(repoPath, graphBranches);
 
   const refreshStatsRef = useRef<(() => Promise<void>) | null>(null);
@@ -359,7 +360,8 @@ export function useRepositoryWorkspaceController(
       aheadCount,
       behindCount,
       isAutoFetching,
-      hasRemote
+      hasRemote,
+      stashCount
     },
     actions: {
       setCommitSearchQuery,

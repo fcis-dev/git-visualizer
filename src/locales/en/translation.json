@@ -281,6 +281,7 @@
   },
   "stashes": {
     "title": "Stash Manager",
+    "titleWithCount": "Stash Manager ({{count}})",
     "noRepo": "No repository open.",
     "errorTitle": "Error",
     "noStashes": "No stashes found in this repository.",

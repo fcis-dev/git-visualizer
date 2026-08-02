@@ -281,6 +281,7 @@
   },
   "stashes": {
     "title": "Gestor de Stashes",
+    "titleWithCount": "Gestor de Stashes ({{count}})",
     "noRepo": "No hay ningún repositorio abierto.",
     "errorTitle": "Error",
     "noStashes": "No se han encontrado stashes en este repositorio.",

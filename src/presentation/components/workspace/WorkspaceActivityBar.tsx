@@ -8,6 +8,7 @@ interface WorkspaceActivityBarProps {
   setIsLeftSidebarVisible: (visible: boolean) => void;
   isWorktree: boolean;
   worktreeCount: number;
+  stashCount: number;
 }
 
 export function WorkspaceActivityBar({
@@ -17,6 +18,7 @@ export function WorkspaceActivityBar({
   setIsLeftSidebarVisible,
   isWorktree,
   worktreeCount,
+  stashCount,
 }: WorkspaceActivityBarProps) {
   const { t } = useTranslation();
 
@@ -91,11 +93,16 @@ export function WorkspaceActivityBar({
               ? "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 shadow-sm"
               : "text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800"
           }`}
-          title={t("stashes.title")}
+          title={stashCount > 0 ? t("stashes.titleWithCount", { count: stashCount }) : t("stashes.title")}
         >
           <Archive className="w-6 h-6 stroke-[1.5]" />
           {activeSidebarTab === "stashes" && (
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 dark:bg-indigo-500 rounded-r-full -ml-[9px]"></div>
+          )}
+          {stashCount > 0 && (
+            <span className="absolute -top-1 -right-1 px-1.5 py-0.5 min-w-[1.2rem] text-[9px] font-bold rounded-full bg-indigo-500 text-white leading-none shadow-sm text-center">
+              {stashCount}
+            </span>
           )}
         </button>
 

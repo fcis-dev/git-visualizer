@@ -19,6 +19,7 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
   const [isWorktree, setIsWorktree] = useState(false);
   const [worktreeCount, setWorktreeCount] = useState(0);
   const [hasRemote, setHasRemote] = useState(false);
+  const [stashCount, setStashCount] = useState(0);
 
   const commitCountRef = useRef(0);
   const prevRepoPathRef = useRef(repoPath);
@@ -32,6 +33,7 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
     setIsWorktree(false);
     setWorktreeCount(0);
     setHasRemote(false);
+    setStashCount(0);
     commitCountRef.current = 0;
   }
 
@@ -58,6 +60,14 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
       setWorktreeCount(data.worktree_count);
       setHasRemote(data.has_remote);
       if (data.commits.length < PAGE_SIZE) setHasMore(false);
+
+      try {
+        const stashes = await repository.getStashes(repoPath);
+        setStashCount(stashes.length);
+      } catch (err) {
+        console.error("Failed to fetch stashes in useGit", err);
+        setStashCount(0);
+      }
     } catch (err: any) {
       console.error(err);
       setError(err.toString());
@@ -69,6 +79,7 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
       setIsWorktree(false);
       setWorktreeCount(0);
       setHasRemote(false);
+      setStashCount(0);
     } finally {
       setIsLoading(false);
     }
@@ -143,6 +154,7 @@ export function useGit(repoPath: string, filterBranches: string[] = []) {
     setError,
     isWorktree,
     worktreeCount,
-    hasRemote
+    hasRemote,
+    stashCount
   };
 }

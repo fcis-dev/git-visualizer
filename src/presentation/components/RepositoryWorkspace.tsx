@@ -90,7 +90,8 @@ export function RepositoryWorkspace({
     behindCount,
     isAutoFetching,
     hasRemote,
-    isProjectSettingsModalOpen
+    isProjectSettingsModalOpen,
+    stashCount
   } = state;
 
   const {
@@ -378,6 +379,7 @@ export function RepositoryWorkspace({
           setIsLeftSidebarVisible={setIsLeftSidebarVisible}
           isWorktree={isWorktree}
           worktreeCount={worktreeCount}
+          stashCount={stashCount}
         />
 
         {/* Dynamic Sidebar (Changes / Branches / Rescue) */}
